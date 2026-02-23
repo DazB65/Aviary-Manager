@@ -121,3 +121,17 @@ export const events = mysqlTable("events", {
 
 export type Event = typeof events.$inferSelect;
 export type InsertEvent = typeof events.$inferInsert;
+
+// Clutch eggs table — individual egg outcomes per brood
+export const clutchEggs = mysqlTable("clutchEggs", {
+  id: int("id").autoincrement().primaryKey(),
+  broodId: int("broodId").notNull(),
+  userId: int("userId").notNull(),
+  eggNumber: int("eggNumber").notNull(), // 1-based egg position in the clutch
+  outcome: mysqlEnum("outcome", ["unknown", "fertile", "infertile", "cracked", "hatched", "died"]).default("unknown").notNull(),
+  notes: text("notes"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ClutchEgg = typeof clutchEggs.$inferSelect;
+export type InsertClutchEgg = typeof clutchEggs.$inferInsert;

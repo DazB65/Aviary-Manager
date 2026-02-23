@@ -11,6 +11,7 @@ import {
   getEventsByUser, createEvent, updateEvent, deleteEvent, toggleEventComplete,
   getDashboardStats,
   getPedigree, calcInbreedingCoefficient, getDescendants, getSiblings,
+  getEggsByBrood, upsertClutchEgg, deleteEggsByBrood, syncClutchEggs,
 } from "./db";
 import { storagePut } from "./storage";
 import { nanoid } from "nanoid";
@@ -267,7 +268,29 @@ export const appRouter = router({
       .mutation(({ ctx, input }) => toggleEventComplete(input.id, ctx.user.id)),
   }),
 
-  // ─── Dashboard ─────────────────────────────────────────────────────────────
+  // ─── Clutch Eggs ──────────────────────────────────────────────────────────
+  clutchEggs: router({
+    byBrood: protectedProcedure
+      .input(z.object({ broodId: z.number() }))
+      .query(({ ctx, input }) => getEggsByBrood(input.broodId, ctx.user.id)),
+    upsert: protectedProcedure
+      .input(z.object({
+        broodId: z.number(),
+        eggNumber: z.number().int().min(1),
+        outcome: z.enum(["unknown", "fertile", "infertile", "cracked", "hatched", "died"]),
+        notes: z.string().optional(),
+      }))
+      .mutation(({ ctx, input }) =>
+        upsertClutchEgg(input.broodId, ctx.user.id, input.eggNumber, input.outcome, input.notes)
+      ),
+    sync: protectedProcedure
+      .input(z.object({ broodId: z.number(), eggsLaid: z.number().int().min(0) }))
+      .mutation(({ ctx, input }) => syncClutchEggs(input.broodId, ctx.user.id, input.eggsLaid)),
+    deleteByBrood: protectedProcedure
+      .input(z.object({ broodId: z.number() }))
+      .mutation(({ ctx, input }) => deleteEggsByBrood(input.broodId, ctx.user.id)),
+  }),
+  // ─── Dashboard ──────────────────────────────────────────────────────
   dashboard: router({
     stats: protectedProcedure.query(({ ctx }) => getDashboardStats(ctx.user.id)),
   }),

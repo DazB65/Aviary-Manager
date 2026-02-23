@@ -7,6 +7,7 @@ import {
   breedingPairs, InsertBreedingPair,
   broods, InsertBrood,
   events, InsertEvent,
+  clutchEggs, ClutchEgg,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -438,4 +439,55 @@ export async function getSiblings(birdId: number, userId: number) {
   }
 
   return siblings;
+}
+
+// ─── Clutch egg outcome helpers ───────────────────────────────────────────────
+
+export async function getEggsByBrood(broodId: number, userId: number): Promise<ClutchEgg[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(clutchEggs)
+    .where(and(eq(clutchEggs.broodId, broodId), eq(clutchEggs.userId, userId)))
+    .orderBy(asc(clutchEggs.eggNumber));
+}
+
+export async function upsertClutchEgg(
+  broodId: number,
+  userId: number,
+  eggNumber: number,
+  outcome: ClutchEgg["outcome"],
+  notes?: string
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(clutchEggs)
+    .values({ broodId, userId, eggNumber, outcome, notes: notes ?? null })
+    .onDuplicateKeyUpdate({ set: { outcome, notes: notes ?? null } });
+}
+
+export async function deleteEggsByBrood(broodId: number, userId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(clutchEggs).where(and(eq(clutchEggs.broodId, broodId), eq(clutchEggs.userId, userId)));
+}
+
+export async function syncClutchEggs(broodId: number, userId: number, eggsLaid: number): Promise<void> {
+  // Ensure exactly eggsLaid egg rows exist for this brood (add missing, remove extras)
+  const db = await getDb();
+  if (!db) return;
+  const existing = await db.select().from(clutchEggs)
+    .where(and(eq(clutchEggs.broodId, broodId), eq(clutchEggs.userId, userId)));
+  const existingNums = new Set(existing.map(e => e.eggNumber));
+  // Add missing egg slots
+  for (let i = 1; i <= eggsLaid; i++) {
+    if (!existingNums.has(i)) {
+      await db.insert(clutchEggs).values({ broodId, userId, eggNumber: i, outcome: "unknown" });
+    }
+  }
+  // Remove egg slots beyond eggsLaid
+  for (const egg of existing) {
+    if (egg.eggNumber > eggsLaid) {
+      await db.delete(clutchEggs).where(eq(clutchEggs.id, egg.id));
+    }
+  }
 }

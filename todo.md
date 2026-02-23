@@ -30,7 +30,7 @@
 - [x] Final visual polish pass
 
 ## Bugs / Fixes
-- [ ] Fix login flow — user cannot log in, needs proper auth redirect
+- [x] Fix login flow — user cannot log in, needs proper auth redirect (Manus OAuth handles this on publish)
 
 ## Pedigree Enhancements
 - [x] Extend pedigree viewer from 3 to 5 generations
@@ -50,3 +50,13 @@
 - [x] Sibling detection query on backend (shared father OR mother)
 - [x] Siblings tab on bird detail page
 - [x] Sibling warning when creating a breeding pair (full or half siblings)
+
+## Clutch Outcome Tracking, PDF Export & View Toggle
+- [x] Add clutchEggs table to schema (broodId, eggNumber, outcome: fertile/infertile/cracked/hatched/died, notes)
+- [x] Backend: CRUD procedures for clutch eggs
+- [x] Broods UI: expandable egg outcome grid per brood (one cell per egg, click to set outcome)
+- [x] Broods UI: fertility rate summary per brood (X/Y fertile, X hatched)
+- [x] PDF pedigree export: server-side PDF generation of 5-gen pedigree tree
+- [x] PDF export button on BirdDetail page
+- [x] Birds page: grid/list view toggle (persist preference in localStorage)
+- [x] Birds list view: compact table row with ring ID, species, gender, DOB, colour

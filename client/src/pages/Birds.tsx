@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { Bird, Plus, Search, Trash2, Pencil, Eye, Upload } from "lucide-react";
+import { Bird, Plus, Search, Trash2, Pencil, Eye, Upload, LayoutGrid, List } from "lucide-react";
 import { useState, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
@@ -59,6 +59,13 @@ export default function Birds() {
   const [search, setSearch] = useState("");
   const [speciesFilter, setSpeciesFilter] = useState("all");
   const [genderFilter, setGenderFilter] = useState("all");
+  const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
+    try { return (localStorage.getItem("birds-view-mode") as "grid" | "list") || "grid"; } catch { return "grid"; }
+  });
+  function toggleView(mode: "grid" | "list") {
+    setViewMode(mode);
+    try { localStorage.setItem("birds-view-mode", mode); } catch {}
+  }
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<BirdFormData>(defaultForm);
@@ -164,9 +171,27 @@ export default function Birds() {
             <h1 className="font-display text-3xl font-bold text-foreground">My Birds</h1>
             <p className="text-muted-foreground mt-1">{birds.length} bird{birds.length !== 1 ? "s" : ""} in your registry</p>
           </div>
-          <Button onClick={openAdd} className="bg-primary hover:bg-primary/90 shadow-md gap-2">
-            <Plus className="h-4 w-4" /> Add Bird
-          </Button>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center border border-border rounded-lg overflow-hidden">
+              <button
+                onClick={() => toggleView("grid")}
+                className={`p-2 transition-colors ${viewMode === "grid" ? "bg-primary text-white" : "bg-white text-muted-foreground hover:bg-muted"}`}
+                title="Grid view"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => toggleView("list")}
+                className={`p-2 transition-colors ${viewMode === "list" ? "bg-primary text-white" : "bg-white text-muted-foreground hover:bg-muted"}`}
+                title="List view"
+              >
+                <List className="h-4 w-4" />
+              </button>
+            </div>
+            <Button onClick={openAdd} className="bg-primary hover:bg-primary/90 shadow-md gap-2">
+              <Plus className="h-4 w-4" /> Add Bird
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}
@@ -217,7 +242,7 @@ export default function Birds() {
             <p className="font-medium">{search ? "No birds match your search" : "No birds yet"}</p>
             {!search && <Button onClick={openAdd} variant="outline" className="mt-4 gap-2"><Plus className="h-4 w-4" />Add your first bird</Button>}
           </div>
-        ) : (
+        ) : viewMode === "grid" ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {filtered.map(bird => {
               const sp = speciesMap[bird.speciesId];
@@ -258,6 +283,73 @@ export default function Birds() {
                 </Card>
               );
             })}
+          </div>
+        ) : (
+          /* List / row view */
+          <div className="rounded-xl border border-border overflow-hidden shadow-card">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Bird</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden sm:table-cell">Species</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Gender</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden md:table-cell">Ring ID</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden lg:table-cell">Colour / Mutation</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden md:table-cell">DOB</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</th>
+                  <th className="px-4 py-3"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filtered.map(bird => {
+                  const sp = speciesMap[bird.speciesId];
+                  const dobStr = bird.dateOfBirth
+                    ? format(bird.dateOfBirth instanceof Date ? bird.dateOfBirth : new Date(String(bird.dateOfBirth)), "dd MMM yyyy")
+                    : "—";
+                  return (
+                    <tr key={bird.id} className="bg-white hover:bg-muted/30 transition-colors group">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-lg overflow-hidden bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center text-lg shrink-0">
+                            {bird.photoUrl ? (
+                              <img src={bird.photoUrl} alt={bird.name ?? "Bird"} className="w-full h-full object-cover" />
+                            ) : (
+                              bird.gender === "male" ? "♂" : bird.gender === "female" ? "♀" : "🐦"
+                            )}
+                          </div>
+                          <span className="font-semibold truncate max-w-32">{bird.name || bird.ringId || `#${bird.id}`}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{sp?.commonName ?? "—"}</td>
+                      <td className="px-4 py-3">
+                        <span className={bird.gender === "male" ? "text-blue-600" : bird.gender === "female" ? "text-rose-500" : "text-muted-foreground"}>
+                          {GENDER_LABELS[bird.gender]}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground hidden md:table-cell">{bird.ringId || "—"}</td>
+                      <td className="px-4 py-3 text-xs text-amber-600 hidden lg:table-cell">{bird.colorMutation || "—"}</td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground hidden md:table-cell">{dobStr}</td>
+                      <td className="px-4 py-3">
+                        <Badge className={`text-xs border ${STATUS_COLORS[bird.status]}`} variant="outline">{bird.status}</Badge>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => setLocation(`/birds/${bird.id}`)} className="p-1.5 rounded-lg hover:bg-muted" title="View">
+                            <Eye className="h-3.5 w-3.5" />
+                          </button>
+                          <button onClick={() => openEdit(bird)} className="p-1.5 rounded-lg hover:bg-muted" title="Edit">
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                          <button onClick={() => { if (confirm("Delete this bird?")) deleteBird.mutate({ id: bird.id }); }} className="p-1.5 rounded-lg hover:bg-muted text-destructive" title="Delete">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

@@ -194,9 +194,23 @@ export default function BirdDetail() {
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-6xl mx-auto">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between gap-3">
           <Button variant="ghost" size="sm" onClick={() => setLocation("/birds")} className="gap-1">
             <ArrowLeft className="h-4 w-4" /> Birds
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 text-teal-700 border-teal-200 hover:bg-teal-50"
+            onClick={() => {
+              const a = document.createElement("a");
+              a.href = `/api/pdf/pedigree/${birdId}`;
+              a.download = `pedigree-${bird.name || bird.ringId || birdId}.pdf`;
+              a.click();
+            }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+            Export Pedigree PDF
           </Button>
         </div>
 

@@ -12,7 +12,10 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { Egg, Plus, Trash2, Pencil, Calendar, CheckCircle2, XCircle } from "lucide-react";
+import {
+  Egg, Plus, Trash2, Pencil, ChevronDown, ChevronUp,
+  CheckCircle2, XCircle, AlertCircle,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { format, parseISO, differenceInDays } from "date-fns";
@@ -30,6 +33,193 @@ const STATUS_ICONS: Record<string, React.ReactNode> = {
   failed: <XCircle className="h-3.5 w-3.5" />,
   abandoned: <XCircle className="h-3.5 w-3.5" />,
 };
+
+type EggOutcome = "unknown" | "fertile" | "infertile" | "cracked" | "hatched" | "died";
+
+const EGG_OUTCOME_CONFIG: Record<EggOutcome, { label: string; emoji: string; bg: string; text: string; border: string }> = {
+  unknown:   { label: "Unknown",   emoji: "🥚", bg: "bg-gray-50",     text: "text-gray-500",   border: "border-gray-200" },
+  fertile:   { label: "Fertile",   emoji: "🟢", bg: "bg-emerald-50",  text: "text-emerald-700",border: "border-emerald-300" },
+  infertile: { label: "Infertile", emoji: "⚪", bg: "bg-slate-50",    text: "text-slate-500",  border: "border-slate-200" },
+  cracked:   { label: "Cracked",   emoji: "💔", bg: "bg-orange-50",   text: "text-orange-600", border: "border-orange-200" },
+  hatched:   { label: "Hatched",   emoji: "🐣", bg: "bg-teal-50",     text: "text-teal-700",   border: "border-teal-300" },
+  died:      { label: "Died",      emoji: "🖤", bg: "bg-red-50",      text: "text-red-600",    border: "border-red-200" },
+};
+
+const EGG_OUTCOME_CYCLE: EggOutcome[] = ["unknown", "fertile", "infertile", "cracked", "hatched", "died"];
+
+// ─── Egg outcome grid for a single brood ─────────────────────────────────────
+function ClutchEggGrid({ broodId, eggsLaid }: { broodId: number; eggsLaid: number }) {
+  const utils = trpc.useUtils();
+  const { data: eggs = [], isLoading } = trpc.clutchEggs.byBrood.useQuery({ broodId });
+  const upsertEgg = trpc.clutchEggs.upsert.useMutation({
+    onSuccess: () => utils.clutchEggs.byBrood.invalidate({ broodId }),
+    onError: (e) => toast.error(e.message),
+  });
+
+  if (eggsLaid === 0) return (
+    <p className="text-xs text-muted-foreground italic">No eggs recorded for this brood.</p>
+  );
+  if (isLoading) return <div className="flex gap-2">{[...Array(eggsLaid)].map((_, i) => <div key={i} className="w-12 h-14 rounded-lg bg-muted animate-pulse" />)}</div>;
+
+  // Build a map of eggNumber → outcome
+  const eggMap: Record<number, EggOutcome> = {};
+  for (const e of eggs) eggMap[e.eggNumber] = e.outcome as EggOutcome;
+
+  // Stats
+  const fertile = eggs.filter(e => e.outcome === "fertile" || e.outcome === "hatched").length;
+  const hatched = eggs.filter(e => e.outcome === "hatched").length;
+  const infertile = eggs.filter(e => e.outcome === "infertile").length;
+  const unknown = eggs.filter(e => e.outcome === "unknown").length;
+  const fertilityRate = eggsLaid > 0 ? Math.round((fertile / eggsLaid) * 100) : 0;
+  const hatchRate = fertile > 0 ? Math.round((hatched / fertile) * 100) : 0;
+
+  function cycleOutcome(eggNumber: number) {
+    const current = eggMap[eggNumber] ?? "unknown";
+    const idx = EGG_OUTCOME_CYCLE.indexOf(current);
+    const next = EGG_OUTCOME_CYCLE[(idx + 1) % EGG_OUTCOME_CYCLE.length];
+    upsertEgg.mutate({ broodId, eggNumber, outcome: next });
+  }
+
+  return (
+    <div className="space-y-3">
+      {/* Egg cells */}
+      <div className="flex flex-wrap gap-2">
+        {[...Array(eggsLaid)].map((_, i) => {
+          const num = i + 1;
+          const outcome = eggMap[num] ?? "unknown";
+          const cfg = EGG_OUTCOME_CONFIG[outcome];
+          return (
+            <button
+              key={num}
+              onClick={() => cycleOutcome(num)}
+              title={`Egg ${num}: ${cfg.label} — click to cycle`}
+              className={`w-12 h-14 rounded-xl border-2 flex flex-col items-center justify-center gap-0.5 transition-all hover:scale-105 active:scale-95 ${cfg.bg} ${cfg.border}`}
+            >
+              <span className="text-lg leading-none">{cfg.emoji}</span>
+              <span className={`text-[9px] font-semibold leading-none ${cfg.text}`}>#{num}</span>
+            </button>
+          );
+        })}
+      </div>
+      {/* Legend */}
+      <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+        {(Object.entries(EGG_OUTCOME_CONFIG) as [EggOutcome, typeof EGG_OUTCOME_CONFIG[EggOutcome]][]).map(([k, v]) => (
+          <span key={k} className="flex items-center gap-1">{v.emoji} {v.label}</span>
+        ))}
+        <span className="text-muted-foreground/50">· click egg to cycle</span>
+      </div>
+      {/* Summary stats */}
+      <div className="flex flex-wrap gap-3 text-xs">
+        <span className="px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 font-medium">
+          🟢 {fertile} fertile · {fertilityRate}% fertility rate
+        </span>
+        <span className="px-2 py-1 rounded-full bg-teal-50 text-teal-700 font-medium">
+          🐣 {hatched} hatched · {hatchRate}% hatch rate
+        </span>
+        {infertile > 0 && (
+          <span className="px-2 py-1 rounded-full bg-slate-50 text-slate-500 font-medium">
+            ⚪ {infertile} infertile
+          </span>
+        )}
+        {unknown > 0 && (
+          <span className="px-2 py-1 rounded-full bg-gray-50 text-gray-500 font-medium">
+            🥚 {unknown} pending
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Brood card with expandable egg grid ─────────────────────────────────────
+function BroodCard({
+  brood,
+  pairLabel,
+  onEdit,
+  onDelete,
+}: {
+  brood: any;
+  pairLabel: string;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const hatchCountdown = brood.status === "incubating" ? daysUntil(brood.expectedHatchDate) : null;
+  const fertilityCountdown = brood.status === "incubating" ? daysUntil(brood.fertilityCheckDate) : null;
+
+  return (
+    <Card className="border border-border shadow-card hover:shadow-elevated transition-all">
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center text-xl shrink-0">
+              🥚
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-sm font-semibold">{pairLabel}</p>
+                <Badge variant="outline" className={`text-xs flex items-center gap-1 ${STATUS_STYLES[brood.status]}`}>
+                  {STATUS_ICONS[brood.status]} {brood.status}
+                </Badge>
+                {brood.season && <span className="text-xs text-muted-foreground">{brood.season}</span>}
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-2">
+                <div>
+                  <p className="text-xs text-muted-foreground">Eggs laid</p>
+                  <p className="text-sm font-semibold">{brood.eggsLaid ?? 0}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Lay date</p>
+                  <p className="text-sm">{formatDateStr(brood.layDate)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Fertility check</p>
+                  <p className="text-sm">{formatDateStr(brood.fertilityCheckDate)}</p>
+                  {fertilityCountdown && <p className="text-xs text-amber-600 font-medium">{fertilityCountdown}</p>}
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Expected hatch</p>
+                  <p className="text-sm">{formatDateStr(brood.expectedHatchDate)}</p>
+                  {hatchCountdown && <p className="text-xs text-teal-600 font-medium">{hatchCountdown}</p>}
+                </div>
+              </div>
+              {brood.status === "hatched" && (
+                <p className="text-xs text-emerald-600 mt-1">✓ {brood.chicksSurvived ?? 0} chick{(brood.chicksSurvived ?? 0) !== 1 ? "s" : ""} survived · Hatched {formatDateStr(brood.actualHatchDate)}</p>
+              )}
+              {brood.notes && <p className="text-xs text-muted-foreground mt-1">{brood.notes}</p>}
+            </div>
+          </div>
+          <div className="flex gap-1 shrink-0 items-start">
+            <Button
+              variant="ghost" size="sm"
+              className="h-8 gap-1 text-xs text-muted-foreground hover:text-foreground"
+              onClick={() => setExpanded(e => !e)}
+            >
+              {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+              Eggs
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit}>
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={onDelete}>
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Expandable egg outcome grid */}
+        {expanded && (
+          <div className="mt-4 pt-4 border-t border-border">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+              Individual Egg Outcomes
+            </p>
+            <ClutchEggGrid broodId={brood.id} eggsLaid={brood.eggsLaid ?? 0} />
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 type BroodFormData = {
   pairId: string;
@@ -83,17 +273,35 @@ export default function Broods() {
   const { data: speciesList = [] } = trpc.species.list.useQuery();
 
   const createBrood = trpc.broods.create.useMutation({
-    onSuccess: () => { utils.broods.list.invalidate(); utils.dashboard.stats.invalidate(); toast.success("Brood logged!"); setDialogOpen(false); },
+    onSuccess: (newBrood) => {
+      utils.broods.list.invalidate();
+      utils.dashboard.stats.invalidate();
+      toast.success("Brood logged!");
+      setDialogOpen(false);
+      // Sync egg slots after creation
+      if (newBrood && Number(form.eggsLaid) > 0) {
+        syncEggs.mutate({ broodId: (newBrood as any).id ?? 0, eggsLaid: Number(form.eggsLaid) });
+      }
+    },
     onError: (e) => toast.error(e.message),
   });
   const updateBrood = trpc.broods.update.useMutation({
-    onSuccess: () => { utils.broods.list.invalidate(); utils.dashboard.stats.invalidate(); toast.success("Brood updated!"); setDialogOpen(false); },
+    onSuccess: (_, vars) => {
+      utils.broods.list.invalidate();
+      utils.dashboard.stats.invalidate();
+      toast.success("Brood updated!");
+      setDialogOpen(false);
+      if (editingId && vars.eggsLaid !== undefined) {
+        syncEggs.mutate({ broodId: editingId, eggsLaid: vars.eggsLaid });
+      }
+    },
     onError: (e) => toast.error(e.message),
   });
   const deleteBrood = trpc.broods.delete.useMutation({
     onSuccess: () => { utils.broods.list.invalidate(); utils.dashboard.stats.invalidate(); toast.success("Brood removed."); },
     onError: (e) => toast.error(e.message),
   });
+  const syncEggs = trpc.clutchEggs.sync.useMutation();
 
   const speciesMap = Object.fromEntries(speciesList.map(s => [s.id, s]));
   const birdMap = Object.fromEntries(birds.map(b => [b.id, b]));
@@ -106,7 +314,6 @@ export default function Broods() {
     return `${mLabel} ♂ × ${fLabel} ♀`;
   }
 
-  // Auto-fill incubation days when pair is selected
   function handlePairChange(pairId: string) {
     setForm(f => {
       const pair = pairs.find(p => String(p.id) === pairId);
@@ -200,61 +407,14 @@ export default function Broods() {
           <div className="space-y-3">
             {filtered.map(brood => {
               const pair = pairs.find(p => p.id === brood.pairId);
-              const hatchCountdown = brood.status === "incubating" ? daysUntil(brood.expectedHatchDate) : null;
-              const fertilityCountdown = brood.status === "incubating" ? daysUntil(brood.fertilityCheckDate) : null;
               return (
-                <Card key={brood.id} className="border border-border shadow-card hover:shadow-elevated transition-all">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-3 flex-1 min-w-0">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center text-xl shrink-0">
-                          🥚
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="text-sm font-semibold">{pair ? pairLabel(pair) : `Pair #${brood.pairId}`}</p>
-                            <Badge variant="outline" className={`text-xs flex items-center gap-1 ${STATUS_STYLES[brood.status]}`}>
-                              {STATUS_ICONS[brood.status]} {brood.status}
-                            </Badge>
-                            {brood.season && <span className="text-xs text-muted-foreground">{brood.season}</span>}
-                          </div>
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-2">
-                            <div>
-                              <p className="text-xs text-muted-foreground">Eggs laid</p>
-                              <p className="text-sm font-semibold">{brood.eggsLaid ?? 0}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">Lay date</p>
-                              <p className="text-sm">{formatDateStr(brood.layDate)}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">Fertility check</p>
-                              <p className="text-sm">{formatDateStr(brood.fertilityCheckDate)}</p>
-                              {fertilityCountdown && <p className="text-xs text-amber-600 font-medium">{fertilityCountdown}</p>}
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">Expected hatch</p>
-                              <p className="text-sm">{formatDateStr(brood.expectedHatchDate)}</p>
-                              {hatchCountdown && <p className="text-xs text-teal-600 font-medium">{hatchCountdown}</p>}
-                            </div>
-                          </div>
-                          {brood.status === "hatched" && (
-                            <p className="text-xs text-emerald-600 mt-1">✓ {brood.chicksSurvived ?? 0} chick{(brood.chicksSurvived ?? 0) !== 1 ? "s" : ""} survived · Hatched {formatDateStr(brood.actualHatchDate)}</p>
-                          )}
-                          {brood.notes && <p className="text-xs text-muted-foreground mt-1">{brood.notes}</p>}
-                        </div>
-                      </div>
-                      <div className="flex gap-1 shrink-0">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(brood)}>
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => { if (confirm("Delete this brood record?")) deleteBrood.mutate({ id: brood.id }); }}>
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <BroodCard
+                  key={brood.id}
+                  brood={brood}
+                  pairLabel={pair ? pairLabel(pair) : `Pair #${brood.pairId}`}
+                  onEdit={() => openEdit(brood)}
+                  onDelete={() => { if (confirm("Delete this brood record?")) deleteBrood.mutate({ id: brood.id }); }}
+                />
               );
             })}
           </div>
