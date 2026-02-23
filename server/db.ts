@@ -250,3 +250,157 @@ export async function toggleEventComplete(id: number, userId: number) {
   await db.update(events).set({ completed: !existing[0].completed }).where(and(eq(events.id, id), eq(events.userId, userId)));
   return { success: true };
 }
+
+// ─── Pedigree: fetch up to 5 generations of ancestors ────────────────────────
+export type PedigreeBird = {
+  id: number;
+  name: string | null;
+  ringId: string | null;
+  gender: string;
+  colorMutation: string | null;
+  photoUrl: string | null;
+  speciesId: number;
+  fatherId: number | null;
+  motherId: number | null;
+};
+
+export async function getPedigree(birdId: number, userId: number, maxGenerations = 5): Promise<Record<number, PedigreeBird>> {
+  const db = await getDb();
+  if (!db) return {};
+
+  const result: Record<number, PedigreeBird> = {};
+  const toFetch = new Set<number>([birdId]);
+  const fetched = new Set<number>();
+
+  for (let gen = 0; gen < maxGenerations && toFetch.size > 0; gen++) {
+    const ids = Array.from(toFetch);
+    toFetch.clear();
+
+    const rows = await db
+      .select({
+        id: birds.id,
+        name: birds.name,
+        ringId: birds.ringId,
+        gender: birds.gender,
+        colorMutation: birds.colorMutation,
+        photoUrl: birds.photoUrl,
+        speciesId: birds.speciesId,
+        fatherId: birds.fatherId,
+        motherId: birds.motherId,
+      })
+      .from(birds)
+      .where(and(eq(birds.userId, userId)));
+
+    // Filter in JS since drizzle inArray needs non-empty array
+    const filtered = rows.filter(r => ids.includes(r.id));
+
+    for (const row of filtered) {
+      if (!fetched.has(row.id)) {
+        result[row.id] = row;
+        fetched.add(row.id);
+        if (row.fatherId && !fetched.has(row.fatherId)) toFetch.add(row.fatherId);
+        if (row.motherId && !fetched.has(row.motherId)) toFetch.add(row.motherId);
+      }
+    }
+  }
+
+  return result;
+}
+
+// ─── Inbreeding coefficient (Wright's path coefficient method) ────────────────
+// Returns a value 0–1 (0 = no inbreeding, 1 = fully inbred)
+export async function calcInbreedingCoefficient(maleId: number, femaleId: number, userId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+
+  // Fetch all birds for this user to build a local ancestry map
+  const allBirds = await db
+    .select({ id: birds.id, fatherId: birds.fatherId, motherId: birds.motherId })
+    .from(birds)
+    .where(eq(birds.userId, userId));
+
+  const birdMap = new Map(allBirds.map(b => [b.id, b]));
+
+  // Get all ancestors of a bird up to maxDepth, returning Map<ancestorId, Set<paths>>
+  function getAncestors(id: number, maxDepth = 10): Map<number, number[]> {
+    const ancestors = new Map<number, number[]>(); // ancestorId -> list of generation depths
+    const queue: Array<{ id: number; depth: number }> = [{ id, depth: 0 }];
+    while (queue.length > 0) {
+      const { id: current, depth } = queue.shift()!;
+      if (depth >= maxDepth) continue;
+      const bird = birdMap.get(current);
+      if (!bird) continue;
+      if (bird.fatherId) {
+        const existing = ancestors.get(bird.fatherId) ?? [];
+        existing.push(depth + 1);
+        ancestors.set(bird.fatherId, existing);
+        queue.push({ id: bird.fatherId, depth: depth + 1 });
+      }
+      if (bird.motherId) {
+        const existing = ancestors.get(bird.motherId) ?? [];
+        existing.push(depth + 1);
+        ancestors.set(bird.motherId, existing);
+        queue.push({ id: bird.motherId, depth: depth + 1 });
+      }
+    }
+    return ancestors;
+  }
+
+  const maleAncestors = getAncestors(maleId);
+  const femaleAncestors = getAncestors(femaleId);
+
+  // Find common ancestors
+  let F = 0;
+  for (const [ancestorId, malePaths] of Array.from(maleAncestors.entries())) {
+    if (femaleAncestors.has(ancestorId)) {
+      const femalePaths = femaleAncestors.get(ancestorId)!;
+      // Wright's formula: F = sum over common ancestors of (0.5^(n1+n2+1))
+      for (const n1 of malePaths) {
+        for (const n2 of femalePaths) {
+          F += Math.pow(0.5, n1 + n2 + 1);
+        }
+      }
+    }
+  }
+
+  return Math.min(Math.round(F * 10000) / 10000, 1); // cap at 1, 4 decimal places
+}
+
+// ─── Descendants: all offspring of a bird ────────────────────────────────────
+export async function getDescendants(birdId: number, userId: number): Promise<PedigreeBird[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const allBirds = await db
+    .select({
+      id: birds.id,
+      name: birds.name,
+      ringId: birds.ringId,
+      gender: birds.gender,
+      colorMutation: birds.colorMutation,
+      photoUrl: birds.photoUrl,
+      speciesId: birds.speciesId,
+      fatherId: birds.fatherId,
+      motherId: birds.motherId,
+    })
+    .from(birds)
+    .where(eq(birds.userId, userId));
+
+  const result: PedigreeBird[] = [];
+  const visited = new Set<number>();
+  const queue = [birdId];
+
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    const children = allBirds.filter(b => b.fatherId === current || b.motherId === current);
+    for (const child of children) {
+      if (!visited.has(child.id)) {
+        visited.add(child.id);
+        result.push(child);
+        queue.push(child.id);
+      }
+    }
+  }
+
+  return result;
+}

@@ -10,6 +10,7 @@ import {
   getBroodsByUser, getBroodsByPair, createBrood, updateBrood, deleteBrood,
   getEventsByUser, createEvent, updateEvent, deleteEvent, toggleEventComplete,
   getDashboardStats,
+  getPedigree, calcInbreedingCoefficient, getDescendants,
 } from "./db";
 import { storagePut } from "./storage";
 import { nanoid } from "nanoid";
@@ -99,7 +100,12 @@ export const appRouter = router({
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(({ ctx, input }) => deleteBird(input.id, ctx.user.id)),
-
+    pedigree: protectedProcedure
+      .input(z.object({ id: z.number(), generations: z.number().min(1).max(5).default(5) }))
+      .query(({ ctx, input }) => getPedigree(input.id, ctx.user.id, input.generations)),
+    descendants: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(({ ctx, input }) => getDescendants(input.id, ctx.user.id)),
     uploadPhoto: protectedProcedure
       .input(z.object({
         filename: z.string(),
@@ -152,9 +158,11 @@ export const appRouter = router({
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(({ ctx, input }) => deletePair(input.id, ctx.user.id)),
+    inbreeding: protectedProcedure
+      .input(z.object({ maleId: z.number(), femaleId: z.number() }))
+      .query(({ ctx, input }) => calcInbreedingCoefficient(input.maleId, input.femaleId, ctx.user.id)),
   }),
-
-  // ─── Broods ────────────────────────────────────────────────────────────────
+  // ─── Broodss ────────────────────────────────────────────────────────────────
   broods: router({
     list: protectedProcedure.query(({ ctx }) => getBroodsByUser(ctx.user.id)),
 

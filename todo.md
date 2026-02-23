@@ -31,3 +31,9 @@
 
 ## Bugs / Fixes
 - [ ] Fix login flow — user cannot log in, needs proper auth redirect
+
+## Pedigree Enhancements
+- [x] Extend pedigree viewer from 3 to 5 generations
+- [x] Inbreeding coefficient (Wright's formula) calculation on backend
+- [x] Inbreeding warning/badge when creating or viewing a breeding pair
+- [x] Descendant view on bird detail page (all offspring listed)

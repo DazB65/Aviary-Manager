@@ -12,8 +12,8 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { Heart, Plus, Trash2, Pencil, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { Heart, Plus, Trash2, Pencil, ChevronRight, AlertTriangle, Dna } from "lucide-react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
@@ -40,13 +40,89 @@ const defaultForm: PairFormData = {
   notes: "",
 };
 
+// ─── Inbreeding badge ─────────────────────────────────────────────────────────
+function InbreedingBadge({ coefficient }: { coefficient: number | undefined | null }) {
+  if (coefficient === undefined || coefficient === null) return null;
+  const pct = Math.round(coefficient * 1000) / 10;
+
+  if (coefficient === 0) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+        <Dna className="h-3 w-3" /> F = 0% — No inbreeding
+      </span>
+    );
+  }
+  if (coefficient < 0.0625) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-yellow-50 text-yellow-700 border border-yellow-200">
+        <Dna className="h-3 w-3" /> F = {pct}% — Low
+      </span>
+    );
+  }
+  if (coefficient < 0.125) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 border border-orange-200">
+        <AlertTriangle className="h-3 w-3" /> F = {pct}% — Moderate
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
+      <AlertTriangle className="h-3 w-3" /> F = {pct}% — High inbreeding
+    </span>
+  );
+}
+
+// ─── Live inbreeding check inside dialog ─────────────────────────────────────
+function InbreedingCheck({ maleId, femaleId }: { maleId: string; femaleId: string }) {
+  const enabled = Boolean(maleId && femaleId && maleId !== femaleId);
+  const { data: coefficient, isLoading } = trpc.pairs.inbreeding.useQuery(
+    { maleId: Number(maleId), femaleId: Number(femaleId) },
+    { enabled }
+  );
+
+  if (!enabled) return null;
+  if (isLoading) {
+    return <p className="text-xs text-muted-foreground animate-pulse flex items-center gap-1"><Dna className="h-3 w-3" /> Calculating inbreeding coefficient…</p>;
+  }
+
+  const pct = coefficient !== undefined ? Math.round(coefficient * 1000) / 10 : 0;
+  const isHigh = (coefficient ?? 0) >= 0.125;
+  const isMod = (coefficient ?? 0) >= 0.0625 && (coefficient ?? 0) < 0.125;
+
+  return (
+    <div className={`rounded-lg p-3 text-sm border ${isHigh ? "bg-red-50 border-red-200 text-red-800" : isMod ? "bg-orange-50 border-orange-200 text-orange-800" : "bg-emerald-50 border-emerald-200 text-emerald-800"}`}>
+      <div className="flex items-center gap-2 font-medium">
+        {isHigh || isMod ? <AlertTriangle className="h-4 w-4 shrink-0" /> : <Dna className="h-4 w-4 shrink-0" />}
+        Inbreeding coefficient (F) = {pct}%
+      </div>
+      <p className="text-xs mt-1 opacity-80">
+        {coefficient === 0
+          ? "No shared ancestors found — this pairing is genetically unrelated."
+          : isHigh
+          ? "High inbreeding detected. This pairing shares significant common ancestry and may increase the risk of genetic defects."
+          : isMod
+          ? "Moderate inbreeding detected. Consider the cumulative effect over multiple generations."
+          : "Low inbreeding. This pairing is generally acceptable but monitor over generations."}
+      </p>
+    </div>
+  );
+}
+
+// ─── Per-pair inbreeding display on card ─────────────────────────────────────
+function PairInbreeding({ maleId, femaleId }: { maleId: number; femaleId: number }) {
+  const { data: coefficient } = trpc.pairs.inbreeding.useQuery({ maleId, femaleId });
+  return <InbreedingBadge coefficient={coefficient} />;
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
 export default function Pairs() {
   const [, setLocation] = useLocation();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<PairFormData>(defaultForm);
-
   const utils = trpc.useUtils();
+
   const { data: pairs = [], isLoading } = trpc.pairs.list.useQuery();
   const { data: birds = [] } = trpc.birds.list.useQuery();
   const { data: speciesList = [] } = trpc.species.list.useQuery();
@@ -64,8 +140,8 @@ export default function Pairs() {
     onError: (e) => toast.error(e.message),
   });
 
-  const speciesMap = Object.fromEntries(speciesList.map(s => [s.id, s]));
-  const birdMap = Object.fromEntries(birds.map(b => [b.id, b]));
+  const speciesMap = useMemo(() => Object.fromEntries(speciesList.map(s => [s.id, s])), [speciesList]);
+  const birdMap = useMemo(() => Object.fromEntries(birds.map(b => [b.id, b])), [birds]);
   const maleBirds = birds.filter(b => b.gender === "male" && b.status === "alive");
   const femaleBirds = birds.filter(b => b.gender === "female" && b.status === "alive");
 
@@ -120,7 +196,7 @@ export default function Pairs() {
 
         {isLoading ? (
           <div className="space-y-3">
-            {[...Array(4)].map((_, i) => <div key={i} className="h-24 rounded-xl bg-muted animate-pulse" />)}
+            {[...Array(4)].map((_, i) => <div key={i} className="h-28 rounded-xl bg-muted animate-pulse" />)}
           </div>
         ) : pairs.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground">
@@ -142,7 +218,7 @@ export default function Pairs() {
                     <div className="flex items-center gap-4">
                       {/* Male */}
                       <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-lg shrink-0">
+                        <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-lg shrink-0 overflow-hidden">
                           {male?.photoUrl ? <img src={male.photoUrl} alt="" className="w-full h-full object-cover rounded-lg" /> : "♂"}
                         </div>
                         <div className="min-w-0">
@@ -150,16 +226,14 @@ export default function Pairs() {
                           <p className="text-xs text-blue-600">Male</p>
                         </div>
                       </div>
-
                       {/* Heart */}
                       <div className="flex flex-col items-center gap-1 shrink-0">
                         <Heart className="h-5 w-5 text-rose-400 fill-rose-400" />
                         {pairingDateStr && <p className="text-xs text-muted-foreground whitespace-nowrap">{pairingDateStr}</p>}
                       </div>
-
                       {/* Female */}
                       <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <div className="w-10 h-10 rounded-lg bg-pink-50 flex items-center justify-center text-lg shrink-0">
+                        <div className="w-10 h-10 rounded-lg bg-pink-50 flex items-center justify-center text-lg shrink-0 overflow-hidden">
                           {female?.photoUrl ? <img src={female.photoUrl} alt="" className="w-full h-full object-cover rounded-lg" /> : "♀"}
                         </div>
                         <div className="min-w-0">
@@ -167,7 +241,6 @@ export default function Pairs() {
                           <p className="text-xs text-pink-600">Female</p>
                         </div>
                       </div>
-
                       {/* Status & Actions */}
                       <div className="flex items-center gap-2 shrink-0">
                         <Badge variant="outline" className={`text-xs ${STATUS_STYLES[pair.status]}`}>
@@ -184,7 +257,11 @@ export default function Pairs() {
                         </Button>
                       </div>
                     </div>
-                    {pair.notes && <p className="text-xs text-muted-foreground mt-2 pl-12">{pair.notes}</p>}
+                    {/* Inbreeding coefficient row */}
+                    <div className="mt-2 flex items-center gap-3 flex-wrap">
+                      <PairInbreeding maleId={pair.maleId} femaleId={pair.femaleId} />
+                      {pair.notes && <p className="text-xs text-muted-foreground">{pair.notes}</p>}
+                    </div>
                   </CardContent>
                 </Card>
               );
@@ -193,6 +270,7 @@ export default function Pairs() {
         )}
       </div>
 
+      {/* Add / Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -225,6 +303,10 @@ export default function Pairs() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Live inbreeding check — appears as soon as both birds are selected */}
+            <InbreedingCheck maleId={form.maleId} femaleId={form.femaleId} />
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Pairing Date</Label>
