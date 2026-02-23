@@ -54,6 +54,7 @@ export const birds = mysqlTable("birds", {
   name: varchar("name", { length: 128 }),
   gender: mysqlEnum("gender", ["male", "female", "unknown"]).default("unknown").notNull(),
   dateOfBirth: date("dateOfBirth"),
+  cageNumber: varchar("cageNumber", { length: 64 }),
   colorMutation: varchar("colorMutation", { length: 128 }),
   photoUrl: text("photoUrl"),
   notes: text("notes"),
@@ -135,3 +136,15 @@ export const clutchEggs = mysqlTable("clutchEggs", {
 
 export type ClutchEgg = typeof clutchEggs.$inferSelect;
 export type InsertClutchEgg = typeof clutchEggs.$inferInsert;
+
+// User settings table — stores per-user preferences
+export const userSettings = mysqlTable("userSettings", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  favouriteSpeciesIds: text("favouriteSpeciesIds"), // JSON array of species IDs
+  defaultSpeciesId: int("defaultSpeciesId"),        // single default species for quick-add
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserSettings = typeof userSettings.$inferSelect;
+export type InsertUserSettings = typeof userSettings.$inferInsert;

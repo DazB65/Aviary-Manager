@@ -60,3 +60,12 @@
 - [x] PDF export button on BirdDetail page
 - [x] Birds page: grid/list view toggle (persist preference in localStorage)
 - [x] Birds list view: compact table row with ring ID, species, gender, DOB, colour
+
+## Settings, Cage Number & Edit Bug Fix
+- [x] Fix edit button not working on Birds page
+- [x] Add cageNumber field to birds table in DB schema
+- [x] Show cage number on bird cards and in the add/edit bird dialog
+- [x] Settings page: favourite species picker (multi-select from all 36 species)
+- [x] Settings stored per user in DB (userSettings table)
+- [x] Add Bird dialog: species dropdown filtered to favourites by default, with option to show all
+- [x] Settings link in sidebar navigation

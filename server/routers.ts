@@ -9,6 +9,7 @@ import {
   getPairsByUser, getPairById, createPair, updatePair, deletePair,
   getBroodsByUser, getBroodsByPair, createBrood, updateBrood, deleteBrood,
   getEventsByUser, createEvent, updateEvent, deleteEvent, toggleEventComplete,
+  getUserSettings, upsertUserSettings,
   getDashboardStats,
   getPedigree, calcInbreedingCoefficient, getDescendants, getSiblings,
   getEggsByBrood, upsertClutchEgg, deleteEggsByBrood, syncClutchEggs,
@@ -63,10 +64,11 @@ export const appRouter = router({
     create: protectedProcedure
       .input(z.object({
         speciesId: z.number(),
-        ringId: z.string().optional(),
+         ringId: z.string().optional(),
         name: z.string().optional(),
         gender: z.enum(["male", "female", "unknown"]).default("unknown"),
         dateOfBirth: z.string().optional(),
+        cageNumber: z.string().optional(),
         colorMutation: z.string().optional(),
         photoUrl: z.string().optional(),
         notes: z.string().optional(),
@@ -77,7 +79,6 @@ export const appRouter = router({
       .mutation(({ ctx, input }) =>
         createBird({ ...input, userId: ctx.user.id } as any)
       ),
-
     update: protectedProcedure
       .input(z.object({
         id: z.number(),
@@ -86,6 +87,7 @@ export const appRouter = router({
         name: z.string().optional(),
         gender: z.enum(["male", "female", "unknown"]).optional(),
         dateOfBirth: z.string().optional(),
+        cageNumber: z.string().optional(),
         colorMutation: z.string().optional(),
         photoUrl: z.string().optional(),
         notes: z.string().optional(),
@@ -290,10 +292,24 @@ export const appRouter = router({
       .input(z.object({ broodId: z.number() }))
       .mutation(({ ctx, input }) => deleteEggsByBrood(input.broodId, ctx.user.id)),
   }),
-  // ─── Dashboard ──────────────────────────────────────────────────────
+   // ─── Dashboard ──────────────────────────────────────────────────────
   dashboard: router({
     stats: protectedProcedure.query(({ ctx }) => getDashboardStats(ctx.user.id)),
   }),
+  // ─── User Settings ────────────────────────────────────────────────────────
+  settings: router({
+    get: protectedProcedure.query(({ ctx }) => getUserSettings(ctx.user.id)),
+    update: protectedProcedure
+      .input(z.object({
+        favouriteSpeciesIds: z.array(z.number()).optional(),
+        defaultSpeciesId: z.number().nullable().optional(),
+      }))
+      .mutation(({ ctx, input }) =>
+        upsertUserSettings(ctx.user.id, {
+          favouriteSpeciesIds: input.favouriteSpeciesIds,
+          defaultSpeciesId: input.defaultSpeciesId ?? null,
+        })
+      ),
+  }),
 });
-
 export type AppRouter = typeof appRouter;

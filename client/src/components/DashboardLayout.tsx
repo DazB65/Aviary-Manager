@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { Bird, CalendarDays, Egg, Heart, LayoutDashboard, LogOut, PanelLeft } from "lucide-react";
+import { Bird, CalendarDays, Egg, Heart, LayoutDashboard, LogOut, PanelLeft, Settings } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -33,6 +33,7 @@ const menuItems = [
   { icon: Heart, label: "Breeding Pairs", path: "/pairs" },
   { icon: Egg, label: "Broods & Eggs", path: "/broods" },
   { icon: CalendarDays, label: "Events & Reminders", path: "/events" },
+  { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";

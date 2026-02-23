@@ -8,6 +8,7 @@ import {
   broods, InsertBrood,
   events, InsertEvent,
   clutchEggs, ClutchEgg,
+  userSettings,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -490,4 +491,26 @@ export async function syncClutchEggs(broodId: number, userId: number, eggsLaid: 
       await db.delete(clutchEggs).where(eq(clutchEggs.id, egg.id));
     }
   }
+}
+
+// ─── User Settings ────────────────────────────────────────────────────────────
+
+export async function getUserSettings(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(userSettings).where(eq(userSettings.userId, userId)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function upsertUserSettings(userId: number, data: { favouriteSpeciesIds?: number[]; defaultSpeciesId?: number | null }) {
+  const db = await getDb();
+  if (!db) return;
+  const favouriteSpeciesIds = data.favouriteSpeciesIds !== undefined
+    ? JSON.stringify(data.favouriteSpeciesIds)
+    : undefined;
+  const values: Record<string, unknown> = { userId };
+  const updateSet: Record<string, unknown> = {};
+  if (favouriteSpeciesIds !== undefined) { values.favouriteSpeciesIds = favouriteSpeciesIds; updateSet.favouriteSpeciesIds = favouriteSpeciesIds; }
+  if (data.defaultSpeciesId !== undefined) { values.defaultSpeciesId = data.defaultSpeciesId; updateSet.defaultSpeciesId = data.defaultSpeciesId; }
+  await db.insert(userSettings).values(values as any).onDuplicateKeyUpdate({ set: updateSet });
 }

@@ -29,6 +29,13 @@
       "when": 1771886562569,
       "tag": "0003_closed_paladin",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1771888151554,
+      "tag": "0004_nosy_captain_cross",
+      "breakpoints": true
     }
   ]
 }

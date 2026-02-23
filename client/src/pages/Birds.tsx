@@ -32,6 +32,7 @@ type BirdFormData = {
   name: string;
   gender: "male" | "female" | "unknown";
   dateOfBirth: string;
+  cageNumber: string;
   colorMutation: string;
   photoUrl: string;
   notes: string;
@@ -46,6 +47,7 @@ const defaultForm: BirdFormData = {
   name: "",
   gender: "unknown",
   dateOfBirth: "",
+  cageNumber: "",
   colorMutation: "",
   photoUrl: "",
   notes: "",
@@ -75,6 +77,8 @@ export default function Birds() {
   const utils = trpc.useUtils();
   const { data: birds = [], isLoading } = trpc.birds.list.useQuery();
   const { data: speciesList = [] } = trpc.species.list.useQuery();
+  const { data: userSettings } = trpc.settings.get.useQuery();
+  const [showAllSpecies, setShowAllSpecies] = useState(false);
 
   const createBird = trpc.birds.create.useMutation({
     onSuccess: () => { utils.birds.list.invalidate(); utils.dashboard.stats.invalidate(); toast.success("Bird added!"); setDialogOpen(false); },
@@ -109,7 +113,15 @@ export default function Birds() {
     }
   }, [uploadPhoto]);
 
-  const openAdd = () => { setEditingId(null); setForm(defaultForm); setDialogOpen(true); };
+  const openAdd = () => {
+    // Pre-fill default species from settings if available
+    const favIds: number[] = (() => { try { return userSettings?.favouriteSpeciesIds ? JSON.parse(userSettings.favouriteSpeciesIds) : []; } catch { return []; } })();
+    const defaultSpeciesId = userSettings?.defaultSpeciesId;
+    setEditingId(null);
+    setForm({ ...defaultForm, speciesId: defaultSpeciesId ? String(defaultSpeciesId) : (favIds.length === 1 ? String(favIds[0]) : "") });
+    setShowAllSpecies(false);
+    setDialogOpen(true);
+  };
   const openEdit = (bird: typeof birds[0]) => {
     setEditingId(bird.id);
     setForm({
@@ -118,6 +130,7 @@ export default function Birds() {
       name: bird.name ?? "",
       gender: bird.gender,
       dateOfBirth: bird.dateOfBirth ? (bird.dateOfBirth instanceof Date ? format(bird.dateOfBirth, "yyyy-MM-dd") : String(bird.dateOfBirth)) : "",
+      cageNumber: (bird as any).cageNumber ?? "",
       colorMutation: bird.colorMutation ?? "",
       photoUrl: bird.photoUrl ?? "",
       notes: bird.notes ?? "",
@@ -125,6 +138,7 @@ export default function Birds() {
       motherId: bird.motherId ? String(bird.motherId) : "",
       status: bird.status,
     });
+    setShowAllSpecies(true); // always show all species when editing
     setDialogOpen(true);
   };
 
@@ -136,6 +150,7 @@ export default function Birds() {
       name: form.name || undefined,
       gender: form.gender,
       dateOfBirth: form.dateOfBirth || undefined,
+      cageNumber: form.cageNumber || undefined,
       colorMutation: form.colorMutation || undefined,
       photoUrl: form.photoUrl || undefined,
       notes: form.notes || undefined,
@@ -278,6 +293,7 @@ export default function Birds() {
                       <span className="text-xs text-muted-foreground">{GENDER_LABELS[bird.gender]}</span>
                       {bird.ringId && <span className="text-xs font-mono text-muted-foreground">{bird.ringId}</span>}
                     </div>
+                    {(bird as any).cageNumber && <p className="text-xs text-teal-600 font-medium truncate mt-0.5">Cage {(bird as any).cageNumber}</p>}
                     {bird.colorMutation && <p className="text-xs text-amber-600 truncate mt-0.5">{bird.colorMutation}</p>}
                   </CardContent>
                 </Card>
@@ -294,6 +310,7 @@ export default function Birds() {
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden sm:table-cell">Species</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Gender</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden md:table-cell">Ring ID</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden lg:table-cell">Cage</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden lg:table-cell">Colour / Mutation</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden md:table-cell">DOB</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</th>
@@ -327,6 +344,7 @@ export default function Birds() {
                         </span>
                       </td>
                       <td className="px-4 py-3 font-mono text-xs text-muted-foreground hidden md:table-cell">{bird.ringId || "—"}</td>
+                      <td className="px-4 py-3 text-xs text-teal-600 font-medium hidden lg:table-cell">{(bird as any).cageNumber || "—"}</td>
                       <td className="px-4 py-3 text-xs text-amber-600 hidden lg:table-cell">{bird.colorMutation || "—"}</td>
                       <td className="px-4 py-3 text-xs text-muted-foreground hidden md:table-cell">{dobStr}</td>
                       <td className="px-4 py-3">
@@ -354,9 +372,9 @@ export default function Birds() {
         )}
       </div>
 
-      {/* Add/Edit Dialog */}
+      {/* Add/Edit Dialog — key forces full remount when switching add/edit to reset Select state */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent key={editingId ?? "new"} className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display text-xl">{editingId ? "Edit Bird" : "Add New Bird"}</DialogTitle>
           </DialogHeader>
@@ -384,37 +402,62 @@ export default function Birds() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2">
-                <Label>Species *</Label>
-                <Select value={form.speciesId} onValueChange={v => setForm(f => ({ ...f, speciesId: v }))}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select species..." />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-60">
-                    {Object.entries(
-                      speciesList.reduce((acc, s) => {
-                        const cat = s.category ?? "Other";
-                        if (!acc[cat]) acc[cat] = [];
-                        acc[cat].push(s);
-                        return acc;
-                      }, {} as Record<string, typeof speciesList>)
-                    ).sort(([a], [b]) => a.localeCompare(b)).map(([cat, items]) => (
-                      <div key={cat}>
-                        <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide">{cat}</div>
-                        {items.map(s => (
-                          <SelectItem key={s.id} value={String(s.id)}>
-                            {s.commonName}
-                            {s.scientificName && <span className="text-muted-foreground ml-1 italic text-xs">({s.scientificName})</span>}
-                          </SelectItem>
+                <div className="flex items-center justify-between">
+                  <Label>Species *</Label>
+                  {(() => {
+                    const favIds: number[] = (() => { try { return userSettings?.favouriteSpeciesIds ? JSON.parse(userSettings.favouriteSpeciesIds) : []; } catch { return []; } })();
+                    return favIds.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllSpecies(v => !v)}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        {showAllSpecies ? "Show my species only" : "Show all species"}
+                      </button>
+                    );
+                  })()}
+                </div>
+                {(() => {
+                  const favIds: number[] = (() => { try { return userSettings?.favouriteSpeciesIds ? JSON.parse(userSettings.favouriteSpeciesIds) : []; } catch { return []; } })();
+                  const displayList = (favIds.length > 0 && !showAllSpecies)
+                    ? speciesList.filter(s => favIds.includes(s.id))
+                    : speciesList;
+                  const grouped = displayList.reduce((acc, s) => {
+                    const cat = s.category ?? "Other";
+                    if (!acc[cat]) acc[cat] = [];
+                    acc[cat].push(s);
+                    return acc;
+                  }, {} as Record<string, typeof speciesList>);
+                  return (
+                    <Select value={form.speciesId} onValueChange={v => setForm(f => ({ ...f, speciesId: v }))}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder={favIds.length > 0 && !showAllSpecies ? "Select from my species..." : "Select species..."} />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60">
+                        {Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([cat, items]) => (
+                          <div key={cat}>
+                            <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide">{cat}</div>
+                            {items.map(s => (
+                              <SelectItem key={s.id} value={String(s.id)}>
+                                {s.commonName}
+                                {s.scientificName && <span className="text-muted-foreground ml-1 italic text-xs">({s.scientificName})</span>}
+                              </SelectItem>
+                            ))}
+                          </div>
                         ))}
-                      </div>
-                    ))}
-                  </SelectContent>
-                </Select>
+                      </SelectContent>
+                    </Select>
+                  );
+                })()}
               </div>
 
               <div>
                 <Label>Ring / Band ID</Label>
                 <Input className="mt-1" placeholder="e.g. AU2025-001" value={form.ringId} onChange={e => setForm(f => ({ ...f, ringId: e.target.value }))} />
+              </div>
+              <div>
+                <Label>Cage Number</Label>
+                <Input className="mt-1" placeholder="e.g. A1, Cage 3" value={form.cageNumber} onChange={e => setForm(f => ({ ...f, cageNumber: e.target.value }))} />
               </div>
               <div>
                 <Label>Name (optional)</Label>

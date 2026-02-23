@@ -11,6 +11,7 @@ import Pairs from "./pages/Pairs";
 import Broods from "./pages/Broods";
 import Events from "./pages/Events";
 import Login from "./pages/Login";
+import Settings from "./pages/Settings";
 
 function Router() {
   return (
@@ -21,6 +22,7 @@ function Router() {
       <Route path="/pairs" component={Pairs} />
       <Route path="/broods" component={Broods} />
       <Route path="/events" component={Events} />
+      <Route path="/settings" component={Settings} />
       <Route path="/login" component={Login} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
