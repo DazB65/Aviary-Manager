@@ -28,3 +28,6 @@
 - [x] Loading states and empty states on all pages
 - [x] Responsive layout (mobile-friendly sidebar)
 - [x] Final visual polish pass
+
+## Bugs / Fixes
+- [ ] Fix login flow — user cannot log in, needs proper auth redirect
