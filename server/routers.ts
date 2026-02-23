@@ -10,7 +10,7 @@ import {
   getBroodsByUser, getBroodsByPair, createBrood, updateBrood, deleteBrood,
   getEventsByUser, createEvent, updateEvent, deleteEvent, toggleEventComplete,
   getDashboardStats,
-  getPedigree, calcInbreedingCoefficient, getDescendants,
+  getPedigree, calcInbreedingCoefficient, getDescendants, getSiblings,
 } from "./db";
 import { storagePut } from "./storage";
 import { nanoid } from "nanoid";
@@ -106,6 +106,9 @@ export const appRouter = router({
     descendants: protectedProcedure
       .input(z.object({ id: z.number() }))
       .query(({ ctx, input }) => getDescendants(input.id, ctx.user.id)),
+    siblings: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(({ ctx, input }) => getSiblings(input.id, ctx.user.id)),
     uploadPhoto: protectedProcedure
       .input(z.object({
         filename: z.string(),
@@ -161,6 +164,13 @@ export const appRouter = router({
     inbreeding: protectedProcedure
       .input(z.object({ maleId: z.number(), femaleId: z.number() }))
       .query(({ ctx, input }) => calcInbreedingCoefficient(input.maleId, input.femaleId, ctx.user.id)),
+    siblingCheck: protectedProcedure
+      .input(z.object({ maleId: z.number(), femaleId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const siblings = await getSiblings(input.maleId, ctx.user.id);
+        const match = siblings.find(s => s.id === input.femaleId);
+        return match ? match.siblingType : null;
+      }),
   }),
   // ─── Broodss ────────────────────────────────────────────────────────────────
   broods: router({

@@ -15,6 +15,13 @@
       "when": 1771882692658,
       "tag": "0001_gigantic_puppet_master",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1771885929129,
+      "tag": "0002_clever_callisto",
+      "breakpoints": true
     }
   ]
 }

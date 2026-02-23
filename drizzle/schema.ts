@@ -33,6 +33,10 @@ export const species = mysqlTable("species", {
   incubationDays: int("incubationDays").notNull().default(14),
   clutchSizeMin: int("clutchSizeMin"),
   clutchSizeMax: int("clutchSizeMax"),
+  fledglingDays: int("fledglingDays"),          // days after hatch before chicks leave nest
+  sexualMaturityMonths: int("sexualMaturityMonths"), // months before bird is ready to breed
+  nestType: varchar("nestType", { length: 64 }),  // e.g. "nest box", "open cup", "colony", "ground"
+  sexingMethod: varchar("sexingMethod", { length: 64 }), // e.g. "visual", "DNA", "surgical", "behavioural"
   isCustom: boolean("isCustom").default(false),
   userId: int("userId"), // null = system species, set = user-added
   createdAt: timestamp("createdAt").defaultNow().notNull(),

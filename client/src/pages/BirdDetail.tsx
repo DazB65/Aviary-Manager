@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Bird, Calendar, Tag, Dna, GitBranch, Users } from "lucide-react";
+import { ArrowLeft, Bird, Calendar, Tag, Dna, GitBranch, Users, AlertTriangle, Home, Clock, Microscope } from "lucide-react";
 import { useLocation, useParams } from "wouter";
 import { format } from "date-fns";
 
@@ -140,6 +140,7 @@ export default function BirdDetail() {
   const { data: speciesList = [] } = trpc.species.list.useQuery();
   const { data: pedigreeMap = {} } = trpc.birds.pedigree.useQuery({ id: birdId, generations: 5 });
   const { data: descendants = [] } = trpc.birds.descendants.useQuery({ id: birdId });
+  const { data: siblings = [] } = trpc.birds.siblings.useQuery({ id: birdId });
 
   const speciesMap = Object.fromEntries(speciesList.map(s => [s.id, s]));
 
@@ -270,6 +271,10 @@ export default function BirdDetail() {
               <Users className="h-4 w-4" /> Descendants
               {descendants.length > 0 && <Badge variant="secondary" className="ml-1 text-xs">{descendants.length}</Badge>}
             </TabsTrigger>
+            <TabsTrigger value="siblings" className="gap-2">
+              <Users className="h-4 w-4" /> Siblings
+              {siblings.length > 0 && <Badge variant="secondary" className="ml-1 text-xs">{siblings.length}</Badge>}
+            </TabsTrigger>
           </TabsList>
 
           {/* Pedigree Tab */}
@@ -351,7 +356,116 @@ export default function BirdDetail() {
               </CardContent>
             </Card>
           </TabsContent>
+          {/* Siblings Tab */}
+          <TabsContent value="siblings">
+            <Card className="border border-border shadow-card">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                  <Users className="h-4 w-4 text-primary" />
+                  Siblings
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">Birds that share at least one parent with {bird.name || bird.ringId || `#${bird.id}`}.</p>
+              </CardHeader>
+              <CardContent>
+                {siblings.length === 0 ? (
+                  <div className="text-center py-10 text-muted-foreground">
+                    <Users className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                    <p className="text-sm">No siblings found.</p>
+                    <p className="text-xs mt-1">Add parent information to this bird and its relatives to detect siblings automatically.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {siblings.map(s => {
+                      const sSpecies = speciesMap[s.speciesId];
+                      const genderIcon = s.gender === "male" ? "♂" : s.gender === "female" ? "♀" : "🐦";
+                      const genderColor = s.gender === "male" ? "text-blue-500" : s.gender === "female" ? "text-rose-500" : "text-muted-foreground";
+                      const isFullSibling = s.siblingType === "full";
+                      return (
+                        <button
+                          key={s.id}
+                          onClick={() => setLocation(`/birds/${s.id}`)}
+                          className="flex items-center gap-3 p-3 rounded-xl border border-border bg-white hover:shadow-elevated hover:border-primary/40 transition-all text-left"
+                        >
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-100 to-purple-100 flex items-center justify-center text-lg shrink-0 overflow-hidden">
+                            {s.photoUrl ? (
+                              <img src={s.photoUrl} alt={s.name ?? "Bird"} className="w-full h-full object-cover" />
+                            ) : genderIcon}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold truncate">{s.name || s.ringId || `#${s.id}`}</p>
+                            <p className="text-xs text-muted-foreground truncate">{sSpecies?.commonName ?? "—"}</p>
+                          </div>
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            <span className={`text-base ${genderColor}`}>{genderIcon}</span>
+                            <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
+                              isFullSibling
+                                ? "bg-purple-100 text-purple-700"
+                                : "bg-blue-50 text-blue-600"
+                            }`}>
+                              {isFullSibling ? "Full" : "Half"}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
+
+        {/* Species info panel */}
+        {species && (species.fledglingDays || species.sexualMaturityMonths || species.nestType || species.sexingMethod) && (
+          <Card className="border border-border shadow-card">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                <Bird className="h-4 w-4 text-primary" />
+                Species Care Guide — {species.commonName}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {species.fledglingDays && (
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Clock className="h-3.5 w-3.5" /> Fledgling age
+                    </div>
+                    <p className="text-sm font-semibold">{species.fledglingDays} days</p>
+                    <p className="text-xs text-muted-foreground">after hatch</p>
+                  </div>
+                )}
+                {species.sexualMaturityMonths && (
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Calendar className="h-3.5 w-3.5" /> Sexual maturity
+                    </div>
+                    <p className="text-sm font-semibold">{species.sexualMaturityMonths} months</p>
+                    <p className="text-xs text-muted-foreground">before breeding</p>
+                  </div>
+                )}
+                {species.nestType && (
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Home className="h-3.5 w-3.5" /> Nest type
+                    </div>
+                    <p className="text-sm font-semibold capitalize">{species.nestType}</p>
+                    <p className="text-xs text-muted-foreground">recommended</p>
+                  </div>
+                )}
+                {species.sexingMethod && (
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Microscope className="h-3.5 w-3.5" /> Sexing method
+                    </div>
+                    <p className="text-sm font-semibold capitalize">{species.sexingMethod}</p>
+                    <p className="text-xs text-muted-foreground">to confirm gender</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </DashboardLayout>
   );

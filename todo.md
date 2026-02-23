@@ -37,3 +37,16 @@
 - [x] Inbreeding coefficient (Wright's formula) calculation on backend
 - [x] Inbreeding warning/badge when creating or viewing a breeding pair
 - [x] Descendant view on bird detail page (all offspring listed)
+
+## Species Enhancements & Sibling Detection
+- [x] Add fledgling age (days) to species schema and seed data
+- [x] Add sexual maturity age (months) to species schema and seed data
+- [x] Add nest type (box/open cup/colony/ground) to species schema and seed data
+- [x] Add sexing method (visual/DNA/surgical/behavioural) to species schema and seed data
+- [x] Auto-calculate fledgling/weaning date on broods using fledgling age
+- [x] Show nest type reminder on breeding pair cards
+- [x] Show sexing method on bird detail page for monomorphic species
+- [x] Show sexual maturity warning on birds not yet old enough to breed
+- [x] Sibling detection query on backend (shared father OR mother)
+- [x] Siblings tab on bird detail page
+- [x] Sibling warning when creating a breeding pair (full or half siblings)

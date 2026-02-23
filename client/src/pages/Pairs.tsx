@@ -76,14 +76,18 @@ function InbreedingBadge({ coefficient }: { coefficient: number | undefined | nu
 // ─── Live inbreeding check inside dialog ─────────────────────────────────────
 function InbreedingCheck({ maleId, femaleId }: { maleId: string; femaleId: string }) {
   const enabled = Boolean(maleId && femaleId && maleId !== femaleId);
-  const { data: coefficient, isLoading } = trpc.pairs.inbreeding.useQuery(
+  const { data: coefficient, isLoading: coefLoading } = trpc.pairs.inbreeding.useQuery(
+    { maleId: Number(maleId), femaleId: Number(femaleId) },
+    { enabled }
+  );
+  const { data: siblingType, isLoading: sibLoading } = trpc.pairs.siblingCheck.useQuery(
     { maleId: Number(maleId), femaleId: Number(femaleId) },
     { enabled }
   );
 
   if (!enabled) return null;
-  if (isLoading) {
-    return <p className="text-xs text-muted-foreground animate-pulse flex items-center gap-1"><Dna className="h-3 w-3" /> Calculating inbreeding coefficient…</p>;
+  if (coefLoading || sibLoading) {
+    return <p className="text-xs text-muted-foreground animate-pulse flex items-center gap-1"><Dna className="h-3 w-3" /> Checking genetics…</p>;
   }
 
   const pct = coefficient !== undefined ? Math.round(coefficient * 1000) / 10 : 0;
@@ -91,20 +95,35 @@ function InbreedingCheck({ maleId, femaleId }: { maleId: string; femaleId: strin
   const isMod = (coefficient ?? 0) >= 0.0625 && (coefficient ?? 0) < 0.125;
 
   return (
-    <div className={`rounded-lg p-3 text-sm border ${isHigh ? "bg-red-50 border-red-200 text-red-800" : isMod ? "bg-orange-50 border-orange-200 text-orange-800" : "bg-emerald-50 border-emerald-200 text-emerald-800"}`}>
-      <div className="flex items-center gap-2 font-medium">
-        {isHigh || isMod ? <AlertTriangle className="h-4 w-4 shrink-0" /> : <Dna className="h-4 w-4 shrink-0" />}
-        Inbreeding coefficient (F) = {pct}%
+    <div className="space-y-2">
+      {siblingType && (
+        <div className="rounded-lg p-3 text-sm border bg-red-50 border-red-200 text-red-800">
+          <div className="flex items-center gap-2 font-semibold">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            {siblingType === "full" ? "Full siblings detected!" : "Half siblings detected!"}
+          </div>
+          <p className="text-xs mt-1 opacity-80">
+            {siblingType === "full"
+              ? "These birds share both the same father and mother. Pairing full siblings significantly increases the risk of genetic defects."
+              : "These birds share one common parent (half siblings). This increases inbreeding risk — proceed with caution."}
+          </p>
+        </div>
+      )}
+      <div className={`rounded-lg p-3 text-sm border ${isHigh ? "bg-red-50 border-red-200 text-red-800" : isMod ? "bg-orange-50 border-orange-200 text-orange-800" : "bg-emerald-50 border-emerald-200 text-emerald-800"}`}>
+        <div className="flex items-center gap-2 font-medium">
+          {isHigh || isMod ? <AlertTriangle className="h-4 w-4 shrink-0" /> : <Dna className="h-4 w-4 shrink-0" />}
+          Inbreeding coefficient (F) = {pct}%
+        </div>
+        <p className="text-xs mt-1 opacity-80">
+          {coefficient === 0
+            ? "No shared ancestors found — this pairing is genetically unrelated."
+            : isHigh
+            ? "High inbreeding detected. This pairing shares significant common ancestry and may increase the risk of genetic defects."
+            : isMod
+            ? "Moderate inbreeding detected. Consider the cumulative effect over multiple generations."
+            : "Low inbreeding. This pairing is generally acceptable but monitor over generations."}
+        </p>
       </div>
-      <p className="text-xs mt-1 opacity-80">
-        {coefficient === 0
-          ? "No shared ancestors found — this pairing is genetically unrelated."
-          : isHigh
-          ? "High inbreeding detected. This pairing shares significant common ancestry and may increase the risk of genetic defects."
-          : isMod
-          ? "Moderate inbreeding detected. Consider the cumulative effect over multiple generations."
-          : "Low inbreeding. This pairing is generally acceptable but monitor over generations."}
-      </p>
     </div>
   );
 }

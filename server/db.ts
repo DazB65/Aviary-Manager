@@ -1,4 +1,4 @@
-import { and, eq, gte, lte, or, desc, asc } from "drizzle-orm";
+import { and, eq, ne, gte, lte, or, desc, asc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users,
@@ -403,4 +403,39 @@ export async function getDescendants(birdId: number, userId: number): Promise<Pe
   }
 
   return result;
+}
+
+// ─── Sibling detection ────────────────────────────────────────────────────────
+/**
+ * Returns all birds that share at least one parent with the given bird.
+ * Distinguishes full siblings (same father AND mother) from half siblings.
+ */
+export async function getSiblings(birdId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Get the bird's own parents
+  const [target] = await db.select().from(birds).where(and(eq(birds.id, birdId), eq(birds.userId, userId))).limit(1);
+  if (!target) return [];
+
+  const { fatherId, motherId } = target;
+  if (!fatherId && !motherId) return []; // no known parents → no siblings
+
+  // Fetch all user's birds except the target itself
+  const allBirds = await db.select().from(birds).where(and(eq(birds.userId, userId), ne(birds.id, birdId)));
+
+  const siblings: Array<typeof allBirds[0] & { siblingType: "full" | "half" }> = [];
+
+  for (const b of allBirds) {
+    const sharedFather = fatherId && b.fatherId && fatherId === b.fatherId;
+    const sharedMother = motherId && b.motherId && motherId === b.motherId;
+
+    if (sharedFather && sharedMother) {
+      siblings.push({ ...b, siblingType: "full" });
+    } else if (sharedFather || sharedMother) {
+      siblings.push({ ...b, siblingType: "half" });
+    }
+  }
+
+  return siblings;
 }
