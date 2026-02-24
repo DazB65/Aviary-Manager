@@ -57,6 +57,13 @@
       "when": 1771901910790,
       "tag": "0007_motionless_spot",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1771902837420,
+      "tag": "0008_equal_reaper",
+      "breakpoints": true
     }
   ]
 }

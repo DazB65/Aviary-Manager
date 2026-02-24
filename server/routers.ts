@@ -150,19 +150,31 @@ export const appRouter = router({
       .input(z.object({
         maleId: z.number(),
         femaleId: z.number(),
+        season: z.number().int().min(2000).max(2100).optional(),
         pairingDate: z.string().optional(),
         status: z.enum(["active", "resting", "retired"]).default("active"),
         notes: z.string().optional(),
       }))
-      .mutation(({ ctx, input }) =>
-        createPair({ ...input, userId: ctx.user.id } as any)
-      ),
+      .mutation(async ({ ctx, input }) => {
+        // Check for duplicate pair in same season
+        const existing = await getPairsByUser(ctx.user.id);
+        const duplicate = existing.find(
+          p => p.maleId === input.maleId && p.femaleId === input.femaleId &&
+               (p.season ?? null) === (input.season ?? null)
+        );
+        if (duplicate) {
+          const yearStr = input.season ? ` in ${input.season}` : "";
+          throw new TRPCError({ code: "CONFLICT", message: `This pair already exists${yearStr}. You can pair the same birds in a different year.` });
+        }
+        return createPair({ ...input, userId: ctx.user.id } as any);
+      }),
 
     update: protectedProcedure
       .input(z.object({
         id: z.number(),
         maleId: z.number().optional(),
         femaleId: z.number().optional(),
+        season: z.number().int().min(2000).max(2100).nullable().optional(),
         pairingDate: z.string().optional(),
         status: z.enum(["active", "resting", "retired"]).optional(),
         notes: z.string().optional(),
@@ -314,11 +326,13 @@ export const appRouter = router({
       .input(z.object({
         favouriteSpeciesIds: z.array(z.number()).optional(),
         defaultSpeciesId: z.number().nullable().optional(),
+        breedingYear: z.number().int().min(2000).max(2100).nullable().optional(),
       }))
       .mutation(({ ctx, input }) =>
         upsertUserSettings(ctx.user.id, {
           favouriteSpeciesIds: input.favouriteSpeciesIds,
           defaultSpeciesId: input.defaultSpeciesId ?? null,
+          breedingYear: input.breedingYear ?? null,
         })
       ),
   }),

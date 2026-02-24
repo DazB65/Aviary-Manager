@@ -118,3 +118,13 @@
 - [x] Add optimistic updates so outcome changes feel instant
 - [x] Show outcome label on each egg cell (not just emoji)
 - [x] Add 5 new clutchEggs router tests (15 tests total, all passing)
+
+## Breeding Season & Pair Improvements
+- [x] Fix capitalisation: "aviary" → "Aviary" on Landing page hero
+- [x] Add breedingYear field to userSettings (global flock breeding season year)
+- [x] Show/edit breeding year prominently in Settings page (teal card at top)
+- [x] Pre-fill pair season year from the global breeding year setting
+- [x] Update breedingPairs schema: add season/year column with unique constraint on (userId, maleId, femaleId, season)
+- [x] Allow same pair to be created again in a different year (pair is year-scoped)
+- [x] Show year on pair cards grouped by season (most recent first)
+- [x] Prevent duplicate pair within the same year (same male + female + year) with clear error message

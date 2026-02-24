@@ -86,12 +86,16 @@ export const breedingPairs = mysqlTable("breedingPairs", {
   userId: int("userId").notNull(),
   maleId: int("maleId").notNull(),
   femaleId: int("femaleId").notNull(),
+  season: int("season"),                           // breeding year/season e.g. 2025
   pairingDate: date("pairingDate"),
   status: mysqlEnum("status", ["active", "resting", "retired"]).default("active").notNull(),
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => ({
+  // Same pair can be created in different years; prevent duplicates within the same year
+  pairSeasonUnique: uniqueIndex("breedingPairs_userId_male_female_season_unique").on(table.userId, table.maleId, table.femaleId, table.season),
+}));
 
 export type BreedingPair = typeof breedingPairs.$inferSelect;
 export type InsertBreedingPair = typeof breedingPairs.$inferInsert;
@@ -157,6 +161,7 @@ export const userSettings = mysqlTable("userSettings", {
   userId: int("userId").notNull().unique(),
   favouriteSpeciesIds: text("favouriteSpeciesIds"), // JSON array of species IDs
   defaultSpeciesId: int("defaultSpeciesId"),        // single default species for quick-add
+  breedingYear: int("breedingYear"),                // global flock breeding season year
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 

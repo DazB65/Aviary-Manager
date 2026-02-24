@@ -2,8 +2,10 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
-import { Check, Settings as SettingsIcon, Star, X } from "lucide-react";
+import { Check, Settings as SettingsIcon, Star, X, CalendarDays } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
@@ -14,6 +16,7 @@ export default function Settings() {
 
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [defaultId, setDefaultId] = useState<number | null>(null);
+  const [breedingYear, setBreedingYear] = useState<string>("");
   const [dirty, setDirty] = useState(false);
 
   // Populate from loaded settings
@@ -24,6 +27,7 @@ export default function Settings() {
       setSelectedIds(Array.isArray(ids) ? ids : []);
     } catch { setSelectedIds([]); }
     setDefaultId(settings.defaultSpeciesId ?? null);
+    setBreedingYear(settings.breedingYear ? String(settings.breedingYear) : String(new Date().getFullYear()));
     setDirty(false);
   }, [settings]);
 
@@ -42,12 +46,10 @@ export default function Settings() {
       setDirty(true);
       return next;
     });
-    // If removing the default, clear it
     if (defaultId === id) { setDefaultId(null); setDirty(true); }
   };
 
   const setDefault = (id: number) => {
-    // Ensure it's in favourites
     setSelectedIds(prev => prev.includes(id) ? prev : [...prev, id]);
     setDefaultId(id);
     setDirty(true);
@@ -56,7 +58,16 @@ export default function Settings() {
   const clearDefault = () => { setDefaultId(null); setDirty(true); };
 
   const handleSave = () => {
-    saveSettings.mutate({ favouriteSpeciesIds: selectedIds, defaultSpeciesId: defaultId });
+    const yearNum = breedingYear ? parseInt(breedingYear, 10) : null;
+    if (breedingYear && (isNaN(yearNum!) || yearNum! < 2000 || yearNum! > 2100)) {
+      toast.error("Please enter a valid year between 2000 and 2100");
+      return;
+    }
+    saveSettings.mutate({
+      favouriteSpeciesIds: selectedIds,
+      defaultSpeciesId: defaultId,
+      breedingYear: yearNum,
+    });
   };
 
   // Group species by category
@@ -81,7 +92,7 @@ export default function Settings() {
             </div>
             <div>
               <h1 className="font-display text-3xl font-bold text-foreground">Settings</h1>
-              <p className="text-muted-foreground mt-0.5">Personalise your aviary manager</p>
+              <p className="text-muted-foreground mt-0.5">Personalise your Aviary Manager</p>
             </div>
           </div>
           {dirty && (
@@ -91,7 +102,40 @@ export default function Settings() {
           )}
         </div>
 
-        {/* Favourite Species Card */}
+        {/* ── Breeding Season Year ── */}
+        <Card className="border-2 border-teal-200 shadow-card bg-gradient-to-br from-teal-50 to-white">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5 text-teal-600" />
+              <CardTitle className="font-display text-lg text-teal-800">Breeding Season Year</CardTitle>
+            </div>
+            <CardDescription className="text-teal-700/80">
+              Set the current breeding season for your whole flock. This year will be pre-filled when you create new breeding pairs and broods, so you don't have to enter it every time.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-end gap-4">
+              <div className="flex-1 max-w-[160px]">
+                <Label className="text-sm font-medium text-teal-800">Current breeding year</Label>
+                <Input
+                  type="number"
+                  min="2000"
+                  max="2100"
+                  className="mt-1.5 text-lg font-bold text-teal-900 border-teal-300 focus:border-teal-500"
+                  value={breedingYear}
+                  onChange={e => { setBreedingYear(e.target.value); setDirty(true); }}
+                  placeholder={String(new Date().getFullYear())}
+                />
+              </div>
+              <div className="pb-1 text-sm text-teal-700/70">
+                <p>New pairs and broods will default to <strong>{breedingYear || new Date().getFullYear()}</strong>.</p>
+                <p className="mt-0.5">You can still override the year on individual records.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ── Favourite Species ── */}
         <Card className="border border-border shadow-card">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
@@ -99,7 +143,7 @@ export default function Settings() {
               <CardTitle className="font-display text-lg">My Species</CardTitle>
             </div>
             <CardDescription>
-              Select the species you keep in your aviary. Only your chosen species will appear in the dropdown when adding a bird.
+              Select the species you keep in your Aviary. Only your chosen species will appear in the dropdown when adding a bird.
               You can still access all species by clicking "Show all species" in the bird form.
             </CardDescription>
           </CardHeader>

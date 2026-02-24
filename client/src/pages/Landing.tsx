@@ -113,7 +113,7 @@ export default function Landing() {
           <h1 className="text-5xl md:text-6xl font-extrabold text-gray-900 leading-tight mb-6">
             The smarter way to manage your{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-amber-500">
-              aviary
+              Aviary
             </span>
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-10">
