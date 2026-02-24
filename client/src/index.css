@@ -70,14 +70,14 @@
   --chart-3: oklch(0.65 0.19 155);
   --chart-4: oklch(0.60 0.22 15);
   --chart-5: oklch(0.68 0.18 280);
-  /* Sidebar — deep forest green/teal */
-  --sidebar: oklch(0.20 0.04 200);
-  --sidebar-foreground: oklch(0.93 0.02 80);
+  /* Sidebar — warm pastel (matches auth page: teal-50/amber-50/rose-50 gradient) */
+  --sidebar: oklch(0.96 0.018 160);
+  --sidebar-foreground: oklch(0.22 0.04 200);
   --sidebar-primary: oklch(0.62 0.22 48);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.27 0.04 200);
-  --sidebar-accent-foreground: oklch(0.93 0.02 80);
-  --sidebar-border: oklch(0.30 0.04 200);
+  --sidebar-accent: oklch(0.91 0.03 80);
+  --sidebar-accent-foreground: oklch(0.22 0.04 200);
+  --sidebar-border: oklch(0.87 0.03 160);
   --sidebar-ring: oklch(0.62 0.22 48);
 }
 

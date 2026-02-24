@@ -106,3 +106,6 @@
 ## Bug Fixes
 - [x] Fix: existing Manus OAuth users cannot register with same email (no passwordHash set)
 - [x] Allow legacy OAuth users to set a password via registration or a "claim account" flow
+
+## UI Polish
+- [x] Match sidebar background colour to the sign-up/login page background colour
