@@ -11,10 +11,21 @@ import {
 
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
-  openId: varchar("openId", { length: 64 }).notNull().unique(),
+  openId: varchar("openId", { length: 64 }).unique(),          // Manus OAuth (legacy, kept for existing users)
   name: text("name"),
-  email: varchar("email", { length: 320 }),
+  email: varchar("email", { length: 320 }).unique(),
+  passwordHash: varchar("passwordHash", { length: 256 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
+  emailVerified: boolean("emailVerified").default(false).notNull(),
+  verifyToken: varchar("verifyToken", { length: 128 }),
+  verifyTokenExpiry: timestamp("verifyTokenExpiry"),
+  resetToken: varchar("resetToken", { length: 128 }),
+  resetTokenExpiry: timestamp("resetTokenExpiry"),
+  // Subscription / plan
+  plan: mysqlEnum("plan", ["free", "pro"]).default("free").notNull(),
+  stripeCustomerId: varchar("stripeCustomerId", { length: 128 }),
+  stripeSubscriptionId: varchar("stripeSubscriptionId", { length: 128 }),
+  planExpiresAt: timestamp("planExpiresAt"),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

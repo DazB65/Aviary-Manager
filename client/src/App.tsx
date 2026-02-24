@@ -10,20 +10,28 @@ import BirdDetail from "./pages/BirdDetail";
 import Pairs from "./pages/Pairs";
 import Broods from "./pages/Broods";
 import Events from "./pages/Events";
-import Login from "./pages/Login";
+import AuthPage from "./pages/AuthPage";
+import ResetPassword from "./pages/ResetPassword";
 import Settings from "./pages/Settings";
+import Billing from "./pages/Billing";
+import Landing from "./pages/Landing";
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
+      <Route path="/" component={Landing} />
+      <Route path="/dashboard" component={Dashboard} />
       <Route path="/birds" component={Birds} />
       <Route path="/birds/:id" component={BirdDetail} />
       <Route path="/pairs" component={Pairs} />
       <Route path="/broods" component={Broods} />
       <Route path="/events" component={Events} />
       <Route path="/settings" component={Settings} />
-      <Route path="/login" component={Login} />
+      <Route path="/billing" component={Billing} />
+      <Route path="/login" component={AuthPage} />
+      <Route path="/register" component={AuthPage} />
+      <Route path="/reset-password" component={ResetPassword} />
+      <Route path="/verify-email" component={AuthPage} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

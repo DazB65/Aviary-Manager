@@ -69,3 +69,36 @@
 - [x] Settings stored per user in DB (userSettings table)
 - [x] Add Bird dialog: species dropdown filtered to favourites by default, with option to show all
 - [x] Settings link in sidebar navigation
+
+## Public SaaS Launch
+### Auth Replacement
+- [x] Add passwordHash, emailVerified, googleId, resetToken, resetTokenExpiry fields to users table
+- [x] Add plan field (free/pro) and stripeCustomerId, stripeSubscriptionId to users table
+- [x] Email/password registration endpoint with bcrypt hashing
+- [x] Email verification flow (auto-verified for beta; re-enable when RESEND_API_KEY configured)
+- [x] Login endpoint (email + password, returns JWT session cookie)
+- [x] Google OAuth login (removed per user request — email only)
+- [x] Forgot password / reset password flow
+- [x] Replace Manus OAuth callback with new auth system
+- [x] Update context.ts to validate JWT sessions from new auth
+- [x] Update frontend Login page with register/login tabs, forgot password
+
+### Free / Paid Tier
+- [x] Free tier: max 20 birds, 5 pairs, basic features
+- [x] Pro tier: unlimited birds, pairs, broods, all features
+- [x] Enforce limits in backend procedures (check bird count before create)
+- [x] Upgrade prompt UI when free limit is hit
+- [x] Plan badge in sidebar (Free / Pro)
+
+### Stripe Billing
+- [x] Add Stripe integration via webdev_add_feature
+- [x] Create Stripe products/prices (monthly + annual Pro plan)
+- [x] Checkout session endpoint
+- [x] Stripe webhook handler (subscription created/updated/cancelled)
+- [x] Billing portal link for managing subscription
+- [x] Pricing page
+
+### Landing Page
+- [x] Public landing page at / (before login)
+- [x] Feature highlights, pricing table, CTA buttons
+- [x] Redirect authenticated users to /dashboard

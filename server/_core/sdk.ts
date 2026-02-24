@@ -257,7 +257,6 @@ class SDKServer {
   }
 
   async authenticateRequest(req: Request): Promise<User> {
-    // Regular authentication flow
     const cookies = this.parseCookies(req.headers.cookie);
     const sessionCookie = cookies.get(COOKIE_NAME);
     const session = await this.verifySession(sessionCookie);
@@ -268,9 +267,18 @@ class SDKServer {
 
     const sessionUserId = session.openId;
     const signedInAt = new Date();
+
+    // ── Email-auth users: openId is a numeric string (their DB id) ──────────
+    const numericId = parseInt(sessionUserId, 10);
+    if (!isNaN(numericId) && String(numericId) === sessionUserId) {
+      const user = await db.getUserById(numericId);
+      if (!user) throw ForbiddenError("User not found");
+      return user;
+    }
+
+    // ── Manus OAuth users: openId is a Manus openId string ──────────────────
     let user = await db.getUserByOpenId(sessionUserId);
 
-    // If user not in DB, sync from OAuth server automatically
     if (!user) {
       try {
         const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
@@ -288,14 +296,11 @@ class SDKServer {
       }
     }
 
-    if (!user) {
-      throw ForbiddenError("User not found");
-    }
+    if (!user) throw ForbiddenError("User not found");
 
-    await db.upsertUser({
-      openId: user.openId,
-      lastSignedIn: signedInAt,
-    });
+    if (user.openId) {
+      await db.upsertUser({ openId: user.openId, lastSignedIn: signedInAt });
+    }
 
     return user;
   }

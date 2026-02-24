@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -76,9 +77,19 @@ export const appRouter = router({
         motherId: z.number().optional(),
         status: z.enum(["alive", "deceased", "sold", "unknown"]).default("alive"),
       }))
-      .mutation(({ ctx, input }) =>
-        createBird({ ...input, userId: ctx.user.id } as any)
-      ),
+      .mutation(async ({ ctx, input }) => {
+        // Free plan: max 20 birds
+        if (ctx.user.plan === "free") {
+          const existing = await getBirdsByUser(ctx.user.id);
+          if (existing.length >= 20) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "FREE_LIMIT_REACHED: Free plan is limited to 20 birds. Upgrade to Pro for unlimited birds.",
+            });
+          }
+        }
+        return createBird({ ...input, userId: ctx.user.id } as any);
+      }),
     update: protectedProcedure
       .input(z.object({
         id: z.number(),
