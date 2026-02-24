@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import {
   Egg, Plus, Trash2, Pencil, ChevronDown, ChevronUp,
-  CheckCircle2, XCircle, AlertCircle,
+  CheckCircle2, XCircle,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -36,94 +36,208 @@ const STATUS_ICONS: Record<string, React.ReactNode> = {
 
 type EggOutcome = "unknown" | "fertile" | "infertile" | "cracked" | "hatched" | "died";
 
-const EGG_OUTCOME_CONFIG: Record<EggOutcome, { label: string; emoji: string; bg: string; text: string; border: string }> = {
-  unknown:   { label: "Unknown",   emoji: "🥚", bg: "bg-gray-50",     text: "text-gray-500",   border: "border-gray-200" },
-  fertile:   { label: "Fertile",   emoji: "🟢", bg: "bg-emerald-50",  text: "text-emerald-700",border: "border-emerald-300" },
-  infertile: { label: "Infertile", emoji: "⚪", bg: "bg-slate-50",    text: "text-slate-500",  border: "border-slate-200" },
-  cracked:   { label: "Cracked",   emoji: "💔", bg: "bg-orange-50",   text: "text-orange-600", border: "border-orange-200" },
-  hatched:   { label: "Hatched",   emoji: "🐣", bg: "bg-teal-50",     text: "text-teal-700",   border: "border-teal-300" },
-  died:      { label: "Died",      emoji: "🖤", bg: "bg-red-50",      text: "text-red-600",    border: "border-red-200" },
+const EGG_OUTCOME_CONFIG: Record<EggOutcome, { label: string; emoji: string; bg: string; text: string; border: string; ring: string }> = {
+  unknown:   { label: "Pending",    emoji: "🥚", bg: "bg-gray-50",     text: "text-gray-500",   border: "border-gray-200",   ring: "ring-gray-300" },
+  fertile:   { label: "Fertile",    emoji: "🟢", bg: "bg-emerald-50",  text: "text-emerald-700",border: "border-emerald-300", ring: "ring-emerald-400" },
+  infertile: { label: "Infertile",  emoji: "⚪", bg: "bg-slate-100",   text: "text-slate-500",  border: "border-slate-300",  ring: "ring-slate-400" },
+  cracked:   { label: "Cracked",    emoji: "💔", bg: "bg-orange-50",   text: "text-orange-600", border: "border-orange-300", ring: "ring-orange-400" },
+  hatched:   { label: "Hatched",    emoji: "🐣", bg: "bg-teal-50",     text: "text-teal-700",   border: "border-teal-300",   ring: "ring-teal-400" },
+  died:      { label: "Died",       emoji: "🖤", bg: "bg-red-50",      text: "text-red-600",    border: "border-red-200",    ring: "ring-red-400" },
 };
 
-const EGG_OUTCOME_CYCLE: EggOutcome[] = ["unknown", "fertile", "infertile", "cracked", "hatched", "died"];
+const OUTCOME_OPTIONS: EggOutcome[] = ["unknown", "fertile", "infertile", "cracked", "hatched", "died"];
+
+// ─── Single egg button with inline outcome picker ────────────────────────────
+function EggCell({
+  num,
+  outcome,
+  isPending,
+  onSelect,
+}: {
+  num: number;
+  outcome: EggOutcome;
+  isPending: boolean;
+  onSelect: (o: EggOutcome) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const cfg = EGG_OUTCOME_CONFIG[outcome];
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(o => !o)}
+        disabled={isPending}
+        title={`Egg ${num}: ${cfg.label} — click to change`}
+        className={`
+          w-14 h-16 rounded-xl border-2 flex flex-col items-center justify-center gap-1
+          transition-all hover:scale-105 active:scale-95 select-none
+          ${cfg.bg} ${cfg.border}
+          ${isPending ? "opacity-50 cursor-wait" : "cursor-pointer"}
+          ${open ? `ring-2 ${cfg.ring} ring-offset-1` : ""}
+        `}
+      >
+        <span className="text-xl leading-none">{cfg.emoji}</span>
+        <span className={`text-[9px] font-bold leading-none ${cfg.text}`}>#{num}</span>
+        <span className={`text-[8px] leading-none ${cfg.text} opacity-80`}>{cfg.label}</span>
+      </button>
+
+      {/* Outcome picker popover */}
+      {open && (
+        <>
+          {/* Backdrop */}
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute z-20 top-full mt-1 left-1/2 -translate-x-1/2 bg-white border border-border rounded-xl shadow-elevated p-2 min-w-[140px]">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide px-1 mb-1.5">
+              Egg #{num} outcome
+            </p>
+            <div className="space-y-0.5">
+              {OUTCOME_OPTIONS.map(opt => {
+                const c = EGG_OUTCOME_CONFIG[opt];
+                const isSelected = opt === outcome;
+                return (
+                  <button
+                    key={opt}
+                    onClick={() => { onSelect(opt); setOpen(false); }}
+                    className={`
+                      w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-xs transition-colors
+                      ${isSelected
+                        ? `${c.bg} ${c.text} font-semibold border ${c.border}`
+                        : "hover:bg-muted text-foreground"
+                      }
+                    `}
+                  >
+                    <span className="text-sm">{c.emoji}</span>
+                    <span>{c.label}</span>
+                    {isSelected && <span className="ml-auto text-[10px]">✓</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 // ─── Egg outcome grid for a single brood ─────────────────────────────────────
 function ClutchEggGrid({ broodId, eggsLaid }: { broodId: number; eggsLaid: number }) {
   const utils = trpc.useUtils();
   const { data: eggs = [], isLoading } = trpc.clutchEggs.byBrood.useQuery({ broodId });
+  // Local optimistic state: eggNumber → outcome
+  const [localOutcomes, setLocalOutcomes] = useState<Record<number, EggOutcome>>({});
+  const [pendingEggs, setPendingEggs] = useState<Set<number>>(new Set());
+
   const upsertEgg = trpc.clutchEggs.upsert.useMutation({
-    onSuccess: () => utils.clutchEggs.byBrood.invalidate({ broodId }),
-    onError: (e) => toast.error(e.message),
+    onMutate: ({ eggNumber, outcome }) => {
+      setLocalOutcomes(prev => ({ ...prev, [eggNumber]: outcome as EggOutcome }));
+      setPendingEggs(prev => new Set(prev).add(eggNumber));
+    },
+    onSuccess: (_data, { eggNumber }) => {
+      setPendingEggs(prev => { const s = new Set(prev); s.delete(eggNumber); return s; });
+      utils.clutchEggs.byBrood.invalidate({ broodId });
+    },
+    onError: (e, { eggNumber }) => {
+      setPendingEggs(prev => { const s = new Set(prev); s.delete(eggNumber); return s; });
+      // Revert local state
+      setLocalOutcomes(prev => {
+        const copy = { ...prev };
+        delete copy[eggNumber];
+        return copy;
+      });
+      toast.error(`Failed to save egg #${eggNumber}: ${e.message}`);
+    },
   });
 
   if (eggsLaid === 0) return (
-    <p className="text-xs text-muted-foreground italic">No eggs recorded for this brood.</p>
+    <p className="text-xs text-muted-foreground italic">No eggs recorded. Edit the brood to set the number of eggs laid.</p>
   );
-  if (isLoading) return <div className="flex gap-2">{[...Array(eggsLaid)].map((_, i) => <div key={i} className="w-12 h-14 rounded-lg bg-muted animate-pulse" />)}</div>;
 
-  // Build a map of eggNumber → outcome
-  const eggMap: Record<number, EggOutcome> = {};
-  for (const e of eggs) eggMap[e.eggNumber] = e.outcome as EggOutcome;
+  if (isLoading) return (
+    <div className="flex flex-wrap gap-2">
+      {[...Array(eggsLaid)].map((_, i) => (
+        <div key={i} className="w-14 h-16 rounded-xl bg-muted animate-pulse" />
+      ))}
+    </div>
+  );
 
-  // Stats
-  const fertile = eggs.filter(e => e.outcome === "fertile" || e.outcome === "hatched").length;
-  const hatched = eggs.filter(e => e.outcome === "hatched").length;
-  const infertile = eggs.filter(e => e.outcome === "infertile").length;
-  const unknown = eggs.filter(e => e.outcome === "unknown").length;
+  // Merge server data with local optimistic state
+  const serverMap: Record<number, EggOutcome> = {};
+  for (const e of eggs) serverMap[e.eggNumber] = e.outcome as EggOutcome;
+
+  function getOutcome(num: number): EggOutcome {
+    if (num in localOutcomes) return localOutcomes[num];
+    return serverMap[num] ?? "unknown";
+  }
+
+  function handleSelect(eggNumber: number, outcome: EggOutcome) {
+    upsertEgg.mutate({ broodId, eggNumber, outcome });
+  }
+
+  // Stats (use merged state)
+  const allOutcomes = [...Array(eggsLaid)].map((_, i) => getOutcome(i + 1));
+  const fertile = allOutcomes.filter(o => o === "fertile" || o === "hatched").length;
+  const hatched = allOutcomes.filter(o => o === "hatched").length;
+  const infertile = allOutcomes.filter(o => o === "infertile").length;
+  const cracked = allOutcomes.filter(o => o === "cracked").length;
+  const died = allOutcomes.filter(o => o === "died").length;
+  const pending = allOutcomes.filter(o => o === "unknown").length;
   const fertilityRate = eggsLaid > 0 ? Math.round((fertile / eggsLaid) * 100) : 0;
   const hatchRate = fertile > 0 ? Math.round((hatched / fertile) * 100) : 0;
 
-  function cycleOutcome(eggNumber: number) {
-    const current = eggMap[eggNumber] ?? "unknown";
-    const idx = EGG_OUTCOME_CYCLE.indexOf(current);
-    const next = EGG_OUTCOME_CYCLE[(idx + 1) % EGG_OUTCOME_CYCLE.length];
-    upsertEgg.mutate({ broodId, eggNumber, outcome: next });
-  }
-
   return (
-    <div className="space-y-3">
-      {/* Egg cells */}
+    <div className="space-y-4">
+      {/* Instruction hint */}
+      <p className="text-xs text-muted-foreground">
+        Tap each egg to set its outcome. Changes save instantly.
+      </p>
+
+      {/* Egg grid */}
       <div className="flex flex-wrap gap-2">
         {[...Array(eggsLaid)].map((_, i) => {
           const num = i + 1;
-          const outcome = eggMap[num] ?? "unknown";
-          const cfg = EGG_OUTCOME_CONFIG[outcome];
           return (
-            <button
+            <EggCell
               key={num}
-              onClick={() => cycleOutcome(num)}
-              title={`Egg ${num}: ${cfg.label} — click to cycle`}
-              className={`w-12 h-14 rounded-xl border-2 flex flex-col items-center justify-center gap-0.5 transition-all hover:scale-105 active:scale-95 ${cfg.bg} ${cfg.border}`}
-            >
-              <span className="text-lg leading-none">{cfg.emoji}</span>
-              <span className={`text-[9px] font-semibold leading-none ${cfg.text}`}>#{num}</span>
-            </button>
+              num={num}
+              outcome={getOutcome(num)}
+              isPending={pendingEggs.has(num)}
+              onSelect={(o) => handleSelect(num, o)}
+            />
           );
         })}
       </div>
-      {/* Legend */}
-      <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-        {(Object.entries(EGG_OUTCOME_CONFIG) as [EggOutcome, typeof EGG_OUTCOME_CONFIG[EggOutcome]][]).map(([k, v]) => (
-          <span key={k} className="flex items-center gap-1">{v.emoji} {v.label}</span>
-        ))}
-        <span className="text-muted-foreground/50">· click egg to cycle</span>
-      </div>
+
       {/* Summary stats */}
-      <div className="flex flex-wrap gap-3 text-xs">
-        <span className="px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 font-medium">
-          🟢 {fertile} fertile · {fertilityRate}% fertility rate
-        </span>
-        <span className="px-2 py-1 rounded-full bg-teal-50 text-teal-700 font-medium">
-          🐣 {hatched} hatched · {hatchRate}% hatch rate
-        </span>
+      <div className="flex flex-wrap gap-2 text-xs">
+        {fertile > 0 && (
+          <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-medium border border-emerald-200">
+            🟢 {fertile} fertile · {fertilityRate}% fertility
+          </span>
+        )}
+        {hatched > 0 && (
+          <span className="px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 font-medium border border-teal-200">
+            🐣 {hatched} hatched · {hatchRate}% hatch rate
+          </span>
+        )}
         {infertile > 0 && (
-          <span className="px-2 py-1 rounded-full bg-slate-50 text-slate-500 font-medium">
+          <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 font-medium border border-slate-200">
             ⚪ {infertile} infertile
           </span>
         )}
-        {unknown > 0 && (
-          <span className="px-2 py-1 rounded-full bg-gray-50 text-gray-500 font-medium">
-            🥚 {unknown} pending
+        {cracked > 0 && (
+          <span className="px-2.5 py-1 rounded-full bg-orange-50 text-orange-600 font-medium border border-orange-200">
+            💔 {cracked} cracked
+          </span>
+        )}
+        {died > 0 && (
+          <span className="px-2.5 py-1 rounded-full bg-red-50 text-red-600 font-medium border border-red-200">
+            🖤 {died} died
+          </span>
+        )}
+        {pending > 0 && (
+          <span className="px-2.5 py-1 rounded-full bg-gray-50 text-gray-500 font-medium border border-gray-200">
+            🥚 {pending} pending
           </span>
         )}
       </div>
@@ -192,11 +306,11 @@ function BroodCard({
           <div className="flex gap-1 shrink-0 items-start">
             <Button
               variant="ghost" size="sm"
-              className="h-8 gap-1 text-xs text-muted-foreground hover:text-foreground"
+              className={`h-8 gap-1 text-xs transition-colors ${expanded ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}`}
               onClick={() => setExpanded(e => !e)}
             >
               {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-              Eggs
+              Eggs {brood.eggsLaid > 0 && <span className="ml-0.5 opacity-60">({brood.eggsLaid})</span>}
             </Button>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit}>
               <Pencil className="h-3.5 w-3.5" />

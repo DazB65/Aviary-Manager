@@ -1,0 +1,1 @@
+ALTER TABLE `clutchEggs` ADD CONSTRAINT `clutchEggs_broodId_eggNumber_unique` UNIQUE(`broodId`,`eggNumber`);

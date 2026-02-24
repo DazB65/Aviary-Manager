@@ -128,3 +128,53 @@ describe("dashboard router", () => {
     await expect(caller.dashboard.stats()).rejects.toThrow();
   });
 });
+
+describe("clutchEggs router", () => {
+  it("byBrood requires authentication", async () => {
+    const ctx: TrpcContext = {
+      user: null,
+      req: { protocol: "https", headers: {} } as TrpcContext["req"],
+      res: { clearCookie: () => {} } as TrpcContext["res"],
+    };
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.clutchEggs.byBrood({ broodId: 1 })).rejects.toThrow();
+  });
+
+  it("upsert requires authentication", async () => {
+    const ctx: TrpcContext = {
+      user: null,
+      req: { protocol: "https", headers: {} } as TrpcContext["req"],
+      res: { clearCookie: () => {} } as TrpcContext["res"],
+    };
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.clutchEggs.upsert({ broodId: 1, eggNumber: 1, outcome: "fertile" })
+    ).rejects.toThrow();
+  });
+
+  it("upsert rejects invalid outcome values", async () => {
+    const { ctx } = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.clutchEggs.upsert({ broodId: 1, eggNumber: 1, outcome: "invalid" as any })
+    ).rejects.toThrow();
+  });
+
+  it("upsert rejects eggNumber < 1", async () => {
+    const { ctx } = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.clutchEggs.upsert({ broodId: 1, eggNumber: 0, outcome: "fertile" })
+    ).rejects.toThrow();
+  });
+
+  it("sync requires authentication", async () => {
+    const ctx: TrpcContext = {
+      user: null,
+      req: { protocol: "https", headers: {} } as TrpcContext["req"],
+      res: { clearCookie: () => {} } as TrpcContext["res"],
+    };
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.clutchEggs.sync({ broodId: 1, eggsLaid: 4 })).rejects.toThrow();
+  });
+});

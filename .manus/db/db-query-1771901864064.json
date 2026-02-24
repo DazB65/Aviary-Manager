@@ -1,0 +1,24 @@
+{
+  "query": "SHOW CREATE TABLE clutchEggs;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user xq2vNK68dbmNxhP.root --database DNCyYTC8dDSQx7ExWnM4EL --execute SHOW CREATE TABLE clutchEggs;",
+  "rows": [
+    {
+      "Table": "clutchEggs",
+      "Create Table": "CREATE TABLE `clutchEggs` ("
+    }
+  ],
+  "messages": [
+    "  `id` int NOT NULL AUTO_INCREMENT,",
+    "  `broodId` int NOT NULL,",
+    "  `userId` int NOT NULL,",
+    "  `eggNumber` int NOT NULL,",
+    "  `outcome` enum('unknown','fertile','infertile','cracked','hatched','died') NOT NULL DEFAULT 'unknown',",
+    "  `notes` text DEFAULT NULL,",
+    "  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,",
+    "  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */",
+    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AUTO_INCREMENT=60001"
+  ],
+  "stdout": "Table\tCreate Table\nclutchEggs\tCREATE TABLE `clutchEggs` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `broodId` int NOT NULL,\n  `userId` int NOT NULL,\n  `eggNumber` int NOT NULL,\n  `outcome` enum('unknown','fertile','infertile','cracked','hatched','died') NOT NULL DEFAULT 'unknown',\n  `notes` text DEFAULT NULL,\n  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AUTO_INCREMENT=60001\n",
+  "stderr": "",
+  "execution_time_ms": 1619
+}

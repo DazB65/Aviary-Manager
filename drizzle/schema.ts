@@ -7,6 +7,7 @@ import {
   varchar,
   date,
   boolean,
+  uniqueIndex,
 } from "drizzle-orm/mysql-core";
 
 export const users = mysqlTable("users", {
@@ -143,7 +144,9 @@ export const clutchEggs = mysqlTable("clutchEggs", {
   outcome: mysqlEnum("outcome", ["unknown", "fertile", "infertile", "cracked", "hatched", "died"]).default("unknown").notNull(),
   notes: text("notes"),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => ({
+  broodEggUnique: uniqueIndex("clutchEggs_broodId_eggNumber_unique").on(table.broodId, table.eggNumber),
+}));
 
 export type ClutchEgg = typeof clutchEggs.$inferSelect;
 export type InsertClutchEgg = typeof clutchEggs.$inferInsert;

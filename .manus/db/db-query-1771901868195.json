@@ -1,0 +1,40 @@
+{
+  "query": "SELECT broodId, eggNumber, COUNT(*) as cnt FROM clutchEggs GROUP BY broodId, eggNumber HAVING cnt > 1 LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user xq2vNK68dbmNxhP.root --database DNCyYTC8dDSQx7ExWnM4EL --execute SELECT broodId, eggNumber, COUNT(*) as cnt FROM clutchEggs GROUP BY broodId, eggNumber HAVING cnt > 1 LIMIT 10;",
+  "rows": [
+    {
+      "broodId": "1",
+      "eggNumber": "6",
+      "cnt": "5"
+    },
+    {
+      "broodId": "1",
+      "eggNumber": "4",
+      "cnt": "3"
+    },
+    {
+      "broodId": "1",
+      "eggNumber": "1",
+      "cnt": "6"
+    },
+    {
+      "broodId": "1",
+      "eggNumber": "5",
+      "cnt": "2"
+    },
+    {
+      "broodId": "1",
+      "eggNumber": "2",
+      "cnt": "8"
+    },
+    {
+      "broodId": "1",
+      "eggNumber": "3",
+      "cnt": "4"
+    }
+  ],
+  "messages": [],
+  "stdout": "broodId\teggNumber\tcnt\n1\t6\t5\n1\t4\t3\n1\t1\t6\n1\t5\t2\n1\t2\t8\n1\t3\t4\n",
+  "stderr": "",
+  "execution_time_ms": 1547
+}

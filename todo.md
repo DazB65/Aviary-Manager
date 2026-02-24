@@ -109,3 +109,12 @@
 
 ## UI Polish
 - [x] Match sidebar background colour to the sign-up/login page background colour
+
+## Egg Outcome Bug Fix
+- [x] Root cause: no unique constraint on (broodId, eggNumber) — every click inserted a new duplicate row instead of updating
+- [x] Clean up existing duplicate rows (kept latest per broodId+eggNumber)
+- [x] Add unique index on clutchEggs(broodId, eggNumber) via schema migration
+- [x] Rewrite egg UI: replace confusing click-to-cycle with per-egg dropdown picker
+- [x] Add optimistic updates so outcome changes feel instant
+- [x] Show outcome label on each egg cell (not just emoji)
+- [x] Add 5 new clutchEggs router tests (15 tests total, all passing)
