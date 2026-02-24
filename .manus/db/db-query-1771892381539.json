@@ -1,0 +1,21 @@
+{
+  "query": "SELECT id, openId, name, email, loginMethod, emailVerified, passwordHash IS NOT NULL as hasPassword, plan, createdAt FROM users LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user xq2vNK68dbmNxhP.root --database DNCyYTC8dDSQx7ExWnM4EL --execute SELECT id, openId, name, email, loginMethod, emailVerified, passwordHash IS NOT NULL as hasPassword, plan, createdAt FROM users LIMIT 10;",
+  "rows": [
+    {
+      "id": "1",
+      "openId": "hEqmwJMjiXcjJ3TQhhkEFS",
+      "name": "DARREN BERICH",
+      "email": "darren.berich@me.com",
+      "loginMethod": "apple",
+      "emailVerified": "0",
+      "hasPassword": "0",
+      "plan": "free",
+      "createdAt": "2026-02-23 21:50:08"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\topenId\tname\temail\tloginMethod\temailVerified\thasPassword\tplan\tcreatedAt\n1\thEqmwJMjiXcjJ3TQhhkEFS\tDARREN BERICH\tdarren.berich@me.com\tapple\t0\t0\tfree\t2026-02-23 21:50:08\n",
+  "stderr": "",
+  "execution_time_ms": 1589
+}

@@ -31,17 +31,32 @@ export function registerAuthRoutes(app: Express) {
     const db = await getDb();
     if (!db) { res.status(500).json({ error: "Database unavailable" }); return; }
 
-    // Check duplicate email
-    const existing = await db.select({ id: users.id })
-      .from(users).where(eq(users.email, email.toLowerCase())).limit(1);
-    if (existing.length > 0) {
-      res.status(409).json({ error: "An account with this email already exists" });
+    // Check if email already exists
+    const existingRows = await db.select().from(users).where(eq(users.email, email.toLowerCase())).limit(1);
+    const existing = existingRows[0];
+
+    if (existing) {
+      // Legacy Manus OAuth user — no password set yet. Allow them to claim the account.
+      if (!existing.passwordHash) {
+        const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+        await db.update(users)
+          .set({
+            passwordHash,
+            loginMethod: "email",
+            emailVerified: true,
+            name: name?.trim() || existing.name || null,
+            lastSignedIn: new Date(),
+          })
+          .where(eq(users.id, existing.id));
+        res.status(201).json({ success: true, message: "Account set up! You can now log in." });
+        return;
+      }
+      // Full account already exists with a password
+      res.status(409).json({ error: "An account with this email already exists. Please log in instead." });
       return;
     }
 
     const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
-    const verifyToken  = nanoid(48);
-    const verifyTokenExpiry = new Date(Date.now() + VERIFY_EXPIRY_MS);
 
     await db.insert(users).values({
       name: name?.trim() || null,

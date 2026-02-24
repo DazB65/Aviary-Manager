@@ -102,3 +102,7 @@
 - [x] Public landing page at / (before login)
 - [x] Feature highlights, pricing table, CTA buttons
 - [x] Redirect authenticated users to /dashboard
+
+## Bug Fixes
+- [x] Fix: existing Manus OAuth users cannot register with same email (no passwordHash set)
+- [x] Allow legacy OAuth users to set a password via registration or a "claim account" flow
