@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from "express";
+import helmet from "helmet";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
@@ -34,6 +35,10 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   const app = express();
   const server = createServer(app);
+  // Trust Fly.io's proxy so express-rate-limit can read X-Forwarded-For correctly
+  app.set("trust proxy", 1);
+  // Security headers — applied before all routes
+  app.use(helmet({ contentSecurityPolicy: false }));
   // Stripe webhook MUST be registered BEFORE express.json() to get raw body for signature verification
   registerStripeRoutes(app);
   // Configure body parser with larger size limit for file uploads

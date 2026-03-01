@@ -1,10 +1,12 @@
 export const ENV = {
-  appId: process.env.VITE_APP_ID ?? "",
   cookieSecret: process.env.JWT_SECRET ?? "",
   databaseUrl: process.env.DATABASE_URL ?? "",
-  oAuthServerUrl: process.env.OAUTH_SERVER_URL ?? "",
-  ownerOpenId: process.env.OWNER_OPEN_ID ?? "",
   isProduction: process.env.NODE_ENV === "production",
-  forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
-  forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+  // Tigris (Fly.io S3-compatible object storage) — injected automatically by Fly
+  tigrisEndpointUrl: process.env.TIGRIS_ENDPOINT_URL ?? "",
+  tigrisAccessKeyId: process.env.TIGRIS_ACCESS_KEY_ID ?? "",
+  tigrisSecretAccessKey: process.env.TIGRIS_SECRET_ACCESS_KEY ?? "",
+  tigrisBucketName: process.env.TIGRIS_BUCKET_NAME ?? "",
+  // Legacy Manus OAuth — kept only for backward-compat; remove when Manus users have migrated
+  ownerOpenId: process.env.OWNER_OPEN_ID ?? "",
 };

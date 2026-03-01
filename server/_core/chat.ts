@@ -10,20 +10,18 @@ import { tool } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import type { Express } from "express";
 import { z } from "zod/v4";
-import { ENV } from "./env";
 import { createPatchedFetch } from "./patchedFetch";
 
 /**
  * Creates an OpenAI-compatible provider with patched fetch.
  */
 function createLLMProvider() {
-  const baseURL = ENV.forgeApiUrl.endsWith("/v1")
-    ? ENV.forgeApiUrl
-    : `${ENV.forgeApiUrl}/v1`;
+  const forgeApiUrl = process.env.BUILT_IN_FORGE_API_URL ?? "";
+  const baseURL = forgeApiUrl.endsWith("/v1") ? forgeApiUrl : `${forgeApiUrl}/v1`;
 
   return createOpenAI({
     baseURL,
-    apiKey: ENV.forgeApiKey,
+    apiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
     fetch: createPatchedFetch(fetch),
   });
 }

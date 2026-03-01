@@ -30,8 +30,9 @@ const GET_USER_INFO_WITH_JWT_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserI
 
 class OAuthService {
   constructor(private client: ReturnType<typeof axios.create>) {
-    console.log("[OAuth] Initialized with baseURL:", ENV.oAuthServerUrl);
-    if (!ENV.oAuthServerUrl) {
+    const oAuthServerUrl = process.env.OAUTH_SERVER_URL ?? "";
+    console.log("[OAuth] Initialized with baseURL:", oAuthServerUrl);
+    if (!oAuthServerUrl) {
       console.error(
         "[OAuth] ERROR: OAUTH_SERVER_URL is not configured! Set OAUTH_SERVER_URL environment variable."
       );
@@ -48,7 +49,7 @@ class OAuthService {
     state: string
   ): Promise<ExchangeTokenResponse> {
     const payload: ExchangeTokenRequest = {
-      clientId: ENV.appId,
+      clientId: process.env.VITE_APP_ID ?? "",
       grantType: "authorization_code",
       code,
       redirectUri: this.decodeState(state),
@@ -78,7 +79,7 @@ class OAuthService {
 
 const createOAuthHttpClient = (): AxiosInstance =>
   axios.create({
-    baseURL: ENV.oAuthServerUrl,
+    baseURL: process.env.OAUTH_SERVER_URL ?? "",
     timeout: AXIOS_TIMEOUT_MS,
   });
 
@@ -171,7 +172,7 @@ class SDKServer {
     return this.signSession(
       {
         openId,
-        appId: ENV.appId,
+        appId: process.env.VITE_APP_ID ?? "",
         name: options.name || "",
       },
       options
@@ -199,7 +200,7 @@ class SDKServer {
 
   async verifySession(
     cookieValue: string | undefined | null
-  ): Promise<{ openId: string; appId: string; name: string } | null> {
+  ): Promise<{ openId: string; appId: string; name: string; iat?: number } | null> {
     if (!cookieValue) {
       console.warn("[Auth] Missing session cookie");
       return null;
@@ -215,7 +216,7 @@ class SDKServer {
       if (
         !isNonEmptyString(openId) ||
         !isNonEmptyString(appId) ||
-        !isNonEmptyString(name)
+        typeof name !== "string"  // allow empty string — email-auth users may have no display name
       ) {
         console.warn("[Auth] Session payload missing required fields");
         return null;
@@ -225,6 +226,7 @@ class SDKServer {
         openId,
         appId,
         name,
+        iat: typeof payload.iat === "number" ? payload.iat : undefined,
       };
     } catch (error) {
       console.warn("[Auth] Session verification failed", String(error));
@@ -237,7 +239,7 @@ class SDKServer {
   ): Promise<GetUserInfoWithJwtResponse> {
     const payload: GetUserInfoWithJwtRequest = {
       jwtToken,
-      projectId: ENV.appId,
+      projectId: process.env.VITE_APP_ID ?? "",
     };
 
     const { data } = await this.client.post<GetUserInfoWithJwtResponse>(
@@ -273,6 +275,12 @@ class SDKServer {
     if (!isNaN(numericId) && String(numericId) === sessionUserId) {
       const user = await db.getUserById(numericId);
       if (!user) throw ForbiddenError("User not found");
+      // Invalidate sessions issued before the last password change
+      if (user.passwordChangedAt && session.iat) {
+        if (user.passwordChangedAt.getTime() > session.iat * 1000) {
+          throw ForbiddenError("Session invalidated due to password change. Please log in again.");
+        }
+      }
       return user;
     }
 

@@ -1,5 +1,9 @@
 import { and, eq, ne, gte, lte, or, desc, asc } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
+import { drizzle } from "drizzle-orm/postgres-js";
+import { migrate } from "drizzle-orm/postgres-js/migrator";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
+import postgres from "postgres";
 import {
   InsertUser, users,
   species, InsertSpecies,
@@ -14,12 +18,28 @@ import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
+// Resolve the drizzle migrations folder relative to this source file so it
+// works whether the server is run via tsx (dev) or as a compiled bundle (prod).
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const MIGRATIONS_FOLDER = join(__dirname, "..", "drizzle");
+
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      // On Fly.io / Railway, internal Postgres connections may use sslmode=disable in the URL.
+      // Let the postgres driver honour whatever the URL specifies instead of forcing SSL.
+      const client = postgres(process.env.DATABASE_URL, { max: 1 });
+      _db = drizzle(client);
+
+      // Apply any pending migrations automatically so the schema is always up to date.
+      await migrate(_db, { migrationsFolder: MIGRATIONS_FOLDER });
+      console.log("[Database] Migrations applied successfully");
+
+      // Re-create with a normal pool size after migration
+      const poolClient = postgres(process.env.DATABASE_URL);
+      _db = drizzle(poolClient);
     } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
+      console.warn("[Database] Failed to connect or migrate:", error);
       _db = null;
     }
   }
@@ -51,7 +71,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   if (!values.lastSignedIn) values.lastSignedIn = new Date();
   if (Object.keys(updateSet).length === 0) updateSet.lastSignedIn = new Date();
 
-  await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });
+  await db.insert(users).values(values).onConflictDoUpdate({ target: users.openId, set: updateSet });
 }
 
 export async function getUserByOpenId(openId: string) {
@@ -79,7 +99,7 @@ export async function getAllSpecies() {
 export async function createSpecies(data: InsertSpecies) {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");
-  const [result] = await db.insert(species).values(data).$returningId();
+  const [result] = await db.insert(species).values(data).returning({ id: species.id });
   return result;
 }
 
@@ -101,7 +121,7 @@ export async function getBirdById(id: number, userId: number) {
 export async function createBird(data: InsertBird) {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");
-  const [result] = await db.insert(birds).values(data).$returningId();
+  const [result] = await db.insert(birds).values(data).returning({ id: birds.id });
   return result;
 }
 
@@ -135,7 +155,7 @@ export async function getPairById(id: number, userId: number) {
 export async function createPair(data: InsertBreedingPair) {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");
-  const [result] = await db.insert(breedingPairs).values(data).$returningId();
+  const [result] = await db.insert(breedingPairs).values(data).returning({ id: breedingPairs.id });
   return result;
 }
 
@@ -168,7 +188,7 @@ export async function getBroodsByPair(pairId: number, userId: number) {
 export async function createBrood(data: InsertBrood) {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");
-  const [result] = await db.insert(broods).values(data).$returningId();
+  const [result] = await db.insert(broods).values(data).returning({ id: broods.id });
   return result;
 }
 
@@ -195,7 +215,7 @@ export async function getEventsByUser(userId: number) {
 export async function createEvent(data: InsertEvent) {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");
-  const [result] = await db.insert(events).values(data).$returningId();
+  const [result] = await db.insert(events).values(data).returning({ id: events.id });
   return result;
 }
 
@@ -470,7 +490,7 @@ export async function upsertClutchEgg(
   if (!db) return;
   await db.insert(clutchEggs)
     .values({ broodId, userId, eggNumber, outcome, notes: notes ?? null })
-    .onDuplicateKeyUpdate({ set: { outcome, notes: notes ?? null } });
+    .onConflictDoUpdate({ target: [clutchEggs.broodId, clutchEggs.eggNumber], set: { outcome, notes: notes ?? null } });
 }
 
 export async function deleteEggsByBrood(broodId: number, userId: number): Promise<void> {
@@ -520,5 +540,5 @@ export async function upsertUserSettings(userId: number, data: { favouriteSpecie
   if (favouriteSpeciesIds !== undefined) { values.favouriteSpeciesIds = favouriteSpeciesIds; updateSet.favouriteSpeciesIds = favouriteSpeciesIds; }
   if (data.defaultSpeciesId !== undefined) { values.defaultSpeciesId = data.defaultSpeciesId; updateSet.defaultSpeciesId = data.defaultSpeciesId; }
   if (data.breedingYear !== undefined) { values.breedingYear = data.breedingYear; updateSet.breedingYear = data.breedingYear; }
-  await db.insert(userSettings).values(values as any).onDuplicateKeyUpdate({ set: updateSet });
+  await db.insert(userSettings).values(values as any).onConflictDoUpdate({ target: userSettings.userId, set: updateSet });
 }

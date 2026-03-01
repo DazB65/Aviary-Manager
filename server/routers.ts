@@ -130,7 +130,19 @@ export const appRouter = router({
         dataBase64: z.string(),
       }))
       .mutation(async ({ ctx, input }) => {
-        const ext = input.filename.split(".").pop() ?? "jpg";
+        const MIME_TO_EXT: Record<string, string> = {
+          "image/jpeg": "jpg",
+          "image/png": "png",
+          "image/gif": "gif",
+          "image/webp": "webp",
+        };
+        const ext = MIME_TO_EXT[input.contentType];
+        if (!ext) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Only JPEG, PNG, GIF, and WebP images are allowed.",
+          });
+        }
         const key = `birds/${ctx.user.id}/${nanoid()}.${ext}`;
         const buffer = Buffer.from(input.dataBase64, "base64");
         const { url } = await storagePut(key, buffer, input.contentType);
@@ -156,6 +168,16 @@ export const appRouter = router({
         notes: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
+        // Free plan: max 5 breeding pairs
+        if (ctx.user.plan === "free") {
+          const existing = await getPairsByUser(ctx.user.id);
+          if (existing.length >= 5) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "FREE_LIMIT_REACHED: Free plan is limited to 5 breeding pairs. Upgrade to Pro for unlimited pairs.",
+            });
+          }
+        }
         // Check for duplicate pair in same season
         const existing = await getPairsByUser(ctx.user.id);
         const duplicate = existing.find(
