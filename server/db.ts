@@ -1,4 +1,4 @@
-import { and, eq, ne, gte, lte, or, desc, asc } from "drizzle-orm";
+import { and, eq, ne, gte, lte, or, desc, asc, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { fileURLToPath } from "url";
@@ -87,6 +87,15 @@ export async function getDb() {
       console.log("[Database] Migrations applied successfully");
     } catch (migError) {
       console.warn("[Database] Migration warning (non-fatal, schema may already be up to date):", migError);
+    }
+
+    // Idempotent schema patches — ensure columns added by recent migrations actually
+    // exist even if the Drizzle migration tracker didn't record them (e.g. after a
+    // failed migration run). ADD COLUMN IF NOT EXISTS is safe to run every startup.
+    try {
+      await _db.execute(sql`ALTER TABLE birds ADD COLUMN IF NOT EXISTS "fledgedDate" date`);
+    } catch (patchError) {
+      console.warn("[Database] Schema patch warning:", patchError);
     }
 
     // Seed species if the table is empty (first deploy / fresh DB).
