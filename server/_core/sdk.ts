@@ -215,8 +215,8 @@ class SDKServer {
 
       if (
         !isNonEmptyString(openId) ||
-        !isNonEmptyString(appId) ||
-        typeof name !== "string"  // allow empty string — email-auth users may have no display name
+        typeof appId !== "string" ||  // allow empty string — VITE_APP_ID may not be set
+        typeof name !== "string"      // allow empty string — email-auth users may have no display name
       ) {
         console.warn("[Auth] Session payload missing required fields");
         return null;
