@@ -1,7 +1,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { BarChart2, Bird, Egg, Heart, TrendingUp } from "lucide-react";
+import { BarChart2, Bird, Egg, TrendingUp } from "lucide-react";
 
 function StatBlock({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
@@ -17,6 +17,9 @@ export default function Statistics() {
   const { data: birds } = trpc.birds.list.useQuery();
   const { data: pairs } = trpc.pairs.list.useQuery();
   const { data: broods } = trpc.broods.list.useQuery();
+  const { data: speciesList = [] } = trpc.species.list.useQuery();
+
+  const speciesById = Object.fromEntries(speciesList.map(s => [s.id, s]));
 
   const aliveBirds = (birds ?? []).filter(b => b.status === "alive");
   const maleCount = aliveBirds.filter(b => b.gender === "male").length;
@@ -39,12 +42,14 @@ export default function Statistics() {
   const seasons = Array.from(seasonMap.entries()).sort(([a], [b]) => b.localeCompare(a));
 
   // Species breakdown
-  const speciesMap = new Map<string, number>();
+  const speciesCountMap = new Map<number, number>();
   aliveBirds.forEach(b => {
-    const name = b.speciesId ? `Species #${b.speciesId}` : "Unknown";
-    speciesMap.set(name, (speciesMap.get(name) ?? 0) + 1);
+    speciesCountMap.set(b.speciesId, (speciesCountMap.get(b.speciesId) ?? 0) + 1);
   });
-  const topSpecies = Array.from(speciesMap.entries()).sort(([, a], [, b]) => b - a).slice(0, 5);
+  const topSpecies = Array.from(speciesCountMap.entries())
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 8)
+    .map(([id, count]) => ({ name: speciesById[id]?.commonName ?? `Species #${id}`, count }));
 
   // Cage breakdown
   const cageMap = new Map<string, number>();
@@ -150,6 +155,36 @@ export default function Statistics() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Species breakdown */}
+        <Card className="border border-border shadow-card">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <Bird className="h-4 w-4 text-primary" />
+              Species Breakdown
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {topSpecies.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">No birds added yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {topSpecies.map(({ name, count }) => (
+                  <div key={name} className="flex items-center gap-3">
+                    <span className="text-sm font-medium w-40 shrink-0 truncate">{name}</span>
+                    <div className="flex-1 bg-muted rounded-full h-2 overflow-hidden">
+                      <div
+                        className="bg-primary h-2 rounded-full"
+                        style={{ width: `${Math.round((count / aliveBirds.length) * 100)}%` }}
+                      />
+                    </div>
+                    <span className="text-sm text-muted-foreground w-8 text-right">{count}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Egg outcomes */}
         <Card className="border border-border shadow-card">
