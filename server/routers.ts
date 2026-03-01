@@ -11,7 +11,7 @@ import {
   getBroodsByUser, getBroodsByPair, createBrood, updateBrood, deleteBrood,
   getEventsByUser, createEvent, updateEvent, deleteEvent, toggleEventComplete,
   getUserSettings, upsertUserSettings,
-  getDashboardStats,
+  getDashboardStats, getSeasonStats, getAllUsers,
   getPedigree, calcInbreedingCoefficient, getDescendants, getSiblings,
   getEggsByBrood, upsertClutchEgg, deleteEggsByBrood, syncClutchEggs,
 } from "./db";
@@ -340,6 +340,18 @@ export const appRouter = router({
    // ─── Dashboard ──────────────────────────────────────────────────────
   dashboard: router({
     stats: protectedProcedure.query(({ ctx }) => getDashboardStats(ctx.user.id)),
+    seasonStats: protectedProcedure
+      .input(z.object({ year: z.number().int().min(2000).max(2100) }))
+      .query(({ ctx, input }) => getSeasonStats(ctx.user.id, input.year)),
+  }),
+  // ─── Admin ──────────────────────────────────────────────────────────
+  admin: router({
+    users: protectedProcedure.query(({ ctx }) => {
+      if (ctx.user.role !== "admin") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+      }
+      return getAllUsers();
+    }),
   }),
   // ─── User Settings ────────────────────────────────────────────────────────
   settings: router({

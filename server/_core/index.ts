@@ -35,7 +35,7 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   const app = express();
   const server = createServer(app);
-  // Trust Fly.io's proxy so express-rate-limit can read X-Forwarded-For correctly
+  // Trust Railway's proxy so express-rate-limit can read X-Forwarded-For correctly
   app.set("trust proxy", 1);
   // Security headers — applied before all routes
   app.use(helmet({ contentSecurityPolicy: false }));

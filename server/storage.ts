@@ -1,6 +1,6 @@
-// Storage helpers using Tigris (Fly.io's S3-compatible object storage)
-// Tigris injects TIGRIS_ENDPOINT_URL, TIGRIS_ACCESS_KEY_ID, TIGRIS_SECRET_ACCESS_KEY,
-// and TIGRIS_BUCKET_NAME automatically when the extension is added to your Fly app.
+// Storage helpers using S3-compatible object storage.
+// Configure TIGRIS_ENDPOINT_URL, TIGRIS_ACCESS_KEY_ID, TIGRIS_SECRET_ACCESS_KEY,
+// and TIGRIS_BUCKET_NAME via Railway environment variables.
 
 import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";

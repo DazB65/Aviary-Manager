@@ -15,6 +15,9 @@ import ResetPassword from "./pages/ResetPassword";
 import Settings from "./pages/Settings";
 import Billing from "./pages/Billing";
 import Landing from "./pages/Landing";
+import Cages from "./pages/Cages";
+import Statistics from "./pages/Statistics";
+import AdminUsers from "./pages/AdminUsers";
 
 function Router() {
   return (
@@ -26,8 +29,12 @@ function Router() {
       <Route path="/pairs" component={Pairs} />
       <Route path="/broods" component={Broods} />
       <Route path="/events" component={Events} />
+      <Route path="/cages" component={Cages} />
+      <Route path="/statistics" component={Statistics} />
+      <Route path="/admin/users" component={AdminUsers} />
       <Route path="/settings" component={Settings} />
       <Route path="/billing" component={Billing} />
+      <Route path="/help" component={Settings} />
       <Route path="/login" component={AuthPage} />
       <Route path="/register" component={AuthPage} />
       <Route path="/reset-password" component={ResetPassword} />

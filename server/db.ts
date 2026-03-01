@@ -26,7 +26,7 @@ const MIGRATIONS_FOLDER = join(__dirname, "..", "drizzle");
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      // On Fly.io / Railway, internal Postgres connections may use sslmode=disable in the URL.
+      // On Railway, internal Postgres connections may use sslmode=disable in the URL.
       // Let the postgres driver honour whatever the URL specifies instead of forcing SSL.
       const client = postgres(process.env.DATABASE_URL, { max: 1 });
       _db = drizzle(client);
@@ -232,6 +232,40 @@ export async function deleteEvent(id: number, userId: number) {
 }
 
 // ─── Dashboard stats ──────────────────────────────────────────────────────────
+
+export async function getSeasonStats(userId: number, year: number) {
+  const db = await getDb();
+  if (!db) return { pairs: 0, broods: 0, incubating: 0, totalEggs: 0, hatched: 0, hatchRate: 0 };
+
+  const yearStr = String(year);
+  const [seasonPairs, seasonBroods] = await Promise.all([
+    db.select().from(breedingPairs).where(and(eq(breedingPairs.userId, userId), eq(breedingPairs.season, year))),
+    db.select().from(broods).where(and(eq(broods.userId, userId), eq(broods.season, yearStr))),
+  ]);
+
+  const pairs = seasonPairs.length;
+  const broodsCount = seasonBroods.length;
+  const incubating = seasonBroods.filter(b => b.status === "incubating").length;
+  const totalEggs = seasonBroods.reduce((sum, b) => sum + (b.eggsLaid ?? 0), 0);
+  const hatched = seasonBroods.reduce((sum, b) => sum + (b.chicksSurvived ?? 0), 0);
+  const hatchRate = totalEggs > 0 ? Math.round((hatched / totalEggs) * 100) : 0;
+
+  return { pairs, broods: broodsCount, incubating, totalEggs, hatched, hatchRate };
+}
+
+export async function getAllUsers() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    id: users.id,
+    name: users.name,
+    email: users.email,
+    plan: users.plan,
+    role: users.role,
+    createdAt: users.createdAt,
+    lastSignedIn: users.lastSignedIn,
+  }).from(users).orderBy(desc(users.createdAt));
+}
 
 export async function getDashboardStats(userId: number) {
   const db = await getDb();

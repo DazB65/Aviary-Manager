@@ -1,5 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,20 +22,24 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { Bird, CalendarDays, CreditCard, Egg, Heart, LayoutDashboard, LogOut, PanelLeft, Settings } from "lucide-react";
+import { trpc } from "@/lib/trpc";
+import { BarChart2, Bird, CalendarDays, CreditCard, Egg, Heart, HelpCircle, Home, LayoutDashboard, LogOut, PanelLeft, Settings, Users } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 
-const menuItems = [
+const mainMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
   { icon: Bird, label: "My Birds", path: "/birds" },
   { icon: Heart, label: "Breeding Pairs", path: "/pairs" },
   { icon: Egg, label: "Broods & Eggs", path: "/broods" },
   { icon: CalendarDays, label: "Events & Reminders", path: "/events" },
+  { icon: Home, label: "Cages", path: "/cages" },
+  { icon: BarChart2, label: "Statistics", path: "/statistics" },
   { icon: Settings, label: "Settings", path: "/settings" },
   { icon: CreditCard, label: "Billing", path: "/billing" },
+  { icon: HelpCircle, label: "Help", path: "/help" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -97,8 +102,12 @@ function DashboardLayoutContent({
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const activeMenuItem = menuItems.find(item => item.path === location);
+  const activeMenuItem = mainMenuItems.find(item => item.path === location);
   const isMobile = useIsMobile();
+  const { data: settings } = trpc.settings.get.useQuery();
+  const breedingYear = settings?.breedingYear ?? new Date().getFullYear();
+  const isAdmin = user?.role === "admin";
+  const isPro = user?.plan === "pro";
 
   useEffect(() => {
     if (isCollapsed) {
@@ -164,8 +173,21 @@ function DashboardLayoutContent({
           </SidebarHeader>
 
           <SidebarContent className="gap-0">
+            {/* Breeding Season section */}
+            {!isCollapsed && (
+              <div className="px-4 py-2 border-b border-border/50">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Breeding Season</p>
+                <button
+                  onClick={() => setLocation("/settings")}
+                  className="flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-primary transition-colors"
+                >
+                  <span>🐦</span>
+                  <span>{breedingYear} Season</span>
+                </button>
+              </div>
+            )}
             <SidebarMenu className="px-2 py-1">
-              {menuItems.map(item => {
+              {mainMenuItems.map(item => {
                 const isActive = location === item.path;
                 return (
                   <SidebarMenuItem key={item.path}>
@@ -184,6 +206,27 @@ function DashboardLayoutContent({
                 );
               })}
             </SidebarMenu>
+            {/* Admin section */}
+            {isAdmin && (
+              <div className="px-2 pb-1">
+                {!isCollapsed && (
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground px-2 py-1">Admin</p>
+                )}
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={location === "/admin/users"}
+                      onClick={() => setLocation("/admin/users")}
+                      tooltip="Admin: Users"
+                      className="h-10 transition-all font-normal"
+                    >
+                      <Users className={`h-4 w-4 ${location === "/admin/users" ? "text-primary" : ""}`} />
+                      <span>Admin: Users</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </div>
+            )}
           </SidebarContent>
 
           <SidebarFooter className="p-3">
@@ -196,9 +239,14 @@ function DashboardLayoutContent({
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
-                    <p className="text-sm font-medium truncate leading-none">
-                      {user?.name || "-"}
-                    </p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-sm font-medium truncate leading-none">
+                        {user?.name || "-"}
+                      </p>
+                      {isPro && (
+                        <Badge className="text-[10px] px-1 py-0 h-4 bg-yellow-400 text-yellow-900 hover:bg-yellow-400 shrink-0">Pro</Badge>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground truncate mt-1.5">
                       {user?.email || "-"}
                     </p>
