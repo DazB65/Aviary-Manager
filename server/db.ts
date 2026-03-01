@@ -67,20 +67,30 @@ const SPECIES_SEED = [
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      // On Railway, internal Postgres connections may use sslmode=disable in the URL.
-      // Let the postgres driver honour whatever the URL specifies instead of forcing SSL.
-      const client = postgres(process.env.DATABASE_URL, { max: 1 });
-      _db = drizzle(client);
-
-      // Apply any pending migrations automatically so the schema is always up to date.
-      await migrate(_db, { migrationsFolder: MIGRATIONS_FOLDER });
-      console.log("[Database] Migrations applied successfully");
-
-      // Re-create with a normal pool size after migration
+      // Establish the main connection pool first — this must succeed or we return null.
       const poolClient = postgres(process.env.DATABASE_URL);
       _db = drizzle(poolClient);
+    } catch (error) {
+      console.warn("[Database] Failed to connect:", error);
+      _db = null;
+      return _db;
+    }
 
-      // Seed species if the table is empty (first deploy / fresh DB)
+    // Apply pending migrations in a separate connection so a migration failure
+    // (e.g. column already exists, journal mismatch) is non-fatal and the app
+    // still serves data against the existing schema.
+    try {
+      const migrateClient = postgres(process.env.DATABASE_URL, { max: 1 });
+      const migrateDb = drizzle(migrateClient);
+      await migrate(migrateDb, { migrationsFolder: MIGRATIONS_FOLDER });
+      await migrateClient.end();
+      console.log("[Database] Migrations applied successfully");
+    } catch (migError) {
+      console.warn("[Database] Migration warning (non-fatal, schema may already be up to date):", migError);
+    }
+
+    // Seed species if the table is empty (first deploy / fresh DB).
+    try {
       const existing = await _db.select({ id: species.id }).from(species).limit(1);
       if (existing.length === 0) {
         await _db.insert(species).values(
@@ -88,9 +98,8 @@ export async function getDb() {
         );
         console.log(`[Database] Seeded ${SPECIES_SEED.length} species`);
       }
-    } catch (error) {
-      console.warn("[Database] Failed to connect or migrate:", error);
-      _db = null;
+    } catch (seedError) {
+      console.warn("[Database] Species seeding warning (non-fatal):", seedError);
     }
   }
   return _db;
