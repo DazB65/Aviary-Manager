@@ -78,6 +78,7 @@ export const birds = pgTable("birds", {
   name: varchar("name", { length: 128 }),
   gender: genderEnum("gender").default("unknown").notNull(),
   dateOfBirth: date("dateOfBirth"),
+  fledgedDate: date("fledgedDate"),
   cageNumber: varchar("cageNumber", { length: 64 }),
   colorMutation: varchar("colorMutation", { length: 128 }),
   photoUrl: text("photoUrl"),

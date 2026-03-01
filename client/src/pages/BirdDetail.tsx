@@ -170,6 +170,9 @@ export default function BirdDetail() {
   const dobStr = bird.dateOfBirth
     ? format(bird.dateOfBirth instanceof Date ? bird.dateOfBirth : new Date(String(bird.dateOfBirth)), "dd MMM yyyy")
     : null;
+  const fledgedStr = (bird as any).fledgedDate
+    ? format((bird as any).fledgedDate instanceof Date ? (bird as any).fledgedDate : new Date(String((bird as any).fledgedDate)), "dd MMM yyyy")
+    : null;
 
   // Count how many generations of ancestors we actually have
   const genCount = (() => {
@@ -255,6 +258,13 @@ export default function BirdDetail() {
                 <div>
                   <p className="text-xs text-muted-foreground">Date of Birth</p>
                   <p className="font-medium">{dobStr || "—"}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Fledged Date</p>
+                  <p className="font-medium">{fledgedStr || "—"}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 text-sm">

@@ -18,7 +18,7 @@ import { toast } from "sonner";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
 
-const GENDER_LABELS: Record<string, string> = { male: "♂ Male", female: "♀ Female", unknown: "Unknown" };
+const GENDER_LABELS: Record<string, string> = { male: "♂ Male", female: "♀ Female", unknown: "? Unknown" };
 const STATUS_COLORS: Record<string, string> = {
   alive: "bg-emerald-50 text-emerald-700 border-emerald-200",
   deceased: "bg-gray-50 text-gray-500 border-gray-200",
@@ -32,6 +32,7 @@ type BirdFormData = {
   name: string;
   gender: "male" | "female" | "unknown";
   dateOfBirth: string;
+  fledgedDate: string;
   cageNumber: string;
   colorMutation: string;
   photoUrl: string;
@@ -47,6 +48,7 @@ const defaultForm: BirdFormData = {
   name: "",
   gender: "unknown",
   dateOfBirth: "",
+  fledgedDate: "",
   cageNumber: "",
   colorMutation: "",
   photoUrl: "",
@@ -130,6 +132,7 @@ export default function Birds() {
       name: bird.name ?? "",
       gender: bird.gender,
       dateOfBirth: bird.dateOfBirth ? (bird.dateOfBirth instanceof Date ? format(bird.dateOfBirth, "yyyy-MM-dd") : String(bird.dateOfBirth)) : "",
+      fledgedDate: (bird as any).fledgedDate ? ((bird as any).fledgedDate instanceof Date ? format((bird as any).fledgedDate, "yyyy-MM-dd") : String((bird as any).fledgedDate)) : "",
       cageNumber: (bird as any).cageNumber ?? "",
       colorMutation: bird.colorMutation ?? "",
       photoUrl: bird.photoUrl ?? "",
@@ -150,6 +153,7 @@ export default function Birds() {
       name: form.name || undefined,
       gender: form.gender,
       dateOfBirth: form.dateOfBirth || undefined,
+      fledgedDate: form.fledgedDate || undefined,
       cageNumber: form.cageNumber || undefined,
       colorMutation: form.colorMutation || undefined,
       photoUrl: form.photoUrl || undefined,
@@ -469,15 +473,19 @@ export default function Birds() {
                 <Select value={form.gender} onValueChange={v => setForm(f => ({ ...f, gender: v as BirdFormData["gender"] }))}>
                   <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="unknown">? Unknown (determine later)</SelectItem>
                     <SelectItem value="male">♂ Male</SelectItem>
                     <SelectItem value="female">♀ Female</SelectItem>
-                    <SelectItem value="unknown">Unknown</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label>Date of Birth</Label>
                 <Input type="date" className="mt-1" value={form.dateOfBirth} onChange={e => setForm(f => ({ ...f, dateOfBirth: e.target.value }))} />
+              </div>
+              <div>
+                <Label>Fledged Date</Label>
+                <Input type="date" className="mt-1" value={form.fledgedDate} onChange={e => setForm(f => ({ ...f, fledgedDate: e.target.value }))} />
               </div>
 
               <div className="col-span-2">
