@@ -24,6 +24,12 @@ const STATUS_STYLES: Record<string, string> = {
   retired: "bg-gray-50 text-gray-500 border-gray-200",
 };
 
+const STATUS_LABELS: Record<string, string> = {
+  active: "🥚 Active",
+  resting: "💤 Resting",
+  retired: "🏁 Retired",
+};
+
 type PairFormData = {
   maleId: string;
   femaleId: string;
@@ -348,7 +354,7 @@ export default function Pairs() {
                             {/* Status & Actions */}
                             <div className="flex items-center gap-2 shrink-0">
                               <Badge variant="outline" className={`text-xs ${STATUS_STYLES[pair.status]}`}>
-                                {pair.status}
+                                {STATUS_LABELS[pair.status] ?? pair.status}
                               </Badge>
                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setLocation(`/broods?pairId=${pair.id}`)}>
                                 <ChevronRight className="h-4 w-4" />
@@ -443,9 +449,9 @@ export default function Pairs() {
                 <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v as PairFormData["status"] }))}>
                   <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="resting">Resting</SelectItem>
-                    <SelectItem value="retired">Retired</SelectItem>
+                    <SelectItem value="active">🥚 Active</SelectItem>
+                    <SelectItem value="resting">💤 Resting</SelectItem>
+                    <SelectItem value="retired">🏁 Retired</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
