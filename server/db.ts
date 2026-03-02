@@ -107,6 +107,11 @@ export async function getDb() {
     } catch (patchError) {
       console.warn("[Database] Schema patch (resting status):", patchError);
     }
+    try {
+      await _db.execute(sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS "allBirds" boolean DEFAULT false`);
+    } catch (patchError) {
+      console.warn("[Database] Schema patch (allBirds):", patchError);
+    }
 
     // Seed species if the table is empty (first deploy / fresh DB).
     try {

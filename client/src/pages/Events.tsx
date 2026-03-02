@@ -144,17 +144,20 @@ export default function Events() {
       return;
     }
 
-    // Build the list of dates
+    // Build the list of dates for recurrence
     const dates = generateDates(baseDate, form.recurrence, form.recurrence === "none" ? 1 : form.recurrenceCount);
 
-    // Build the list of bird IDs to create events for
-    const birdIds: (number | undefined)[] =
-      form.birdId === "all"
-        ? birds.map(b => b.id)
-        : [form.birdId ? Number(form.birdId) : undefined];
+    // When "All birds" is selected, create ONE event per date with allBirds: true (no specific birdId)
+    const isAllBirds = form.birdId === "all";
+    const specificBirdId = !isAllBirds && form.birdId ? Number(form.birdId) : undefined;
 
-    const creates = dates.flatMap(date =>
-      birdIds.map(birdId => createEvent.mutateAsync({ ...basePayload, eventDate: date, birdId }))
+    const creates = dates.map(date =>
+      createEvent.mutateAsync({
+        ...basePayload,
+        eventDate: date,
+        birdId: specificBirdId,
+        allBirds: isAllBirds,
+      })
     );
 
     try {
@@ -266,7 +269,10 @@ export default function Events() {
                                   <p className={`text-sm font-medium ${ev.completed ? "line-through text-muted-foreground" : ""}`}>{ev.title}</p>
                                   <Badge variant="outline" className={`text-xs ${typeInfo.color}`}>{ev.eventType}</Badge>
                                 </div>
-                                {(linkedBird || linkedPair) && (
+                                {(ev as any).allBirds && (
+                                  <p className="text-xs text-muted-foreground mt-0.5">🐦 All birds</p>
+                                )}
+                                {!( (ev as any).allBirds ) && (linkedBird || linkedPair) && (
                                   <p className="text-xs text-muted-foreground mt-0.5">
                                     {linkedBird ? `🐦 ${linkedBird.name || linkedBird.ringId || `#${linkedBird.id}`}` : ""}
                                     {linkedPair ? `💑 ${pairLabel(linkedPair)}` : ""}

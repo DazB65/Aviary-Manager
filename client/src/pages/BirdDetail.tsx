@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Bird, Calendar, Tag, Dna, GitBranch, Users, AlertTriangle, Home, Clock, Microscope } from "lucide-react";
+import { ArrowLeft, Bird, Calendar, Tag, Dna, GitBranch, Users, CalendarDays, CheckCircle2, Circle } from "lucide-react";
 import { useLocation, useParams } from "wouter";
 import { format } from "date-fns";
 
@@ -141,8 +141,19 @@ export default function BirdDetail() {
   const { data: pedigreeMap = {} } = trpc.birds.pedigree.useQuery({ id: birdId, generations: 5 });
   const { data: descendants = [] } = trpc.birds.descendants.useQuery({ id: birdId });
   const { data: siblings = [] } = trpc.birds.siblings.useQuery({ id: birdId });
+  const { data: allEvents = [] } = trpc.events.list.useQuery();
 
   const speciesMap = Object.fromEntries(speciesList.map(s => [s.id, s]));
+
+  // Events relevant to this bird: either linked directly or applies to all birds
+  const birdEvents = allEvents.filter(e =>
+    e.birdId === birdId || (e as any).allBirds === true
+  ).sort((a, b) => {
+    // Sort by date descending (most recent first)
+    const aDate = a.eventDate ? new Date(String(a.eventDate)).getTime() : 0;
+    const bDate = b.eventDate ? new Date(String(b.eventDate)).getTime() : 0;
+    return bDate - aDate;
+  });
 
   if (isLoading) {
     return (
@@ -305,6 +316,10 @@ export default function BirdDetail() {
               <Users className="h-4 w-4" /> Siblings
               {siblings.length > 0 && <Badge variant="secondary" className="ml-1 text-xs">{siblings.length}</Badge>}
             </TabsTrigger>
+            <TabsTrigger value="events" className="gap-2">
+              <CalendarDays className="h-4 w-4" /> Events
+              {birdEvents.length > 0 && <Badge variant="secondary" className="ml-1 text-xs">{birdEvents.length}</Badge>}
+            </TabsTrigger>
           </TabsList>
 
           {/* Pedigree Tab */}
@@ -443,59 +458,50 @@ export default function BirdDetail() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Events Tab */}
+          <TabsContent value="events">
+            <Card className="border border-border shadow-card">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                  <CalendarDays className="h-4 w-4 text-primary" />
+                  Events
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">Events linked to this bird and aviary-wide events.</p>
+              </CardHeader>
+              <CardContent>
+                {birdEvents.length === 0 ? (
+                  <div className="text-center py-10 text-muted-foreground">
+                    <CalendarDays className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                    <p className="text-sm">No events recorded for this bird.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {birdEvents.map(ev => (
+                      <div key={ev.id} className={`flex items-center gap-3 p-3 rounded-xl border border-border bg-white transition-all ${ev.completed ? "opacity-60" : ""}`}>
+                        <span className="shrink-0">
+                          {ev.completed
+                            ? <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                            : <Circle className="h-5 w-5 text-muted-foreground" />
+                          }
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-medium ${ev.completed ? "line-through text-muted-foreground" : ""}`}>{ev.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {(ev as any).allBirds ? "🐦 All birds · " : ""}
+                            {ev.eventDate ? format(ev.eventDate instanceof Date ? ev.eventDate : new Date(String(ev.eventDate)), "dd MMM yyyy") : "—"}
+                          </p>
+                        </div>
+                        <Badge variant="outline" className="text-xs shrink-0">{ev.eventType}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
 
-        {/* Species info panel */}
-        {species && (species.fledglingDays || species.sexualMaturityMonths || species.nestType || species.sexingMethod) && (
-          <Card className="border border-border shadow-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                <Bird className="h-4 w-4 text-primary" />
-                Species Care Guide — {species.commonName}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {species.fledglingDays && (
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Clock className="h-3.5 w-3.5" /> Fledgling age
-                    </div>
-                    <p className="text-sm font-semibold">{species.fledglingDays} days</p>
-                    <p className="text-xs text-muted-foreground">after hatch</p>
-                  </div>
-                )}
-                {species.sexualMaturityMonths && (
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Calendar className="h-3.5 w-3.5" /> Sexual maturity
-                    </div>
-                    <p className="text-sm font-semibold">{species.sexualMaturityMonths} months</p>
-                    <p className="text-xs text-muted-foreground">before breeding</p>
-                  </div>
-                )}
-                {species.nestType && (
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Home className="h-3.5 w-3.5" /> Nest type
-                    </div>
-                    <p className="text-sm font-semibold capitalize">{species.nestType}</p>
-                    <p className="text-xs text-muted-foreground">recommended</p>
-                  </div>
-                )}
-                {species.sexingMethod && (
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Microscope className="h-3.5 w-3.5" /> Sexing method
-                    </div>
-                    <p className="text-sm font-semibold capitalize">{species.sexingMethod}</p>
-                    <p className="text-xs text-muted-foreground">to confirm gender</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </DashboardLayout>
   );

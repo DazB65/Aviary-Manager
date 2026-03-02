@@ -318,6 +318,7 @@ export const appRouter = router({
         eventType: z.enum(["vet", "banding", "medication", "weaning", "sale", "other"]).default("other"),
         birdId: z.number().optional(),
         pairId: z.number().optional(),
+        allBirds: z.boolean().optional(),
       }))
       .mutation(({ ctx, input }) =>
         createEvent({ ...input, userId: ctx.user.id } as any)
@@ -333,6 +334,7 @@ export const appRouter = router({
         birdId: z.number().nullable().optional(),
         pairId: z.number().nullable().optional(),
         completed: z.boolean().optional(),
+        allBirds: z.boolean().optional(),
       }))
       .mutation(({ ctx, input }) => {
         const { id, ...data } = input;
