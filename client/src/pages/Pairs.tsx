@@ -349,7 +349,7 @@ export default function Pairs() {
 
       {/* Add / Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent key={editingId ?? "new"} className="max-w-md">
           <DialogHeader>
             <DialogTitle className="font-display text-xl">{editingId ? "Edit Pair" : "Create Breeding Pair"}</DialogTitle>
           </DialogHeader>
