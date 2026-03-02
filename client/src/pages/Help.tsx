@@ -22,6 +22,11 @@ const SECTIONS: Section[] = [
         summary: "Aviary Manager is season-aware. Set a breeding year in Settings so every brood and pair belongs to the right season.",
         content: "Go to Settings and update the Breeding Season year. The Dashboard header shows your current season. You can view season-specific statistics in the Statistics page by selecting the year.",
       },
+      {
+        title: "Reading the Dashboard",
+        summary: "The Dashboard is your aviary at a glance — bird counts, active pairs, eggs incubating, upcoming events, and recent additions.",
+        content: "The top row shows your total active birds, active breeding pairs, eggs currently incubating, and events due this week. Below that, Upcoming Events lists anything due in the next 7 days. Upcoming Hatches shows broods with hatch dates approaching. Recent Birds shows the last 4 birds added. A Getting Started checklist appears for new accounts — complete each step to dismiss it, or close it with the X button.",
+      },
     ],
   },
   {
@@ -41,6 +46,16 @@ const SECTIONS: Section[] = [
         title: "Bird Statuses",
         summary: "Birds can be marked as Alive, Breeding, Resting, Deceased, Sold, or Unknown. Deceased and sold birds remain in the app for pedigree purposes.",
         content: "Change a bird's status from the edit dialog. Deceased and sold birds are hidden from the main list by default — click 'Show inactive (N)' in the filter bar to reveal them. They remain selectable as parents so your pedigree records stay accurate.",
+      },
+      {
+        title: "Uploading a Bird Photo",
+        summary: "Each bird can have a profile photo. Photos appear on the bird card, the detail page, and in the pedigree tree.",
+        content: "Open the Add or Edit Bird dialog and click the photo area (or the upload icon) to choose an image from your device. Photos are stored securely and displayed throughout the app. If no photo is uploaded, the bird card shows a default bird icon.",
+      },
+      {
+        title: "Filtering and Sorting Your Birds",
+        summary: "Use the filter bar to narrow your list by species or gender. Switch between grid and list view, and click column headers in list view to sort.",
+        content: "The filter bar at the top of My Birds has a search box, a species dropdown, and a gender dropdown — use any combination to narrow the list. The grid/list toggle in the top right switches the layout. In list view, click any column header (Bird, Species, Gender, Ring ID, Cage, Colour/Mutation, DOB, Status) to sort ascending; click again to reverse. Cage numbers sort in natural order (A1, A2, A10, B1) not alphabetically.",
       },
     ],
   },
@@ -65,7 +80,12 @@ const SECTIONS: Section[] = [
       {
         title: "Logging a Brood",
         summary: "A brood records a single clutch from a breeding pair. The app auto-calculates the expected hatch date from the lay date and species incubation period.",
-        content: "Go to Broods & Eggs and click + New Brood. Select the breeding pair, enter the number of eggs and lay date. The expected hatch date is calculated automatically based on the species' incubation period. Set the brood status to Incubating, Hatched, or Failed.",
+        content: "Go to Broods & Eggs and click + New Brood. Select the breeding pair, enter the number of eggs and lay date. The expected hatch date is calculated automatically based on the species' incubation period. Set the brood status to Incubating, Hatched, Failed, or Abandoned.",
+      },
+      {
+        title: "Brood Statuses Explained",
+        summary: "A brood moves through four possible statuses: Incubating, Hatched, Failed, and Abandoned — each reflects a different outcome for the clutch.",
+        content: "Incubating: eggs are currently being sat on and developing. Hatched: the clutch has completed and chicks have emerged (even partially). Failed: eggs did not develop or all died in shell — use this for infertile clutches or development failures. Abandoned: the pair stopped sitting before the clutch completed, e.g. due to disturbance or the death of a parent. Failed and Abandoned both exclude the brood from hatch rate calculations.",
       },
       {
         title: "Tracking Egg Outcomes",
@@ -86,6 +106,11 @@ const SECTIONS: Section[] = [
         title: "Adding Events and Reminders",
         summary: "Track vet visits, banding, medication rounds, and any custom reminder with a specific due date.",
         content: "Click + Add Event on the Events & Reminders page. Give it a title, set the due date, and optionally link it to a bird or pair. When the due date approaches, it surfaces on your Dashboard under Upcoming Events.",
+      },
+      {
+        title: "Event Types",
+        summary: "Events have six types to help you categorise and filter your reminders: Vet, Banding, Medication, Weaning, Sale, and Other.",
+        content: "Vet: veterinary appointments or health checks. Banding: ring or band fitting for chicks. Medication: scheduled medication rounds or treatments. Weaning: reminders to separate chicks from parents. Sale: planned sales of birds. Other: anything that doesn't fit the above — custom notes, inspections, or general reminders. The type appears as a colour-coded badge on each event card.",
       },
       {
         title: "Auto-Created Brood Events",
@@ -136,6 +161,41 @@ const SECTIONS: Section[] = [
         title: "My Species",
         summary: "Select the species you keep in your aviary. Your chosen species appear first in all dropdowns to speed up data entry.",
         content: "In Settings, click the species you keep to highlight them as favourites. When adding a bird or pair, the species dropdown shows your favourites first. You can still access all species by clicking 'Show all species'.",
+      },
+    ],
+  },
+  {
+    id: "plan", emoji: "💳", title: "Plan & Billing",
+    articles: [
+      {
+        title: "Free vs Pro Plan",
+        summary: "The free plan supports up to 20 birds and 5 breeding pairs. Pro gives you unlimited birds, unlimited pairs, and all future features.",
+        content: "On the free plan you can add up to 20 birds and 5 breeding pairs — broods, events, cages, statistics and pedigrees are all unlimited. When you hit a limit, the app shows a message explaining why and links you to upgrade. Pro removes all limits and is billed annually. Click Billing in the sidebar to see your current plan and upgrade.",
+      },
+      {
+        title: "Upgrading to Pro",
+        summary: "Upgrade any time from the Billing page. Your existing data is never affected — upgrading just removes the limits.",
+        content: "Go to Billing in the sidebar and click the upgrade button. Once upgraded, the bird and pair limits are removed immediately — no need to restart or log out. All your existing birds, pairs, and records stay exactly as they were. If you're on a beta invitation, your plan may have been set by the app administrator already.",
+      },
+    ],
+  },
+  {
+    id: "account", emoji: "👤", title: "Account",
+    articles: [
+      {
+        title: "Resetting Your Password",
+        summary: "If you've forgotten your password, use the 'Forgot password?' link on the login page to receive a reset email.",
+        content: "On the login page, click 'Forgot password?' and enter your email address. You'll receive a reset link within a few minutes — check your spam folder if it doesn't arrive. The link expires after 1 hour. Once reset, you'll be redirected back to the login page to sign in with your new password.",
+      },
+      {
+        title: "Email Verification",
+        summary: "New accounts require email verification before you can log in. Check your inbox for a verification email after registering.",
+        content: "After registering, a verification email is sent to the address you provided. Click the link in the email to verify your account and gain access. The link is valid for 24 hours. If it expires or you didn't receive the email, contact the app administrator to resend it.",
+      },
+      {
+        title: "Logging Out",
+        summary: "You can log out at any time from the user menu at the bottom of the sidebar.",
+        content: "Click your name or avatar at the bottom-left of the sidebar to open the user menu, then click Sign Out. Your session is cleared immediately. On a shared device, always log out when you're done to keep your aviary data private.",
       },
     ],
   },
