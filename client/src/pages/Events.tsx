@@ -33,6 +33,8 @@ type EventFormData = {
   birdId: string;
   pairId: string;
   notes: string;
+  recurrence: "none" | "daily" | "weekly" | "monthly" | "yearly";
+  recurrenceCount: number;
 };
 
 const defaultForm: EventFormData = {
@@ -42,7 +44,23 @@ const defaultForm: EventFormData = {
   birdId: "",
   pairId: "",
   notes: "",
+  recurrence: "none",
+  recurrenceCount: 2,
 };
+
+function generateDates(startDate: string, recurrence: "none" | "daily" | "weekly" | "monthly" | "yearly", count: number): string[] {
+  if (recurrence === "none" || count <= 1) return [startDate];
+  const dates: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const d = new Date(startDate + "T12:00:00");
+    if (recurrence === "daily") d.setDate(d.getDate() + i);
+    else if (recurrence === "weekly") d.setDate(d.getDate() + i * 7);
+    else if (recurrence === "monthly") d.setMonth(d.getMonth() + i);
+    else if (recurrence === "yearly") d.setFullYear(d.getFullYear() + i);
+    dates.push(d.toISOString().split("T")[0]);
+  }
+  return dates;
+}
 
 function formatDateLabel(val: Date | string | null | undefined): string {
   if (!val) return "—";
@@ -64,7 +82,6 @@ export default function Events() {
   const { data: pairs = [] } = trpc.pairs.list.useQuery();
 
   const createEvent = trpc.events.create.useMutation({
-    onSuccess: () => { utils.events.list.invalidate(); utils.dashboard.stats.invalidate(); toast.success("Event added!"); setDialogOpen(false); },
     onError: (e) => toast.error(e.message),
   });
   const updateEvent = trpc.events.update.useMutation({
@@ -100,24 +117,55 @@ export default function Events() {
       birdId: ev.birdId ? String(ev.birdId) : "",
       pairId: ev.pairId ? String(ev.pairId) : "",
       notes: ev.notes ?? "",
+      recurrence: "none",
+      recurrenceCount: 2,
     });
     setDialogOpen(true);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!form.title.trim()) { toast.error("Please enter a title"); return; }
-    const payload = {
+    const baseDate = form.eventDate || new Date().toISOString().split("T")[0];
+    const basePayload = {
       title: form.title.trim(),
       eventType: form.eventType as "vet" | "banding" | "medication" | "weaning" | "sale" | "other",
-      eventDate: form.eventDate || new Date().toISOString().split('T')[0],
-      birdId: form.birdId ? Number(form.birdId) : undefined,
       pairId: form.pairId ? Number(form.pairId) : undefined,
       notes: form.notes || undefined,
     };
+
     if (editingId) {
-      updateEvent.mutate({ id: editingId, ...payload });
-    } else {
-      createEvent.mutate(payload);
+      // Edit mode: no recurrence expansion
+      updateEvent.mutate({
+        id: editingId,
+        ...basePayload,
+        eventDate: baseDate,
+        birdId: form.birdId && form.birdId !== "all" ? Number(form.birdId) : undefined,
+      });
+      return;
+    }
+
+    // Build the list of dates
+    const dates = generateDates(baseDate, form.recurrence, form.recurrence === "none" ? 1 : form.recurrenceCount);
+
+    // Build the list of bird IDs to create events for
+    const birdIds: (number | undefined)[] =
+      form.birdId === "all"
+        ? birds.map(b => b.id)
+        : [form.birdId ? Number(form.birdId) : undefined];
+
+    const creates = dates.flatMap(date =>
+      birdIds.map(birdId => createEvent.mutateAsync({ ...basePayload, eventDate: date, birdId }))
+    );
+
+    try {
+      await Promise.all(creates);
+      const total = creates.length;
+      toast.success(total === 1 ? "Event added!" : `${total} events added!`);
+      utils.events.list.invalidate();
+      utils.dashboard.stats.invalidate();
+      setDialogOpen(false);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to create events");
     }
   };
 
@@ -283,7 +331,8 @@ export default function Events() {
                 <SelectTrigger className="mt-1"><SelectValue placeholder="None" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">None</SelectItem>
-                  {birds.map(b => (
+                  <SelectItem value="all">🐦 All birds ({birds.filter(b => b.status === "alive" || b.status === "breeding" || b.status === "resting").length})</SelectItem>
+                  {birds.filter(b => b.status === "alive" || b.status === "breeding" || b.status === "resting").map(b => (
                     <SelectItem key={b.id} value={String(b.id)}>{b.name || b.ringId || `#${b.id}`}</SelectItem>
                   ))}
                 </SelectContent>
@@ -301,6 +350,37 @@ export default function Events() {
                 </SelectContent>
               </Select>
             </div>
+            {/* Recurring */}
+            {!editingId && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Repeat</Label>
+                  <Select value={form.recurrence} onValueChange={v => setForm(f => ({ ...f, recurrence: v as EventFormData["recurrence"] }))}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Does not repeat</SelectItem>
+                      <SelectItem value="daily">Daily</SelectItem>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectItem value="yearly">Yearly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {form.recurrence !== "none" && (
+                  <div>
+                    <Label>Occurrences</Label>
+                    <Input
+                      type="number"
+                      min={2}
+                      max={52}
+                      className="mt-1"
+                      value={form.recurrenceCount}
+                      onChange={e => setForm(f => ({ ...f, recurrenceCount: Math.max(2, Math.min(52, Number(e.target.value))) }))}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
             <div>
               <Label>Notes</Label>
               <Textarea className="mt-1" placeholder="Optional notes..." value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} />
