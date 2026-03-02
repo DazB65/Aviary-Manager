@@ -9,6 +9,7 @@ import { sendVerificationEmail, sendPasswordResetEmail } from "./email";
 import { sdk } from "./_core/sdk";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
+import { ENV } from "./_core/env";
 
 const BCRYPT_ROUNDS = 12;
 const VERIFY_EXPIRY_MS = 24 * 60 * 60 * 1000;   // 24 hours
@@ -139,8 +140,12 @@ export function registerAuthRoutes(app: Express) {
         return;
       }
 
-      // Update lastSignedIn
-      await db.update(users).set({ lastSignedIn: new Date() }).where(eq(users.id, user.id));
+      // Auto-grant admin role to owner email
+      const updateSet: Record<string, unknown> = { lastSignedIn: new Date() };
+      if (ENV.ownerEmail && email.toLowerCase() === ENV.ownerEmail && user.role !== "admin") {
+        updateSet.role = "admin";
+      }
+      await db.update(users).set(updateSet as any).where(eq(users.id, user.id));
 
       // Create session using the existing SDK (reuses JWT infrastructure)
       const sessionToken = await sdk.createSessionToken(String(user.id), {

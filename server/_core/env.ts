@@ -9,4 +9,6 @@ export const ENV = {
   tigrisBucketName: process.env.TIGRIS_BUCKET_NAME ?? "",
   // Legacy Manus OAuth — kept only for backward-compat; remove when Manus users have migrated
   ownerOpenId: process.env.OWNER_OPEN_ID ?? "",
+  // Owner email — user with this email gets admin role automatically on login
+  ownerEmail: (process.env.OWNER_EMAIL ?? "").toLowerCase(),
 };

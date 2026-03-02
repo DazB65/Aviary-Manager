@@ -345,6 +345,12 @@ export async function getAllUsers() {
   }).from(users).orderBy(desc(users.createdAt));
 }
 
+export async function setUserPlan(userId: number, plan: "free" | "pro") {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.update(users).set({ plan }).where(eq(users.id, userId));
+}
+
 export async function getDashboardStats(userId: number) {
   const db = await getDb();
   if (!db) return { totalBirds: 0, activePairs: 0, eggsIncubating: 0, upcomingHatches: 0, upcomingEvents: 0 };

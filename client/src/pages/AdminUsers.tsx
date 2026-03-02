@@ -1,12 +1,19 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { Users } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 export default function AdminUsers() {
+  const utils = trpc.useUtils();
   const { data: users, isLoading, error } = trpc.admin.users.useQuery();
+  const setPlan = trpc.admin.setPlan.useMutation({
+    onSuccess: () => { utils.admin.users.invalidate(); toast.success("Plan updated!"); },
+    onError: (e) => toast.error(e.message),
+  });
 
   if (error) {
     return (
@@ -54,6 +61,7 @@ export default function AdminUsers() {
                       <th className="text-left font-medium text-muted-foreground px-4 py-3">Role</th>
                       <th className="text-left font-medium text-muted-foreground px-4 py-3">Joined</th>
                       <th className="text-left font-medium text-muted-foreground px-4 py-3">Last Seen</th>
+                      <th className="text-left font-medium text-muted-foreground px-4 py-3">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -80,6 +88,17 @@ export default function AdminUsers() {
                         </td>
                         <td className="px-4 py-3 text-muted-foreground">
                           {u.lastSignedIn ? format(new Date(u.lastSignedIn), "dd MMM yyyy") : "Never"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs h-7"
+                            disabled={setPlan.isPending}
+                            onClick={() => setPlan.mutate({ userId: u.id, plan: u.plan === "pro" ? "free" : "pro" })}
+                          >
+                            {u.plan === "pro" ? "Downgrade to Free" : "Upgrade to Pro"}
+                          </Button>
                         </td>
                       </tr>
                     ))}

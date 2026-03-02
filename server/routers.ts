@@ -11,7 +11,7 @@ import {
   getBroodsByUser, getBroodsByPair, createBrood, updateBrood, deleteBrood,
   getEventsByUser, createEvent, updateEvent, deleteEvent, toggleEventComplete,
   getUserSettings, upsertUserSettings,
-  getDashboardStats, getSeasonStats, getAllUsers,
+  getDashboardStats, getSeasonStats, getAllUsers, setUserPlan,
   getPedigree, calcInbreedingCoefficient, getDescendants, getSiblings,
   getEggsByBrood, upsertClutchEgg, deleteEggsByBrood, syncClutchEggs,
 } from "./db";
@@ -384,6 +384,14 @@ export const appRouter = router({
       }
       return getAllUsers();
     }),
+    setPlan: protectedProcedure
+      .input(z.object({ userId: z.number(), plan: z.enum(["free", "pro"]) }))
+      .mutation(({ ctx, input }) => {
+        if (ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        }
+        return setUserPlan(input.userId, input.plan);
+      }),
   }),
   // ─── User Settings ────────────────────────────────────────────────────────
   settings: router({
