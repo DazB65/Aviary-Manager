@@ -396,7 +396,7 @@ export default function Events() {
                   </SelectContent>
                 </Select>
               </div>
-              {!editingId && form.recurrence !== "none" && form.recurrence !== "custom" && (
+              {form.recurrence !== "none" && form.recurrence !== "custom" && (
                 <div>
                   <Label>Occurrences</Label>
                   <Input
@@ -410,7 +410,7 @@ export default function Events() {
                 </div>
               )}
             </div>
-            {!editingId && form.recurrence === "custom" && (
+            {form.recurrence === "custom" && (
               <div className="grid grid-cols-3 gap-2">
                 <div>
                   <Label>Every</Label>
