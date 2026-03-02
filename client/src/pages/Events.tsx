@@ -36,6 +36,7 @@ type EventFormData = {
   notes: string;
   recurrence: "none" | "daily" | "weekly" | "monthly" | "yearly" | "custom";
   recurrenceCount: number;
+  neverEnding: boolean;
   customInterval: number;
   customUnit: "days" | "weeks" | "months" | "years";
 };
@@ -49,6 +50,7 @@ const defaultForm: EventFormData = {
   notes: "",
   recurrence: "none",
   recurrenceCount: 2,
+  neverEnding: false,
   customInterval: 3,
   customUnit: "months",
 };
@@ -167,11 +169,25 @@ export default function Events() {
       return;
     }
 
+    // Compute the normalised recurrence unit/interval for storage
+    const recurrenceUnit = form.recurrence === "none" ? undefined
+      : form.recurrence === "daily"   ? "days"
+      : form.recurrence === "weekly"  ? "weeks"
+      : form.recurrence === "monthly" ? "months"
+      : form.recurrence === "yearly"  ? "years"
+      : form.customUnit; // custom
+    const recurrenceInterval = form.recurrence === "none" ? undefined
+      : form.recurrence === "custom" ? form.customInterval
+      : 1;
+
+    // Never-ending: only generate 2 dates (current + next buffered); server auto-extends on each complete
+    const occurrences = form.neverEnding ? 2 : (form.recurrence === "none" ? 1 : form.recurrenceCount);
+
     // Build the list of dates for recurrence
     const dates = generateDates(
       baseDate,
       form.recurrence,
-      form.recurrence === "none" ? 1 : form.recurrenceCount,
+      occurrences,
       form.customInterval,
       form.customUnit,
     );
@@ -181,7 +197,7 @@ export default function Events() {
     const specificBirdId = !isAllBirds && form.birdId ? Number(form.birdId) : undefined;
 
     // Group recurring events with a shared seriesId so future ones stay hidden until current is completed
-    const seriesId = dates.length > 1 ? crypto.randomUUID() : undefined;
+    const seriesId = dates.length > 1 || form.neverEnding ? crypto.randomUUID() : undefined;
 
     const creates = dates.map(date =>
       createEvent.mutateAsync({
@@ -190,6 +206,9 @@ export default function Events() {
         birdId: specificBirdId,
         allBirds: isAllBirds,
         seriesId,
+        recurrenceUnit,
+        recurrenceInterval,
+        isIndefinite: form.neverEnding || undefined,
       })
     );
 
@@ -440,17 +459,32 @@ export default function Events() {
               {form.recurrence !== "none" && form.recurrence !== "custom" && (
                 <div>
                   <Label>Occurrences</Label>
-                  <Input
-                    type="number"
-                    min={2}
-                    max={52}
-                    className="mt-1"
-                    value={form.recurrenceCount}
-                    onChange={e => setForm(f => ({ ...f, recurrenceCount: Math.max(2, Math.min(52, Number(e.target.value))) }))}
-                  />
+                  {form.neverEnding ? (
+                    <div className="mt-1 h-9 flex items-center px-3 rounded-md border bg-muted text-muted-foreground text-sm">♾ Never ending</div>
+                  ) : (
+                    <Input
+                      type="number"
+                      min={2}
+                      max={52}
+                      className="mt-1"
+                      value={form.recurrenceCount}
+                      onChange={e => setForm(f => ({ ...f, recurrenceCount: Math.max(2, Math.min(52, Number(e.target.value))) }))}
+                    />
+                  )}
                 </div>
               )}
             </div>
+            {form.recurrence !== "none" && (
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded"
+                  checked={form.neverEnding}
+                  onChange={e => setForm(f => ({ ...f, neverEnding: e.target.checked }))}
+                />
+                <span className="text-sm text-muted-foreground">♾ Never ending</span>
+              </label>
+            )}
             {form.recurrence === "custom" && (
               <div className="grid grid-cols-3 gap-2">
                 <div>
@@ -478,14 +512,18 @@ export default function Events() {
                 </div>
                 <div>
                   <Label>Occurrences</Label>
-                  <Input
-                    type="number"
-                    min={2}
-                    max={52}
-                    className="mt-1"
-                    value={form.recurrenceCount}
-                    onChange={e => setForm(f => ({ ...f, recurrenceCount: Math.max(2, Math.min(52, Number(e.target.value))) }))}
-                  />
+                  {form.neverEnding ? (
+                    <div className="mt-1 h-9 flex items-center px-3 rounded-md border bg-muted text-muted-foreground text-sm">♾ Never ending</div>
+                  ) : (
+                    <Input
+                      type="number"
+                      min={2}
+                      max={52}
+                      className="mt-1"
+                      value={form.recurrenceCount}
+                      onChange={e => setForm(f => ({ ...f, recurrenceCount: Math.max(2, Math.min(52, Number(e.target.value))) }))}
+                    />
+                  )}
                 </div>
               </div>
             )}

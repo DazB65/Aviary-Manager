@@ -146,6 +146,9 @@ export const events = pgTable("events", {
   pairId: integer("pairId"),   // optional — link to a specific pair
   allBirds: boolean("allBirds").default(false),  // true = applies to all birds in the aviary
   seriesId: varchar("seriesId", { length: 64 }),  // groups recurring events; only earliest incomplete is shown
+  recurrenceUnit: varchar("recurrenceUnit", { length: 16 }),   // "days"|"weeks"|"months"|"years"
+  recurrenceInterval: integer("recurrenceInterval"),            // e.g. 3 for "every 3 months"
+  isIndefinite: boolean("isIndefinite").default(false),         // never-ending series — auto-extends on complete
   completed: boolean("completed").default(false),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),

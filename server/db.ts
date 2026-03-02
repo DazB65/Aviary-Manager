@@ -122,6 +122,21 @@ export async function getDb() {
     } catch (patchError) {
       console.warn("[Database] Schema patch (seriesId):", patchError);
     }
+    try {
+      await _db.execute(sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS "recurrenceUnit" varchar(16)`);
+    } catch (patchError) {
+      console.warn("[Database] Schema patch (recurrenceUnit):", patchError);
+    }
+    try {
+      await _db.execute(sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS "recurrenceInterval" integer`);
+    } catch (patchError) {
+      console.warn("[Database] Schema patch (recurrenceInterval):", patchError);
+    }
+    try {
+      await _db.execute(sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS "isIndefinite" boolean DEFAULT false`);
+    } catch (patchError) {
+      console.warn("[Database] Schema patch (isIndefinite):", patchError);
+    }
 
     // Seed species if the table is empty (first deploy / fresh DB).
     try {
@@ -428,7 +443,45 @@ export async function toggleEventComplete(id: number, userId: number) {
   if (!db) throw new Error("Database not available");
   const existing = await db.select().from(events).where(and(eq(events.id, id), eq(events.userId, userId))).limit(1);
   if (!existing[0]) throw new Error("Event not found");
-  await db.update(events).set({ completed: !existing[0].completed }).where(and(eq(events.id, id), eq(events.userId, userId)));
+  const nowCompleted = !existing[0].completed;
+  await db.update(events).set({ completed: nowCompleted }).where(and(eq(events.id, id), eq(events.userId, userId)));
+
+  // Auto-extend never-ending series: when an event is completed, create the next occurrence
+  const ev = existing[0] as any;
+  if (nowCompleted && ev.isIndefinite && ev.seriesId && ev.recurrenceUnit && ev.recurrenceInterval) {
+    // Find the latest event in this series to calculate the next date from
+    const seriesEvents = await db.select().from(events)
+      .where(and(eq((events as any).seriesId, ev.seriesId), eq(events.userId, userId)))
+      .orderBy(desc(events.eventDate));
+    if (seriesEvents.length > 0) {
+      const latest = seriesEvents[0] as any;
+      const latestDate = new Date(String(latest.eventDate) + "T12:00:00");
+      const nextDate = new Date(latestDate);
+      const interval: number = ev.recurrenceInterval ?? 1;
+      const unit: string = ev.recurrenceUnit;
+      if (unit === "days")   nextDate.setDate(nextDate.getDate() + interval);
+      else if (unit === "weeks")  nextDate.setDate(nextDate.getDate() + 7 * interval);
+      else if (unit === "months") nextDate.setMonth(nextDate.getMonth() + interval);
+      else if (unit === "years")  nextDate.setFullYear(nextDate.getFullYear() + interval);
+      const nextDateStr = nextDate.toISOString().split("T")[0];
+      await db.insert(events).values({
+        userId: ev.userId,
+        title: ev.title,
+        notes: ev.notes,
+        eventDate: nextDateStr,
+        eventType: ev.eventType,
+        birdId: ev.birdId,
+        pairId: ev.pairId,
+        allBirds: ev.allBirds ?? false,
+        seriesId: ev.seriesId,
+        recurrenceUnit: ev.recurrenceUnit,
+        recurrenceInterval: ev.recurrenceInterval,
+        isIndefinite: true,
+        completed: false,
+      } as any);
+    }
+  }
+
   return { success: true };
 }
 

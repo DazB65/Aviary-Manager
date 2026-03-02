@@ -320,6 +320,9 @@ export const appRouter = router({
         pairId: z.number().optional(),
         allBirds: z.boolean().optional(),
         seriesId: z.string().optional(),
+        recurrenceUnit: z.string().optional(),
+        recurrenceInterval: z.number().optional(),
+        isIndefinite: z.boolean().optional(),
       }))
       .mutation(({ ctx, input }) =>
         createEvent({ ...input, userId: ctx.user.id } as any)
