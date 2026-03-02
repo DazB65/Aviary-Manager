@@ -183,7 +183,7 @@ function DashboardLayoutContent({
             {/* Breeding Season section */}
             {!isCollapsed && (
               <div className="px-4 py-2 border-b border-border/50">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Breeding Season</p>
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">Breeding Season</p>
                 <button
                   onClick={() => setLocation("/settings")}
                   className="flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-primary transition-colors"
@@ -203,12 +203,12 @@ function DashboardLayoutContent({
                       isActive={isActive}
                       onClick={() => setLocation(item.path)}
                       tooltip={item.label}
-                      className={`h-10 transition-all font-normal`}
+                      className={`h-10 transition-all font-normal text-sm`}
                     >
                       <item.icon
                         className={`h-4 w-4 ${isActive ? "text-primary" : ""}`}
                       />
-                      <span>{item.label}</span>
+                      <span className="text-sm">{item.label}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
@@ -218,7 +218,7 @@ function DashboardLayoutContent({
             {isAdmin && (
               <div className="px-2 pb-1">
                 {!isCollapsed && (
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground px-2 py-1">Admin</p>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground px-2 py-1">Admin</p>
                 )}
                 <SidebarMenu>
                   <SidebarMenuItem>
@@ -241,7 +241,7 @@ function DashboardLayoutContent({
             {!isCollapsed && (
               <button
                 onClick={startTour}
-                className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors mb-1"
+                className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors mb-1"
               >
                 <MapPin className="h-3.5 w-3.5 shrink-0" />
                 <span>Take the tour</span>
@@ -264,7 +264,7 @@ function DashboardLayoutContent({
                         <Badge className="text-[10px] px-1 py-0 h-4 bg-yellow-400 text-yellow-900 hover:bg-yellow-400 shrink-0">Pro</Badge>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground truncate mt-1.5">
+                    <p className="text-sm text-muted-foreground truncate mt-1.5">
                       {user?.email || "-"}
                     </p>
                   </div>

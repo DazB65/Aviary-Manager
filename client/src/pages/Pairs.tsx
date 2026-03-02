@@ -55,28 +55,28 @@ function InbreedingBadge({ coefficient }: { coefficient: number | undefined | nu
 
   if (coefficient === 0) {
     return (
-      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-        <Dna className="h-3 w-3" /> F = 0% — No inbreeding
+      <span className="inline-flex items-center gap-1 text-sm px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+        <Dna className="h-3.5 w-3.5" /> F = 0% — No inbreeding
       </span>
     );
   }
   if (coefficient < 0.0625) {
     return (
-      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-yellow-50 text-yellow-700 border border-yellow-200">
-        <Dna className="h-3 w-3" /> F = {pct}% — Low
+      <span className="inline-flex items-center gap-1 text-sm px-2 py-0.5 rounded-full bg-yellow-50 text-yellow-700 border border-yellow-200">
+        <Dna className="h-3.5 w-3.5" /> F = {pct}% — Low
       </span>
     );
   }
   if (coefficient < 0.125) {
     return (
-      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 border border-orange-200">
-        <AlertTriangle className="h-3 w-3" /> F = {pct}% — Moderate
+      <span className="inline-flex items-center gap-1 text-sm px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 border border-orange-200">
+        <AlertTriangle className="h-3.5 w-3.5" /> F = {pct}% — Moderate
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
-      <AlertTriangle className="h-3 w-3" /> F = {pct}% — High inbreeding
+    <span className="inline-flex items-center gap-1 text-sm px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
+      <AlertTriangle className="h-3.5 w-3.5" /> F = {pct}% — High inbreeding
     </span>
   );
 }
@@ -320,7 +320,7 @@ export default function Pairs() {
                           {/* Cage number — top left */}
                           {(male?.cageNumber || female?.cageNumber) && (
                             <div className="mb-3">
-                              <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
+                              <span className="inline-flex items-center gap-1.5 text-sm font-bold px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
                                 🏠 Cage {male?.cageNumber || female?.cageNumber}
                               </span>
                             </div>
@@ -333,7 +333,7 @@ export default function Pairs() {
                               </div>
                               <div className="min-w-0">
                                 <p className="text-sm font-semibold truncate">{birdLabel(male)}</p>
-                                <p className="text-xs text-blue-600">Male</p>
+                                <p className="text-sm text-blue-600">Male</p>
                               </div>
                             </div>
                             {/* Heart */}
@@ -348,12 +348,12 @@ export default function Pairs() {
                               </div>
                               <div className="min-w-0">
                                 <p className="text-sm font-semibold truncate">{birdLabel(female)}</p>
-                                <p className="text-xs text-pink-600">Female</p>
+                                <p className="text-sm text-pink-600">Female</p>
                               </div>
                             </div>
                             {/* Status & Actions */}
                             <div className="flex items-center gap-2 shrink-0">
-                              <Badge variant="outline" className={`text-xs ${STATUS_STYLES[pair.status]}`}>
+                              <Badge variant="outline" className={`text-sm ${STATUS_STYLES[pair.status]}`}>
                                 {STATUS_LABELS[pair.status] ?? pair.status}
                               </Badge>
                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setLocation(`/broods?pairId=${pair.id}`)}>
