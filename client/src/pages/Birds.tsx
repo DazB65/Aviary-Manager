@@ -81,6 +81,7 @@ export default function Birds() {
     setViewMode(mode);
     try { localStorage.setItem("birds-view-mode", mode); } catch {}
   }
+  const [showInactive, setShowInactive] = useState(false);
   type SortCol = "name" | "species" | "gender" | "ringId" | "cage" | "mutation" | "dob" | "status";
   const [sortCol, setSortCol] = useState<SortCol | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
@@ -187,12 +188,16 @@ export default function Birds() {
     }
   };
 
+  const inactiveStatuses = ["deceased", "sold"];
+  const inactiveBirdsCount = birds.filter(b => inactiveStatuses.includes(b.status)).length;
+
   const filtered = birds.filter(b => {
     const q = search.toLowerCase();
     const matchSearch = !q || (b.name ?? "").toLowerCase().includes(q) || (b.ringId ?? "").toLowerCase().includes(q) || (b.colorMutation ?? "").toLowerCase().includes(q);
     const matchSpecies = speciesFilter === "all" || String(b.speciesId) === speciesFilter;
     const matchGender = genderFilter === "all" || b.gender === genderFilter;
-    return matchSearch && matchSpecies && matchGender;
+    const matchActive = showInactive || !inactiveStatuses.includes(b.status);
+    return matchSearch && matchSpecies && matchGender && matchActive;
   });
 
   const speciesMap = Object.fromEntries(speciesList.map(s => [s.id, s]));
@@ -213,8 +218,9 @@ export default function Birds() {
     const cmp = aVal.localeCompare(bVal, undefined, { numeric: true, sensitivity: "base" });
     return sortDir === "asc" ? cmp : -cmp;
   });
-  const maleBirds = birds.filter(b => b.gender === "male" && b.status === "alive");
-  const femaleBirds = birds.filter(b => b.gender === "female" && b.status === "alive");
+  // All males/females available as parents regardless of status (needed for pedigree)
+  const maleBirds = birds.filter(b => b.gender === "male");
+  const femaleBirds = birds.filter(b => b.gender === "female");
 
   return (
     <DashboardLayout>
@@ -281,6 +287,14 @@ export default function Birds() {
               <SelectItem value="unknown">Unknown</SelectItem>
             </SelectContent>
           </Select>
+          {inactiveBirdsCount > 0 && (
+            <button
+              onClick={() => setShowInactive(v => !v)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm transition-colors whitespace-nowrap ${showInactive ? "bg-muted border-border text-foreground" : "border-dashed border-border text-muted-foreground hover:text-foreground hover:border-border"}`}
+            >
+              {showInactive ? "Hide" : "Show"} inactive ({inactiveBirdsCount})
+            </button>
+          )}
         </div>
 
         {/* Bird Grid */}
@@ -301,7 +315,7 @@ export default function Birds() {
             {sorted.map(bird => {
               const sp = speciesMap[bird.speciesId];
               return (
-                <Card key={bird.id} className="group border border-border shadow-card hover:shadow-elevated transition-all duration-200 overflow-hidden">
+                <Card key={bird.id} className={`group border border-border shadow-card hover:shadow-elevated transition-all duration-200 overflow-hidden ${inactiveStatuses.includes(bird.status) ? "opacity-60" : ""}`}>
                   <div className="relative">
                     {bird.photoUrl ? (
                       <img src={bird.photoUrl} alt={bird.name ?? "Bird"} className="w-full h-36 object-cover" />
@@ -367,7 +381,7 @@ export default function Birds() {
                     ? format(bird.dateOfBirth instanceof Date ? bird.dateOfBirth : new Date(String(bird.dateOfBirth)), "dd MMM yyyy")
                     : "—";
                   return (
-                    <tr key={bird.id} className="bg-white hover:bg-muted/30 transition-colors group">
+                    <tr key={bird.id} className={`hover:bg-muted/30 transition-colors group ${inactiveStatuses.includes(bird.status) ? "bg-muted/20 opacity-60" : "bg-white"}`}>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className={`w-9 h-9 rounded-lg overflow-hidden ${bird.gender === "male" ? "bg-blue-50" : bird.gender === "female" ? "bg-pink-50" : "bg-amber-50"} flex items-center justify-center text-lg shrink-0`}>
@@ -539,7 +553,10 @@ export default function Birds() {
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
                     {maleBirds.filter(b => b.id !== editingId).map(b => (
-                      <SelectItem key={b.id} value={String(b.id)}>{b.name || b.ringId || `#${b.id}`}</SelectItem>
+                      <SelectItem key={b.id} value={String(b.id)}>
+                        {b.name || b.ringId || `#${b.id}`}
+                        {(b.status === "deceased" || b.status === "sold") ? ` (${b.status})` : ""}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -551,7 +568,10 @@ export default function Birds() {
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
                     {femaleBirds.filter(b => b.id !== editingId).map(b => (
-                      <SelectItem key={b.id} value={String(b.id)}>{b.name || b.ringId || `#${b.id}`}</SelectItem>
+                      <SelectItem key={b.id} value={String(b.id)}>
+                        {b.name || b.ringId || `#${b.id}`}
+                        {(b.status === "deceased" || b.status === "sold") ? ` (${b.status})` : ""}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
