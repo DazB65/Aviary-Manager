@@ -517,11 +517,6 @@ export default function Birds() {
                 <Input className="mt-1" placeholder="e.g. A1, Cage 3" value={form.cageNumber} onChange={e => setForm(f => ({ ...f, cageNumber: e.target.value }))} />
               </div>
               <div>
-                <Label>Name (optional)</Label>
-                <Input className="mt-1" placeholder="e.g. Sunny" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
-              </div>
-
-              <div>
                 <Label>Gender</Label>
                 <Select value={form.gender} onValueChange={v => setForm(f => ({ ...f, gender: v as BirdFormData["gender"] }))}>
                   <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
