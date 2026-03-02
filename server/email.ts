@@ -1,37 +1,24 @@
-import nodemailer from "nodemailer";
-
-function getTransporter() {
-  const host = process.env.SMTP_HOST;
-  const port = parseInt(process.env.SMTP_PORT || "587");
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-
-  if (!host || !user || !pass) {
-    // In development without SMTP configured, log to console
-    return null;
-  }
-
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: { user, pass },
-  });
-}
+import { Resend } from "resend";
 
 const FROM_ADDRESS = process.env.EMAIL_FROM || "Aviary Manager <noreply@aviarymanager.com>";
 const APP_URL = process.env.APP_URL || "http://localhost:3000";
 
-export async function sendVerificationEmail(email: string, token: string): Promise<void> {
-  const verifyUrl = `${APP_URL}/verify-email?token=${token}`;
-  const transporter = getTransporter();
+function getResend(): Resend | null {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return null;
+  return new Resend(apiKey);
+}
 
-  if (!transporter) {
-    console.log(`[Email] VERIFY EMAIL for ${email}: ${verifyUrl}`);
+export async function sendVerificationEmail(email: string, token: string): Promise<void> {
+  const verifyUrl = `${APP_URL}/api/auth/verify-email?token=${token}`;
+  const resend = getResend();
+
+  if (!resend) {
+    console.log(`[Email] No RESEND_API_KEY set. VERIFY EMAIL for ${email}: ${verifyUrl}`);
     return;
   }
 
-  await transporter.sendMail({
+  await resend.emails.send({
     from: FROM_ADDRESS,
     to: email,
     subject: "Verify your Aviary Manager account",
@@ -59,14 +46,14 @@ export async function sendVerificationEmail(email: string, token: string): Promi
 
 export async function sendPasswordResetEmail(email: string, token: string): Promise<void> {
   const resetUrl = `${APP_URL}/reset-password?token=${token}`;
-  const transporter = getTransporter();
+  const resend = getResend();
 
-  if (!transporter) {
-    console.log(`[Email] RESET PASSWORD for ${email}: ${resetUrl}`);
+  if (!resend) {
+    console.log(`[Email] No RESEND_API_KEY set. RESET PASSWORD for ${email}: ${resetUrl}`);
     return;
   }
 
-  await transporter.sendMail({
+  await resend.emails.send({
     from: FROM_ADDRESS,
     to: email,
     subject: "Reset your Aviary Manager password",
