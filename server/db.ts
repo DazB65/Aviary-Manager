@@ -112,6 +112,11 @@ export async function getDb() {
     } catch (patchError) {
       console.warn("[Database] Schema patch (allBirds):", patchError);
     }
+    try {
+      await _db.execute(sql`ALTER TYPE event_type ADD VALUE IF NOT EXISTS 'supplements'`);
+    } catch (patchError) {
+      console.warn("[Database] Schema patch (supplements event type):", patchError);
+    }
 
     // Seed species if the table is empty (first deploy / fresh DB).
     try {

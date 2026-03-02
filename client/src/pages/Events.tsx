@@ -23,12 +23,13 @@ const EVENT_TYPE_STYLES: Record<string, { color: string; emoji: string }> = {
   weaning: { color: "bg-teal-50 text-teal-700 border-teal-200", emoji: "🐣" },
   sale: { color: "bg-amber-50 text-amber-700 border-amber-200", emoji: "💰" },
   medication: { color: "bg-rose-50 text-rose-700 border-rose-200", emoji: "💊" },
+  supplements: { color: "bg-green-50 text-green-700 border-green-200", emoji: "🌿" },
   other: { color: "bg-gray-50 text-gray-600 border-gray-200", emoji: "📌" },
 };
 
 type EventFormData = {
   title: string;
-  eventType: "vet" | "banding" | "medication" | "weaning" | "sale" | "other";
+  eventType: "vet" | "banding" | "medication" | "weaning" | "sale" | "supplements" | "other";
   eventDate: string;
   birdId: string;
   pairId: string;
@@ -150,7 +151,7 @@ export default function Events() {
     const baseDate = form.eventDate || new Date().toISOString().split("T")[0];
     const basePayload = {
       title: form.title.trim(),
-      eventType: form.eventType as "vet" | "banding" | "medication" | "weaning" | "sale" | "other",
+      eventType: form.eventType as "vet" | "banding" | "medication" | "weaning" | "sale" | "supplements" | "other",
       pairId: form.pairId ? Number(form.pairId) : undefined,
       notes: form.notes || undefined,
     };
@@ -361,6 +362,7 @@ export default function Events() {
                     <SelectItem value="weaning">🐣 Weaning</SelectItem>
                     <SelectItem value="sale">💰 Sale</SelectItem>
                     <SelectItem value="medication">💊 Medication</SelectItem>
+                    <SelectItem value="supplements">🌿 Supplements</SelectItem>
                     <SelectItem value="other">📌 Other</SelectItem>
                   </SelectContent>
                 </Select>
