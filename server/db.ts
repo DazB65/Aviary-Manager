@@ -117,6 +117,11 @@ export async function getDb() {
     } catch (patchError) {
       console.warn("[Database] Schema patch (supplements event type):", patchError);
     }
+    try {
+      await _db.execute(sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS "seriesId" varchar(64)`);
+    } catch (patchError) {
+      console.warn("[Database] Schema patch (seriesId):", patchError);
+    }
 
     // Seed species if the table is empty (first deploy / fresh DB).
     try {

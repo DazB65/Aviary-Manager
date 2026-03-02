@@ -319,6 +319,7 @@ export const appRouter = router({
         birdId: z.number().optional(),
         pairId: z.number().optional(),
         allBirds: z.boolean().optional(),
+        seriesId: z.string().optional(),
       }))
       .mutation(({ ctx, input }) =>
         createEvent({ ...input, userId: ctx.user.id } as any)

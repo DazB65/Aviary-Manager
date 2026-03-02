@@ -180,12 +180,16 @@ export default function Events() {
     const isAllBirds = form.birdId === "all";
     const specificBirdId = !isAllBirds && form.birdId ? Number(form.birdId) : undefined;
 
+    // Group recurring events with a shared seriesId so future ones stay hidden until current is completed
+    const seriesId = dates.length > 1 ? crypto.randomUUID() : undefined;
+
     const creates = dates.map(date =>
       createEvent.mutateAsync({
         ...basePayload,
         eventDate: date,
         birdId: specificBirdId,
         allBirds: isAllBirds,
+        seriesId,
       })
     );
 
@@ -203,8 +207,28 @@ export default function Events() {
 
   const filtered = events.filter(e => showCompleted ? e.completed : !e.completed);
 
+  // When viewing upcoming events, hide future recurrences — only show the earliest incomplete per series
+  const displayEvents = !showCompleted
+    ? (() => {
+        const earliestBySeries = new Map<string, typeof events[0]>();
+        const nonSeries: typeof events[0][] = [];
+        for (const ev of filtered) {
+          const sid = (ev as any).seriesId as string | null | undefined;
+          if (!sid) {
+            nonSeries.push(ev);
+          } else {
+            const existing = earliestBySeries.get(sid);
+            if (!existing || new Date(String(ev.eventDate)) < new Date(String(existing.eventDate))) {
+              earliestBySeries.set(sid, ev);
+            }
+          }
+        }
+        return [...nonSeries, ...earliestBySeries.values()];
+      })()
+    : filtered;
+
   // Group by date
-  const grouped = filtered.reduce((acc, ev) => {
+  const grouped = displayEvents.reduce((acc, ev) => {
     const key = ev.eventDate ? formatDateLabel(ev.eventDate) : "No date";
     if (!acc[key]) acc[key] = [];
     acc[key].push(ev);

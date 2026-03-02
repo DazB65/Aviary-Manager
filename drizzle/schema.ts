@@ -145,6 +145,7 @@ export const events = pgTable("events", {
   birdId: integer("birdId"),   // optional — link to a specific bird
   pairId: integer("pairId"),   // optional — link to a specific pair
   allBirds: boolean("allBirds").default(false),  // true = applies to all birds in the aviary
+  seriesId: varchar("seriesId", { length: 64 }),  // groups recurring events; only earliest incomplete is shown
   completed: boolean("completed").default(false),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
