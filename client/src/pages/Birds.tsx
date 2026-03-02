@@ -282,7 +282,7 @@ export default function Birds() {
                     {bird.photoUrl ? (
                       <img src={bird.photoUrl} alt={bird.name ?? "Bird"} className="w-full h-36 object-cover" />
                     ) : (
-                      <div className="w-full h-36 bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center text-4xl">
+                      <div className={`w-full h-36 ${bird.gender === "male" ? "bg-blue-50" : bird.gender === "female" ? "bg-pink-50" : "bg-amber-50"} flex items-center justify-center text-4xl`}>
                         {bird.gender === "male" ? "♂" : bird.gender === "female" ? "♀" : "🐦"}
                       </div>
                     )}
@@ -342,7 +342,7 @@ export default function Birds() {
                     <tr key={bird.id} className="bg-white hover:bg-muted/30 transition-colors group">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-lg overflow-hidden bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center text-lg shrink-0">
+                          <div className={`w-9 h-9 rounded-lg overflow-hidden ${bird.gender === "male" ? "bg-blue-50" : bird.gender === "female" ? "bg-pink-50" : "bg-amber-50"} flex items-center justify-center text-lg shrink-0`}>
                             {bird.photoUrl ? (
                               <img src={bird.photoUrl} alt={bird.name ?? "Bird"} className="w-full h-full object-cover" />
                             ) : (

@@ -59,7 +59,7 @@ function PedigreeCard({
         {bird.photoUrl ? (
           <img src={bird.photoUrl} alt={bird.name ?? "Bird"} className={`${imgClasses[size]} rounded-lg object-cover shrink-0`} />
         ) : (
-          <div className={`${imgClasses[size]} rounded-lg bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center shrink-0 ${textClasses[size]}`}>
+          <div className={`${imgClasses[size]} rounded-lg ${bird.gender === "male" ? "bg-blue-50" : bird.gender === "female" ? "bg-pink-50" : "bg-amber-50"} flex items-center justify-center shrink-0 ${textClasses[size]}`}>
             {genderIcon}
           </div>
         )}
@@ -222,7 +222,7 @@ export default function BirdDetail() {
           <div className="bg-gradient-to-r from-amber-400 to-orange-500 h-24" />
           <CardContent className="px-6 pb-6">
             <div className="flex items-end gap-5 -mt-10">
-              <div className="w-20 h-20 rounded-2xl border-4 border-white shadow-md overflow-hidden bg-amber-50 flex items-center justify-center text-3xl">
+              <div className={`w-20 h-20 rounded-2xl border-4 border-white shadow-md overflow-hidden ${bird.gender === "male" ? "bg-blue-50" : bird.gender === "female" ? "bg-pink-50" : "bg-amber-50"} flex items-center justify-center text-3xl`}>
                 {bird.photoUrl ? (
                   <img src={bird.photoUrl} alt={bird.name ?? "Bird"} className="w-full h-full object-cover" />
                 ) : (
@@ -367,7 +367,7 @@ export default function BirdDetail() {
                           onClick={() => setLocation(`/birds/${d.id}`)}
                           className="flex items-center gap-3 p-3 rounded-xl border border-border bg-white hover:shadow-elevated hover:border-primary/40 transition-all text-left"
                         >
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center text-lg shrink-0 overflow-hidden">
+                          <div className={`w-10 h-10 rounded-xl ${d.gender === "male" ? "bg-blue-50" : d.gender === "female" ? "bg-pink-50" : "bg-amber-50"} flex items-center justify-center text-lg shrink-0 overflow-hidden`}>
                             {d.photoUrl ? (
                               <img src={d.photoUrl} alt={d.name ?? "Bird"} className="w-full h-full object-cover" />
                             ) : genderIcon}
@@ -416,7 +416,7 @@ export default function BirdDetail() {
                           onClick={() => setLocation(`/birds/${s.id}`)}
                           className="flex items-center gap-3 p-3 rounded-xl border border-border bg-white hover:shadow-elevated hover:border-primary/40 transition-all text-left"
                         >
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-100 to-purple-100 flex items-center justify-center text-lg shrink-0 overflow-hidden">
+                          <div className={`w-10 h-10 rounded-xl ${s.gender === "male" ? "bg-blue-50" : s.gender === "female" ? "bg-pink-50" : "bg-amber-50"} flex items-center justify-center text-lg shrink-0 overflow-hidden`}>
                             {s.photoUrl ? (
                               <img src={s.photoUrl} alt={s.name ?? "Bird"} className="w-full h-full object-cover" />
                             ) : genderIcon}

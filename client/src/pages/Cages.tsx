@@ -69,7 +69,7 @@ export default function Cages() {
                         onClick={() => setLocation(`/birds/${bird.id}`)}
                         className="text-left rounded-xl border border-border p-3 hover:border-primary/40 hover:bg-primary/5 transition-all"
                       >
-                        <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center mb-2 text-lg border border-amber-100">
+                        <div className={`w-10 h-10 rounded-lg ${bird.gender === "male" ? "bg-blue-50" : bird.gender === "female" ? "bg-pink-50" : "bg-amber-50"} flex items-center justify-center mb-2 text-lg`}>
                           {bird.photoUrl
                             ? <img src={bird.photoUrl} alt={bird.name ?? "Bird"} className="w-full h-full object-cover rounded-lg" />
                             : bird.gender === "male" ? "♂" : bird.gender === "female" ? "♀" : "🐦"}
@@ -100,7 +100,7 @@ export default function Cages() {
                         onClick={() => setLocation(`/birds/${bird.id}`)}
                         className="text-left rounded-xl border border-border p-3 hover:border-primary/40 hover:bg-primary/5 transition-all"
                       >
-                        <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center mb-2 text-lg">
+                        <div className={`w-10 h-10 rounded-lg ${bird.gender === "male" ? "bg-blue-50" : bird.gender === "female" ? "bg-pink-50" : "bg-amber-50"} flex items-center justify-center mb-2 text-lg`}>
                           {bird.gender === "male" ? "♂" : bird.gender === "female" ? "♀" : "🐦"}
                         </div>
                         <p className="text-sm font-medium truncate">{bird.name || bird.ringId || `Bird #${bird.id}`}</p>
