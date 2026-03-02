@@ -190,7 +190,15 @@ export const appRouter = router({
           const yearStr = input.season ? ` in ${input.season}` : "";
           throw new TRPCError({ code: "CONFLICT", message: `This pair already exists${yearStr}. You can pair the same birds in a different year.` });
         }
-        return createPair({ ...input, userId: ctx.user.id } as any);
+        const pair = await createPair({ ...input, userId: ctx.user.id } as any);
+        // Auto-set bird status to "breeding" when an active pair is created
+        if ((input.status ?? "active") === "active") {
+          await Promise.all([
+            updateBird(input.maleId, ctx.user.id, { status: "breeding" }),
+            updateBird(input.femaleId, ctx.user.id, { status: "breeding" }),
+          ]);
+        }
+        return pair;
       }),
 
     update: protectedProcedure
@@ -203,14 +211,36 @@ export const appRouter = router({
         status: z.enum(["active", "resting", "retired"]).optional(),
         notes: z.string().optional(),
       }))
-      .mutation(({ ctx, input }) => {
+      .mutation(async ({ ctx, input }) => {
         const { id, ...data } = input;
-        return updatePair(id, ctx.user.id, data as any);
+        // Fetch pair first to get maleId/femaleId (may not be in update payload)
+        const existing = await getPairById(id, ctx.user.id);
+        await updatePair(id, ctx.user.id, data as any);
+        // Sync bird statuses when pair status changes
+        if (data.status !== undefined && existing) {
+          const maleId = data.maleId ?? existing.maleId;
+          const femaleId = data.femaleId ?? existing.femaleId;
+          const birdStatus = data.status === "active" ? "breeding" : "alive";
+          await Promise.all([
+            updateBird(maleId, ctx.user.id, { status: birdStatus }),
+            updateBird(femaleId, ctx.user.id, { status: birdStatus }),
+          ]);
+        }
       }),
 
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(({ ctx, input }) => deletePair(input.id, ctx.user.id)),
+      .mutation(async ({ ctx, input }) => {
+        // Revert bird statuses to "alive" before removing the pair
+        const pair = await getPairById(input.id, ctx.user.id);
+        await deletePair(input.id, ctx.user.id);
+        if (pair) {
+          await Promise.all([
+            updateBird(pair.maleId, ctx.user.id, { status: "alive" }),
+            updateBird(pair.femaleId, ctx.user.id, { status: "alive" }),
+          ]);
+        }
+      }),
     inbreeding: protectedProcedure
       .input(z.object({ maleId: z.number(), femaleId: z.number() }))
       .query(({ ctx, input }) => calcInbreedingCoefficient(input.maleId, input.femaleId, ctx.user.id)),

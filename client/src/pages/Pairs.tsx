@@ -155,22 +155,23 @@ export default function Pairs() {
     : String(new Date().getFullYear());
 
   const createPair = trpc.pairs.create.useMutation({
-    onSuccess: () => { utils.pairs.list.invalidate(); utils.dashboard.stats.invalidate(); toast.success("Pair created!"); setDialogOpen(false); },
+    onSuccess: () => { utils.pairs.list.invalidate(); utils.dashboard.stats.invalidate(); utils.birds.list.invalidate(); toast.success("Pair created!"); setDialogOpen(false); },
     onError: (e) => toast.error(e.message),
   });
   const updatePair = trpc.pairs.update.useMutation({
-    onSuccess: () => { utils.pairs.list.invalidate(); utils.dashboard.stats.invalidate(); toast.success("Pair updated!"); setDialogOpen(false); },
+    onSuccess: () => { utils.pairs.list.invalidate(); utils.dashboard.stats.invalidate(); utils.birds.list.invalidate(); toast.success("Pair updated!"); setDialogOpen(false); },
     onError: (e) => toast.error(e.message),
   });
   const deletePair = trpc.pairs.delete.useMutation({
-    onSuccess: () => { utils.pairs.list.invalidate(); utils.dashboard.stats.invalidate(); toast.success("Pair removed."); },
+    onSuccess: () => { utils.pairs.list.invalidate(); utils.dashboard.stats.invalidate(); utils.birds.list.invalidate(); toast.success("Pair removed."); },
     onError: (e) => toast.error(e.message),
   });
 
   const speciesMap = useMemo(() => Object.fromEntries(speciesList.map(s => [s.id, s])), [speciesList]);
   const birdMap = useMemo(() => Object.fromEntries(birds.map(b => [b.id, b])), [birds]);
-  const maleBirds = birds.filter(b => b.gender === "male" && b.status === "alive");
-  const femaleBirds = birds.filter(b => b.gender === "female" && b.status === "alive");
+  const livingStatuses = ["alive", "breeding", "resting"] as const;
+  const maleBirds = birds.filter(b => b.gender === "male" && (livingStatuses as readonly string[]).includes(b.status));
+  const femaleBirds = birds.filter(b => b.gender === "female" && (livingStatuses as readonly string[]).includes(b.status));
 
   const openAdd = () => {
     setEditingId(null);
@@ -296,7 +297,7 @@ export default function Pairs() {
                               </div>
                               <div className="min-w-0">
                                 <p className="text-sm font-semibold truncate">{birdLabel(male)}</p>
-                                <p className="text-xs text-blue-600">Male</p>
+                                <p className="text-xs text-blue-600">Male{male?.cageNumber ? ` · Cage ${male.cageNumber}` : ""}</p>
                               </div>
                             </div>
                             {/* Heart */}
@@ -311,7 +312,7 @@ export default function Pairs() {
                               </div>
                               <div className="min-w-0">
                                 <p className="text-sm font-semibold truncate">{birdLabel(female)}</p>
-                                <p className="text-xs text-pink-600">Female</p>
+                                <p className="text-xs text-pink-600">Female{female?.cageNumber ? ` · Cage ${female.cageNumber}` : ""}</p>
                               </div>
                             </div>
                             {/* Status & Actions */}
@@ -379,7 +380,7 @@ export default function Pairs() {
                 <SelectContent>
                   {maleBirds.map(b => (
                     <SelectItem key={b.id} value={String(b.id)}>
-                      {b.name || b.ringId || `#${b.id}`} — {speciesMap[b.speciesId]?.commonName ?? "Unknown"}
+                      {b.name || b.ringId || `#${b.id}`} — {speciesMap[b.speciesId]?.commonName ?? "Unknown"}{b.cageNumber ? ` · Cage ${b.cageNumber}` : ""}{b.status !== "alive" ? ` (${b.status})` : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -392,7 +393,7 @@ export default function Pairs() {
                 <SelectContent>
                   {femaleBirds.map(b => (
                     <SelectItem key={b.id} value={String(b.id)}>
-                      {b.name || b.ringId || `#${b.id}`} — {speciesMap[b.speciesId]?.commonName ?? "Unknown"}
+                      {b.name || b.ringId || `#${b.id}`} — {speciesMap[b.speciesId]?.commonName ?? "Unknown"}{b.cageNumber ? ` · Cage ${b.cageNumber}` : ""}{b.status !== "alive" ? ` (${b.status})` : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
