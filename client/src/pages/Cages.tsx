@@ -10,7 +10,7 @@ export default function Cages() {
   const [, setLocation] = useLocation();
   const { data: birds, isLoading } = trpc.birds.list.useQuery();
 
-  const aliveBirds = (birds ?? []).filter(b => b.status === "alive");
+  const aliveBirds = (birds ?? []).filter(b => ["alive", "breeding", "resting"].includes(b.status));
 
   // Group birds by cage number
   const cageMap = new Map<string, typeof aliveBirds>();
