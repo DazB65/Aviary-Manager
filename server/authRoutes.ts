@@ -74,7 +74,7 @@ export function registerAuthRoutes(app: Express) {
               lastSignedIn: new Date(),
             })
             .where(eq(users.id, existing.id));
-          res.status(201).json({ success: true, message: "Account set up! You can now log in." });
+          res.status(201).json({ success: true, requiresVerification: false, message: "Account set up! You can now log in." });
           return;
         }
         // Full account already exists with a password
@@ -99,7 +99,7 @@ export function registerAuthRoutes(app: Express) {
 
       sendVerificationEmail(email.toLowerCase(), verifyToken).catch(console.error);
 
-      res.status(201).json({ success: true, message: "Account created! Please check your email to verify your account before logging in." });
+      res.status(201).json({ success: true, requiresVerification: true, message: "Account created! Please check your email to verify your account before logging in." });
     } catch (err) {
       console.error("[Register] Unexpected error:", err);
       res.status(500).json({ error: "Registration failed. Please try again." });

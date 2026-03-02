@@ -30,6 +30,7 @@ export default function AuthPage() {
   const [regError, setRegError] = useState("");
   const [regLoading, setRegLoading] = useState(false);
   const [regSuccess, setRegSuccess] = useState(false);
+  const [regRequiresVerification, setRegRequiresVerification] = useState(true);
 
   // Forgot password state
   const [showForgot, setShowForgot] = useState(false);
@@ -91,6 +92,7 @@ export default function AuthPage() {
       });
       const data = await res.json();
       if (!res.ok) { setRegError(data.error || "Registration failed"); return; }
+      setRegRequiresVerification(data.requiresVerification !== false);
       setRegSuccess(true);
     } catch {
       setRegError("Network error. Please try again.");
@@ -221,7 +223,9 @@ export default function AuthPage() {
                     <Alert className="mb-4 border-teal-200 bg-teal-50">
                       <CheckCircle2 className="h-4 w-4 text-teal-600" />
                       <AlertDescription className="text-teal-700">
-                        Account created! Check your email to verify your address before logging in.
+                        {regRequiresVerification
+                          ? "Account created! Check your email to verify your address before logging in."
+                          : "Account ready! You can sign in now."}
                       </AlertDescription>
                     </Alert>
                   )}
@@ -278,11 +282,22 @@ export default function AuthPage() {
                   {regSuccess ? (
                     <div className="text-center py-6">
                       <CheckCircle2 className="w-12 h-12 text-teal-500 mx-auto mb-4" />
-                      <h3 className="font-semibold text-gray-900 text-lg mb-2">Check your inbox!</h3>
-                      <p className="text-gray-600 text-sm mb-4">
-                        We've sent a verification link to <strong>{regEmail}</strong>.
-                        Click it to activate your account, then sign in.
-                      </p>
+                      {regRequiresVerification ? (
+                        <>
+                          <h3 className="font-semibold text-gray-900 text-lg mb-2">Check your inbox!</h3>
+                          <p className="text-gray-600 text-sm mb-4">
+                            We've sent a verification link to <strong>{regEmail}</strong>.
+                            Click it to activate your account, then sign in.
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <h3 className="font-semibold text-gray-900 text-lg mb-2">Account ready!</h3>
+                          <p className="text-gray-600 text-sm mb-4">
+                            Your account has been set up. You can sign in now.
+                          </p>
+                        </>
+                      )}
                       <Button onClick={() => { setRegSuccess(false); setTab("login"); }} className="bg-teal-600 hover:bg-teal-700 text-white">
                         Go to Sign In
                       </Button>
