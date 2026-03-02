@@ -55,8 +55,9 @@ export default function Cages() {
               <Card key={cageNumber} className="border border-border shadow-card">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base font-semibold flex items-center gap-2">
-                    <Home className="h-4 w-4 text-primary" />
-                    Cage {cageNumber}
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
+                      🏠 Cage {cageNumber}
+                    </span>
                     <Badge variant="secondary" className="text-xs">{cageBirds.length} bird{cageBirds.length !== 1 ? "s" : ""}</Badge>
                   </CardTitle>
                 </CardHeader>
