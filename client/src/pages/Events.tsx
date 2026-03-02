@@ -135,6 +135,8 @@ export default function Events() {
       notes: ev.notes ?? "",
       recurrence: "none",
       recurrenceCount: 2,
+      customInterval: 3,
+      customUnit: "months",
     });
     setDialogOpen(true);
   };
@@ -379,37 +381,35 @@ export default function Events() {
               </Select>
             </div>
             {/* Recurring */}
-            {!editingId && (
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Repeat</Label>
-                  <Select value={form.recurrence} onValueChange={v => setForm(f => ({ ...f, recurrence: v as EventFormData["recurrence"] }))}>
-                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Does not repeat</SelectItem>
-                      <SelectItem value="daily">Daily</SelectItem>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                      <SelectItem value="yearly">Yearly</SelectItem>
-                      <SelectItem value="custom">Custom…</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {form.recurrence !== "none" && form.recurrence !== "custom" && (
-                  <div>
-                    <Label>Occurrences</Label>
-                    <Input
-                      type="number"
-                      min={2}
-                      max={52}
-                      className="mt-1"
-                      value={form.recurrenceCount}
-                      onChange={e => setForm(f => ({ ...f, recurrenceCount: Math.max(2, Math.min(52, Number(e.target.value))) }))}
-                    />
-                  </div>
-                )}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Repeat</Label>
+                <Select value={form.recurrence} onValueChange={v => setForm(f => ({ ...f, recurrence: v as EventFormData["recurrence"] }))}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Does not repeat</SelectItem>
+                    <SelectItem value="daily">Daily</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="yearly">Yearly</SelectItem>
+                    <SelectItem value="custom">Custom…</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            )}
+              {!editingId && form.recurrence !== "none" && form.recurrence !== "custom" && (
+                <div>
+                  <Label>Occurrences</Label>
+                  <Input
+                    type="number"
+                    min={2}
+                    max={52}
+                    className="mt-1"
+                    value={form.recurrenceCount}
+                    onChange={e => setForm(f => ({ ...f, recurrenceCount: Math.max(2, Math.min(52, Number(e.target.value))) }))}
+                  />
+                </div>
+              )}
+            </div>
             {!editingId && form.recurrence === "custom" && (
               <div className="grid grid-cols-3 gap-2">
                 <div>
