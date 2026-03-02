@@ -170,8 +170,30 @@ export default function Pairs() {
   const speciesMap = useMemo(() => Object.fromEntries(speciesList.map(s => [s.id, s])), [speciesList]);
   const birdMap = useMemo(() => Object.fromEntries(birds.map(b => [b.id, b])), [birds]);
   const livingStatuses = ["alive", "breeding", "resting"] as const;
-  const maleBirds = birds.filter(b => b.gender === "male" && (livingStatuses as readonly string[]).includes(b.status));
-  const femaleBirds = birds.filter(b => b.gender === "female" && (livingStatuses as readonly string[]).includes(b.status));
+
+  // Bird IDs already in an active pair — exclude from dropdowns when creating/editing
+  // When editing, the current pair's own birds are always allowed
+  const pairedBirdIds = useMemo(() => {
+    const ids = new Set<number>();
+    for (const p of pairs) {
+      if (p.status === "active" && p.id !== editingId) {
+        ids.add(p.maleId);
+        ids.add(p.femaleId);
+      }
+    }
+    return ids;
+  }, [pairs, editingId]);
+
+  const maleBirds = birds.filter(b =>
+    b.gender === "male" &&
+    (livingStatuses as readonly string[]).includes(b.status) &&
+    !pairedBirdIds.has(b.id)
+  );
+  const femaleBirds = birds.filter(b =>
+    b.gender === "female" &&
+    (livingStatuses as readonly string[]).includes(b.status) &&
+    !pairedBirdIds.has(b.id)
+  );
 
   const openAdd = () => {
     setEditingId(null);
