@@ -1,4 +1,4 @@
-import { and, eq, ne, gte, lte, or, desc, asc, sql } from "drizzle-orm";
+import { and, eq, ne, gte, lte, or, desc, asc, sql, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { fileURLToPath } from "url";
@@ -350,7 +350,7 @@ export async function getDashboardStats(userId: number) {
   if (!db) return { totalBirds: 0, activePairs: 0, eggsIncubating: 0, upcomingHatches: 0, upcomingEvents: 0 };
 
   const [allBirds, allPairs, allBroods, allEvents] = await Promise.all([
-    db.select().from(birds).where(and(eq(birds.userId, userId), eq(birds.status, "alive"))),
+    db.select().from(birds).where(and(eq(birds.userId, userId), inArray(birds.status, ["alive", "breeding", "resting"]))),
     db.select().from(breedingPairs).where(and(eq(breedingPairs.userId, userId), eq(breedingPairs.status, "active"))),
     db.select().from(broods).where(and(eq(broods.userId, userId), eq(broods.status, "incubating"))),
     db.select().from(events).where(and(eq(events.userId, userId), eq(events.completed, false))),
