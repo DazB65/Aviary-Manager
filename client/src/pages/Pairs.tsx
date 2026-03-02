@@ -311,6 +311,14 @@ export default function Pairs() {
                     return (
                       <Card key={pair.id} className="border border-border shadow-card hover:shadow-elevated transition-all">
                         <CardContent className="p-4">
+                          {/* Cage number — top left */}
+                          {(male?.cageNumber || female?.cageNumber) && (
+                            <div className="mb-3">
+                              <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
+                                🏠 Cage {male?.cageNumber || female?.cageNumber}
+                              </span>
+                            </div>
+                          )}
                           <div className="flex items-center gap-4">
                             {/* Male */}
                             <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -319,7 +327,7 @@ export default function Pairs() {
                               </div>
                               <div className="min-w-0">
                                 <p className="text-sm font-semibold truncate">{birdLabel(male)}</p>
-                                <p className="text-xs text-blue-600">Male{male?.cageNumber ? ` · Cage ${male.cageNumber}` : ""}</p>
+                                <p className="text-xs text-blue-600">Male</p>
                               </div>
                             </div>
                             {/* Heart */}
@@ -334,7 +342,7 @@ export default function Pairs() {
                               </div>
                               <div className="min-w-0">
                                 <p className="text-sm font-semibold truncate">{birdLabel(female)}</p>
-                                <p className="text-xs text-pink-600">Female{female?.cageNumber ? ` · Cage ${female.cageNumber}` : ""}</p>
+                                <p className="text-xs text-pink-600">Female</p>
                               </div>
                             </div>
                             {/* Status & Actions */}
