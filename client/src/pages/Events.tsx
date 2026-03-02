@@ -112,6 +112,10 @@ export default function Events() {
     onSuccess: () => { utils.events.list.invalidate(); utils.dashboard.stats.invalidate(); },
     onError: (e) => toast.error(e.message),
   });
+  const deleteAllEvents = trpc.events.deleteAll.useMutation({
+    onSuccess: () => { utils.events.list.invalidate(); utils.dashboard.stats.invalidate(); toast.success("All events cleared."); },
+    onError: (e) => toast.error(e.message),
+  });
 
   const birdMap = Object.fromEntries(birds.map(b => [b.id, b]));
 
@@ -224,9 +228,20 @@ export default function Events() {
             <h1 className="font-display text-3xl font-bold text-foreground">Events & Reminders</h1>
             <p className="text-muted-foreground mt-1">{events.filter(e => !e.completed).length} upcoming</p>
           </div>
-          <Button onClick={openAdd} className="bg-primary hover:bg-primary/90 shadow-md gap-2">
-            <Plus className="h-4 w-4" /> Add Event
-          </Button>
+          <div className="flex gap-2">
+            {events.length > 0 && (
+              <Button
+                variant="outline"
+                className="text-destructive border-destructive hover:bg-destructive hover:text-white gap-2"
+                onClick={() => { if (confirm("Delete all events? This cannot be undone.")) deleteAllEvents.mutate(); }}
+              >
+                <Trash2 className="h-4 w-4" /> Clear all
+              </Button>
+            )}
+            <Button onClick={openAdd} className="bg-primary hover:bg-primary/90 shadow-md gap-2">
+              <Plus className="h-4 w-4" /> Add Event
+            </Button>
+          </div>
         </div>
 
         {/* Toggle completed */}

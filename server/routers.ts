@@ -9,7 +9,7 @@ import {
   getBirdsByUser, getBirdById, createBird, updateBird, deleteBird,
   getPairsByUser, getPairById, createPair, updatePair, deletePair,
   getBroodsByUser, getBroodsByPair, createBrood, updateBrood, deleteBrood,
-  getEventsByUser, createEvent, updateEvent, deleteEvent, toggleEventComplete,
+  getEventsByUser, createEvent, updateEvent, deleteEvent, deleteAllEvents, toggleEventComplete,
   getUserSettings, upsertUserSettings,
   getDashboardStats, getSeasonStats, getAllUsers, setUserPlan, deleteUser,
   getPedigree, calcInbreedingCoefficient, getDescendants, getSiblings,
@@ -347,6 +347,8 @@ export const appRouter = router({
     toggleComplete: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(({ ctx, input }) => toggleEventComplete(input.id, ctx.user.id)),
+    deleteAll: protectedProcedure
+      .mutation(({ ctx }) => deleteAllEvents(ctx.user.id)),
   }),
 
   // ─── Clutch Eggs ──────────────────────────────────────────────────────────

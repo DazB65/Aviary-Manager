@@ -314,6 +314,12 @@ export async function deleteEvent(id: number, userId: number) {
   await db.delete(events).where(and(eq(events.id, id), eq(events.userId, userId)));
 }
 
+export async function deleteAllEvents(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.delete(events).where(eq(events.userId, userId));
+}
+
 // ─── Dashboard stats ──────────────────────────────────────────────────────────
 
 export async function getSeasonStats(userId: number, year: number) {
