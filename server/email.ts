@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 
-const FROM_ADDRESS = process.env.EMAIL_FROM || "Aviary Manager <noreply@aviarymanager.com>";
+const FROM_ADDRESS = process.env.EMAIL_FROM || "Aviary Manager <noreply@aviarymanager.app>";
 const APP_URL = process.env.APP_URL || "http://localhost:3000";
 
 function getResend(): Resend | null {
