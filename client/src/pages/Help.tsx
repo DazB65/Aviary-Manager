@@ -278,7 +278,7 @@ export default function Help() {
                 <span>{section.emoji}</span> {section.title}
                 <span className="text-xs font-normal text-muted-foreground bg-muted rounded-full px-2 py-0.5">{section.articles.length}</span>
               </h2>
-              <Accordion type="single" collapsible className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Accordion type="single" collapsible className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
                 {section.articles.map(article => (
                   <AccordionItem
                     key={article.title}
