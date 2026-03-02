@@ -345,6 +345,19 @@ export async function getAllUsers() {
   }).from(users).orderBy(desc(users.createdAt));
 }
 
+export async function deleteUser(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  // Delete all user data in dependency order
+  await db.delete(clutchEggs).where(eq(clutchEggs.userId, userId));
+  await db.delete(events).where(eq(events.userId, userId));
+  await db.delete(broods).where(eq(broods.userId, userId));
+  await db.delete(breedingPairs).where(eq(breedingPairs.userId, userId));
+  await db.delete(birds).where(eq(birds.userId, userId));
+  await db.delete(userSettings).where(eq(userSettings.userId, userId));
+  await db.delete(users).where(eq(users.id, userId));
+}
+
 export async function setUserPlan(userId: number, plan: "free" | "pro") {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");

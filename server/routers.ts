@@ -11,7 +11,7 @@ import {
   getBroodsByUser, getBroodsByPair, createBrood, updateBrood, deleteBrood,
   getEventsByUser, createEvent, updateEvent, deleteEvent, toggleEventComplete,
   getUserSettings, upsertUserSettings,
-  getDashboardStats, getSeasonStats, getAllUsers, setUserPlan,
+  getDashboardStats, getSeasonStats, getAllUsers, setUserPlan, deleteUser,
   getPedigree, calcInbreedingCoefficient, getDescendants, getSiblings,
   getEggsByBrood, upsertClutchEgg, deleteEggsByBrood, syncClutchEggs,
 } from "./db";
@@ -391,6 +391,17 @@ export const appRouter = router({
           throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
         }
         return setUserPlan(input.userId, input.plan);
+      }),
+    deleteUser: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(({ ctx, input }) => {
+        if (ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        }
+        if (input.userId === ctx.user.id) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "You cannot delete your own account" });
+        }
+        return deleteUser(input.userId);
       }),
   }),
   // ─── User Settings ────────────────────────────────────────────────────────

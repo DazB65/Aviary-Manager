@@ -3,17 +3,28 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Users } from "lucide-react";
+import { Users, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 export default function AdminUsers() {
+  const { user: me } = useAuth();
   const utils = trpc.useUtils();
   const { data: users, isLoading, error } = trpc.admin.users.useQuery();
   const setPlan = trpc.admin.setPlan.useMutation({
     onSuccess: () => { utils.admin.users.invalidate(); toast.success("Plan updated!"); },
     onError: (e) => toast.error(e.message),
   });
+  const deleteUser = trpc.admin.deleteUser.useMutation({
+    onSuccess: () => { utils.admin.users.invalidate(); toast.success("User deleted."); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  function handleDelete(userId: number, email: string) {
+    if (!confirm(`Delete user "${email}" and all their data? This cannot be undone.`)) return;
+    deleteUser.mutate({ userId });
+  }
 
   if (error) {
     return (
@@ -90,15 +101,28 @@ export default function AdminUsers() {
                           {u.lastSignedIn ? format(new Date(u.lastSignedIn), "dd MMM yyyy") : "Never"}
                         </td>
                         <td className="px-4 py-3">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-xs h-7"
-                            disabled={setPlan.isPending}
-                            onClick={() => setPlan.mutate({ userId: u.id, plan: u.plan === "pro" ? "free" : "pro" })}
-                          >
-                            {u.plan === "pro" ? "Downgrade to Free" : "Upgrade to Pro"}
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-xs h-7"
+                              disabled={setPlan.isPending || deleteUser.isPending}
+                              onClick={() => setPlan.mutate({ userId: u.id, plan: u.plan === "pro" ? "free" : "pro" })}
+                            >
+                              {u.plan === "pro" ? "Downgrade to Free" : "Upgrade to Pro"}
+                            </Button>
+                            {u.id !== me?.id && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-xs h-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                disabled={deleteUser.isPending}
+                                onClick={() => handleDelete(u.id, u.email ?? "")}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
