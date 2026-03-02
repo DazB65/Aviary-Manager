@@ -8,6 +8,13 @@
       "when": 1772320105831,
       "tag": "0000_sweet_tarot",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1772406522721,
+      "tag": "0001_real_galactus",
+      "breakpoints": true
     }
   ]
 }
