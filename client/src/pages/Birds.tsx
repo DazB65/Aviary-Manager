@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { Bird, Plus, Search, Trash2, Pencil, Eye, Upload, LayoutGrid, List } from "lucide-react";
+import { Bird, Plus, Search, Trash2, Pencil, Eye, Upload, LayoutGrid, List, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { useState, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
@@ -80,6 +80,13 @@ export default function Birds() {
   function toggleView(mode: "grid" | "list") {
     setViewMode(mode);
     try { localStorage.setItem("birds-view-mode", mode); } catch {}
+  }
+  type SortCol = "name" | "species" | "gender" | "ringId" | "cage" | "mutation" | "dob" | "status";
+  const [sortCol, setSortCol] = useState<SortCol | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  function toggleSort(col: SortCol) {
+    if (sortCol === col) { setSortDir(d => d === "asc" ? "desc" : "asc"); }
+    else { setSortCol(col); setSortDir("asc"); }
   }
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -189,6 +196,23 @@ export default function Birds() {
   });
 
   const speciesMap = Object.fromEntries(speciesList.map(s => [s.id, s]));
+
+  const sorted = [...filtered].sort((a, b) => {
+    if (!sortCol) return 0;
+    const sp = (id: number) => speciesMap[id]?.commonName ?? "";
+    let aVal = "";
+    let bVal = "";
+    if (sortCol === "name") { aVal = a.name || a.ringId || ""; bVal = b.name || b.ringId || ""; }
+    else if (sortCol === "species") { aVal = sp(a.speciesId); bVal = sp(b.speciesId); }
+    else if (sortCol === "gender") { aVal = a.gender; bVal = b.gender; }
+    else if (sortCol === "ringId") { aVal = a.ringId ?? ""; bVal = b.ringId ?? ""; }
+    else if (sortCol === "cage") { aVal = (a as any).cageNumber ?? ""; bVal = (b as any).cageNumber ?? ""; }
+    else if (sortCol === "mutation") { aVal = a.colorMutation ?? ""; bVal = b.colorMutation ?? ""; }
+    else if (sortCol === "dob") { aVal = String(a.dateOfBirth ?? ""); bVal = String(b.dateOfBirth ?? ""); }
+    else if (sortCol === "status") { aVal = a.status; bVal = b.status; }
+    const cmp = aVal.localeCompare(bVal, undefined, { numeric: true, sensitivity: "base" });
+    return sortDir === "asc" ? cmp : -cmp;
+  });
   const maleBirds = birds.filter(b => b.gender === "male" && b.status === "alive");
   const femaleBirds = birds.filter(b => b.gender === "female" && b.status === "alive");
 
@@ -274,7 +298,7 @@ export default function Birds() {
           </div>
         ) : viewMode === "grid" ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {filtered.map(bird => {
+            {sorted.map(bird => {
               const sp = speciesMap[bird.speciesId];
               return (
                 <Card key={bird.id} className="group border border-border shadow-card hover:shadow-elevated transition-all duration-200 overflow-hidden">
@@ -321,19 +345,23 @@ export default function Birds() {
             <table className="w-full text-sm">
               <thead className="bg-muted/50">
                 <tr>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Bird</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden sm:table-cell">Species</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Gender</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden md:table-cell">Ring ID</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden lg:table-cell">Cage</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden lg:table-cell">Colour / Mutation</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden md:table-cell">DOB</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</th>
+                  {(["name","species","gender","ringId","cage","mutation","dob","status"] as SortCol[]).map((col, i) => {
+                    const labels: Record<SortCol, string> = { name:"Bird", species:"Species", gender:"Gender", ringId:"Ring ID", cage:"Cage", mutation:"Colour / Mutation", dob:"DOB", status:"Status" };
+                    const hidden = { species:"hidden sm:table-cell", ringId:"hidden md:table-cell", cage:"hidden lg:table-cell", mutation:"hidden lg:table-cell", dob:"hidden md:table-cell" } as Record<string,string>;
+                    const active = sortCol === col;
+                    const Icon = active ? (sortDir === "asc" ? ChevronUp : ChevronDown) : ChevronsUpDown;
+                    return (
+                      <th key={col} onClick={() => toggleSort(col)}
+                        className={`text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide cursor-pointer select-none transition-colors ${active ? "text-foreground" : "text-muted-foreground hover:text-foreground"} ${hidden[col] ?? ""}`}>
+                        <span className="flex items-center gap-1">{labels[col]}<Icon className="h-3 w-3 shrink-0" /></span>
+                      </th>
+                    );
+                  })}
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {filtered.map(bird => {
+                {sorted.map(bird => {
                   const sp = speciesMap[bird.speciesId];
                   const dobStr = bird.dateOfBirth
                     ? format(bird.dateOfBirth instanceof Date ? bird.dateOfBirth : new Date(String(bird.dateOfBirth)), "dd MMM yyyy")
