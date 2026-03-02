@@ -23,9 +23,10 @@ import {
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
 import { trpc } from "@/lib/trpc";
-import { BarChart2, Bird, CalendarDays, CreditCard, Egg, Heart, HelpCircle, Home, LayoutDashboard, LogOut, PanelLeft, Settings, Users } from "lucide-react";
+import { BarChart2, Bird, CalendarDays, CreditCard, Egg, Heart, HelpCircle, Home, LayoutDashboard, LogOut, PanelLeft, Settings, Users, MapPin } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
+import { useAppTour } from "@/hooks/useAppTour";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 
@@ -108,6 +109,12 @@ function DashboardLayoutContent({
   const breedingYear = settings?.breedingYear ?? new Date().getFullYear();
   const isAdmin = user?.role === "admin";
   const isPro = user?.plan === "pro";
+  const { startTour, maybeStartTour } = useAppTour();
+
+  useEffect(() => {
+    maybeStartTour();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (isCollapsed) {
@@ -189,8 +196,9 @@ function DashboardLayoutContent({
             <SidebarMenu className="px-2 py-1">
               {mainMenuItems.map(item => {
                 const isActive = location === item.path;
+                const tourId = `tour-nav-${item.path.replace("/", "")}`;
                 return (
-                  <SidebarMenuItem key={item.path}>
+                  <SidebarMenuItem key={item.path} id={tourId}>
                     <SidebarMenuButton
                       isActive={isActive}
                       onClick={() => setLocation(item.path)}
@@ -230,6 +238,15 @@ function DashboardLayoutContent({
           </SidebarContent>
 
           <SidebarFooter className="p-3">
+            {!isCollapsed && (
+              <button
+                onClick={startTour}
+                className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors mb-1"
+              >
+                <MapPin className="h-3.5 w-3.5 shrink-0" />
+                <span>Take the tour</span>
+              </button>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-3 rounded-lg px-1 py-1 hover:bg-accent/50 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
