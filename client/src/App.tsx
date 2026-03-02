@@ -18,6 +18,7 @@ import Landing from "./pages/Landing";
 import Cages from "./pages/Cages";
 import Statistics from "./pages/Statistics";
 import AdminUsers from "./pages/AdminUsers";
+import Help from "./pages/Help";
 
 function Router() {
   return (
@@ -34,7 +35,7 @@ function Router() {
       <Route path="/admin/users" component={AdminUsers} />
       <Route path="/settings" component={Settings} />
       <Route path="/billing" component={Billing} />
-      <Route path="/help" component={Settings} />
+      <Route path="/help" component={Help} />
       <Route path="/login" component={AuthPage} />
       <Route path="/register" component={AuthPage} />
       <Route path="/reset-password" component={ResetPassword} />
