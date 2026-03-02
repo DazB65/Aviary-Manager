@@ -21,9 +21,20 @@ import { format } from "date-fns";
 const GENDER_LABELS: Record<string, string> = { male: "♂ Male", female: "♀ Female", unknown: "? Unknown" };
 const STATUS_COLORS: Record<string, string> = {
   alive: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  breeding: "bg-pink-50 text-pink-700 border-pink-200",
+  resting: "bg-amber-50 text-amber-700 border-amber-200",
   deceased: "bg-gray-50 text-gray-500 border-gray-200",
   sold: "bg-blue-50 text-blue-700 border-blue-200",
   unknown: "bg-yellow-50 text-yellow-700 border-yellow-200",
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  alive: "Alive",
+  breeding: "🥚 Breeding",
+  resting: "💤 Resting",
+  deceased: "Deceased",
+  sold: "Sold",
+  unknown: "Unknown",
 };
 
 type BirdFormData = {
@@ -39,7 +50,7 @@ type BirdFormData = {
   notes: string;
   fatherId: string;
   motherId: string;
-  status: "alive" | "deceased" | "sold" | "unknown";
+  status: "alive" | "breeding" | "resting" | "deceased" | "sold" | "unknown";
 };
 
 const defaultForm: BirdFormData = {
@@ -287,7 +298,7 @@ export default function Birds() {
                       </button>
                     </div>
                     <Badge className={`absolute bottom-2 left-2 text-xs border ${STATUS_COLORS[bird.status]}`} variant="outline">
-                      {bird.status}
+                      {STATUS_LABELS[bird.status] ?? bird.status}
                     </Badge>
                   </div>
                   <CardContent className="p-3">
@@ -352,7 +363,7 @@ export default function Birds() {
                       <td className="px-4 py-3 text-xs text-amber-600 hidden lg:table-cell">{bird.colorMutation || "—"}</td>
                       <td className="px-4 py-3 text-xs text-muted-foreground hidden md:table-cell">{dobStr}</td>
                       <td className="px-4 py-3">
-                        <Badge className={`text-xs border ${STATUS_COLORS[bird.status]}`} variant="outline">{bird.status}</Badge>
+                        <Badge className={`text-xs border ${STATUS_COLORS[bird.status]}`} variant="outline">{STATUS_LABELS[bird.status] ?? bird.status}</Badge>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -524,6 +535,8 @@ export default function Birds() {
                   <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="alive">Alive</SelectItem>
+                    <SelectItem value="breeding">🥚 Breeding</SelectItem>
+                    <SelectItem value="resting">💤 Resting</SelectItem>
                     <SelectItem value="deceased">Deceased</SelectItem>
                     <SelectItem value="sold">Sold</SelectItem>
                     <SelectItem value="unknown">Unknown</SelectItem>

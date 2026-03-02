@@ -89,13 +89,23 @@ export async function getDb() {
       console.warn("[Database] Migration warning (non-fatal, schema may already be up to date):", migError);
     }
 
-    // Idempotent schema patches — ensure columns added by recent migrations actually
-    // exist even if the Drizzle migration tracker didn't record them (e.g. after a
-    // failed migration run). ADD COLUMN IF NOT EXISTS is safe to run every startup.
+    // Idempotent schema patches — ensure columns/enum values added by recent migrations
+    // actually exist. These run in autocommit mode (outside a transaction) which is
+    // required for ALTER TYPE ADD VALUE in PostgreSQL.
     try {
       await _db.execute(sql`ALTER TABLE birds ADD COLUMN IF NOT EXISTS "fledgedDate" date`);
     } catch (patchError) {
-      console.warn("[Database] Schema patch warning:", patchError);
+      console.warn("[Database] Schema patch (fledgedDate):", patchError);
+    }
+    try {
+      await _db.execute(sql`ALTER TYPE bird_status ADD VALUE IF NOT EXISTS 'breeding'`);
+    } catch (patchError) {
+      console.warn("[Database] Schema patch (breeding status):", patchError);
+    }
+    try {
+      await _db.execute(sql`ALTER TYPE bird_status ADD VALUE IF NOT EXISTS 'resting'`);
+    } catch (patchError) {
+      console.warn("[Database] Schema patch (resting status):", patchError);
     }
 
     // Seed species if the table is empty (first deploy / fresh DB).

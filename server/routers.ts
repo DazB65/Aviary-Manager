@@ -76,7 +76,7 @@ export const appRouter = router({
         notes: z.string().optional(),
         fatherId: z.number().optional(),
         motherId: z.number().optional(),
-        status: z.enum(["alive", "deceased", "sold", "unknown"]).default("alive"),
+        status: z.enum(["alive", "breeding", "resting", "deceased", "sold", "unknown"]).default("alive"),
       }))
       .mutation(async ({ ctx, input }) => {
         // Free plan: max 20 birds
@@ -106,7 +106,7 @@ export const appRouter = router({
         notes: z.string().optional(),
         fatherId: z.number().nullable().optional(),
         motherId: z.number().nullable().optional(),
-        status: z.enum(["alive", "deceased", "sold", "unknown"]).optional(),
+        status: z.enum(["alive", "breeding", "resting", "deceased", "sold", "unknown"]).optional(),
       }))
       .mutation(({ ctx, input }) => {
         const { id, ...data } = input;
