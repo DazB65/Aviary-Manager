@@ -33,8 +33,10 @@ type EventFormData = {
   birdId: string;
   pairId: string;
   notes: string;
-  recurrence: "none" | "daily" | "weekly" | "monthly" | "yearly";
+  recurrence: "none" | "daily" | "weekly" | "monthly" | "yearly" | "custom";
   recurrenceCount: number;
+  customInterval: number;
+  customUnit: "days" | "weeks" | "months" | "years";
 };
 
 const defaultForm: EventFormData = {
@@ -46,9 +48,17 @@ const defaultForm: EventFormData = {
   notes: "",
   recurrence: "none",
   recurrenceCount: 2,
+  customInterval: 3,
+  customUnit: "months",
 };
 
-function generateDates(startDate: string, recurrence: "none" | "daily" | "weekly" | "monthly" | "yearly", count: number): string[] {
+function generateDates(
+  startDate: string,
+  recurrence: EventFormData["recurrence"],
+  count: number,
+  customInterval = 1,
+  customUnit: EventFormData["customUnit"] = "months"
+): string[] {
   if (recurrence === "none" || count <= 1) return [startDate];
   const dates: string[] = [];
   for (let i = 0; i < count; i++) {
@@ -57,6 +67,12 @@ function generateDates(startDate: string, recurrence: "none" | "daily" | "weekly
     else if (recurrence === "weekly") d.setDate(d.getDate() + i * 7);
     else if (recurrence === "monthly") d.setMonth(d.getMonth() + i);
     else if (recurrence === "yearly") d.setFullYear(d.getFullYear() + i);
+    else if (recurrence === "custom") {
+      if (customUnit === "days") d.setDate(d.getDate() + i * customInterval);
+      else if (customUnit === "weeks") d.setDate(d.getDate() + i * 7 * customInterval);
+      else if (customUnit === "months") d.setMonth(d.getMonth() + i * customInterval);
+      else if (customUnit === "years") d.setFullYear(d.getFullYear() + i * customInterval);
+    }
     dates.push(d.toISOString().split("T")[0]);
   }
   return dates;
@@ -145,7 +161,13 @@ export default function Events() {
     }
 
     // Build the list of dates for recurrence
-    const dates = generateDates(baseDate, form.recurrence, form.recurrence === "none" ? 1 : form.recurrenceCount);
+    const dates = generateDates(
+      baseDate,
+      form.recurrence,
+      form.recurrence === "none" ? 1 : form.recurrenceCount,
+      form.customInterval,
+      form.customUnit,
+    );
 
     // When "All birds" is selected, create ONE event per date with allBirds: true (no specific birdId)
     const isAllBirds = form.birdId === "all";
@@ -255,37 +277,37 @@ export default function Events() {
                       const linkedPair = ev.pairId ? pairs.find(p => p.id === ev.pairId) : null;
                       return (
                         <Card key={ev.id} className={`border shadow-card transition-all ${ev.completed ? "opacity-60" : "hover:shadow-elevated"}`}>
-                          <CardContent className="p-3">
-                            <div className="flex items-center gap-3">
+                          <CardContent className="p-4">
+                            <div className="flex items-start gap-4">
                               <button
                                 onClick={() => toggleComplete.mutate({ id: ev.id })}
-                                className="shrink-0 text-muted-foreground hover:text-primary transition-colors"
+                                className="shrink-0 text-muted-foreground hover:text-primary transition-colors mt-0.5"
                               >
-                                {ev.completed ? <CheckCircle2 className="h-5 w-5 text-emerald-500" /> : <Circle className="h-5 w-5" />}
+                                {ev.completed ? <CheckCircle2 className="h-6 w-6 text-emerald-500" /> : <Circle className="h-6 w-6" />}
                               </button>
-                              <span className="text-lg shrink-0">{typeInfo.emoji}</span>
+                              <span className="text-2xl shrink-0 leading-none mt-0.5">{typeInfo.emoji}</span>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
-                                  <p className={`text-sm font-medium ${ev.completed ? "line-through text-muted-foreground" : ""}`}>{ev.title}</p>
-                                  <Badge variant="outline" className={`text-xs ${typeInfo.color}`}>{ev.eventType}</Badge>
+                                  <p className={`text-base font-semibold ${ev.completed ? "line-through text-muted-foreground" : ""}`}>{ev.title}</p>
+                                  <Badge variant="outline" className={`text-sm ${typeInfo.color}`}>{ev.eventType}</Badge>
                                 </div>
                                 {(ev as any).allBirds && (
-                                  <p className="text-xs text-muted-foreground mt-0.5">🐦 All birds</p>
+                                  <p className="text-sm text-muted-foreground mt-1">🐦 All birds</p>
                                 )}
                                 {!( (ev as any).allBirds ) && (linkedBird || linkedPair) && (
-                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                  <p className="text-sm text-muted-foreground mt-1">
                                     {linkedBird ? `🐦 ${linkedBird.name || linkedBird.ringId || `#${linkedBird.id}`}` : ""}
                                     {linkedPair ? `💑 ${pairLabel(linkedPair)}` : ""}
                                   </p>
                                 )}
-                                {ev.notes && <p className="text-xs text-muted-foreground mt-0.5">{ev.notes}</p>}
+                                {ev.notes && <p className="text-sm text-muted-foreground mt-1">{ev.notes}</p>}
                               </div>
                               <div className="flex gap-1 shrink-0">
-                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(ev)}>
-                                  <Pencil className="h-3 w-3" />
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(ev)}>
+                                  <Pencil className="h-4 w-4" />
                                 </Button>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => { if (confirm("Delete this event?")) deleteEvent.mutate({ id: ev.id }); }}>
-                                  <Trash2 className="h-3 w-3" />
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => { if (confirm("Delete this event?")) deleteEvent.mutate({ id: ev.id }); }}>
+                                  <Trash2 className="h-4 w-4" />
                                 </Button>
                               </div>
                             </div>
@@ -369,10 +391,11 @@ export default function Events() {
                       <SelectItem value="weekly">Weekly</SelectItem>
                       <SelectItem value="monthly">Monthly</SelectItem>
                       <SelectItem value="yearly">Yearly</SelectItem>
+                      <SelectItem value="custom">Custom…</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                {form.recurrence !== "none" && (
+                {form.recurrence !== "none" && form.recurrence !== "custom" && (
                   <div>
                     <Label>Occurrences</Label>
                     <Input
@@ -385,6 +408,44 @@ export default function Events() {
                     />
                   </div>
                 )}
+              </div>
+            )}
+            {!editingId && form.recurrence === "custom" && (
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <Label>Every</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={99}
+                    className="mt-1"
+                    value={form.customInterval}
+                    onChange={e => setForm(f => ({ ...f, customInterval: Math.max(1, Number(e.target.value)) }))}
+                  />
+                </div>
+                <div>
+                  <Label>Unit</Label>
+                  <Select value={form.customUnit} onValueChange={v => setForm(f => ({ ...f, customUnit: v as EventFormData["customUnit"] }))}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="days">Days</SelectItem>
+                      <SelectItem value="weeks">Weeks</SelectItem>
+                      <SelectItem value="months">Months</SelectItem>
+                      <SelectItem value="years">Years</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Occurrences</Label>
+                  <Input
+                    type="number"
+                    min={2}
+                    max={52}
+                    className="mt-1"
+                    value={form.recurrenceCount}
+                    onChange={e => setForm(f => ({ ...f, recurrenceCount: Math.max(2, Math.min(52, Number(e.target.value))) }))}
+                  />
+                </div>
               </div>
             )}
             <div>
