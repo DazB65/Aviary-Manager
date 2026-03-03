@@ -147,6 +147,11 @@ export async function getDb() {
     } catch (patchError) {
       console.warn("[Database] Schema patch (splitFor):", patchError);
     }
+    try {
+      await _db.execute(sql`ALTER TABLE birds ADD COLUMN IF NOT EXISTS "singleFactor" text`);
+    } catch (patchError) {
+      console.warn("[Database] Schema patch (singleFactor):", patchError);
+    }
 
     // Seed species if the table is empty (first deploy / fresh DB).
     try {

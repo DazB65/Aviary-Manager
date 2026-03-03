@@ -86,8 +86,9 @@ export const birds = pgTable("birds", {
   fatherId: integer("fatherId"), // self-referential for pedigree
   motherId: integer("motherId"), // self-referential for pedigree
   status: birdStatusEnum("status").default("alive").notNull(),
-  visualMutations: text("visualMutations"), // JSON array of expressed mutation IDs e.g. '["red_head","white_breast"]'
-  splitFor: text("splitFor"),              // JSON array of carried (split) mutation IDs e.g. '["blue_body"]'
+  visualMutations: text("visualMutations"), // JSON array of expressed mutation IDs e.g. '["head_red","breast_white"]'
+  splitFor: text("splitFor"),              // JSON array of carried (split) mutation IDs e.g. '["body_blue"]'
+  singleFactor: text("singleFactor"),      // JSON array of single-factor incompletely dominant mutation IDs e.g. '["body_dilute"]'
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });

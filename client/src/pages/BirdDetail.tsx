@@ -4,7 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { getMutationsForSpecies } from "@/lib/genetics/gouldian";
+import {
+  getMutationsForSpecies,
+  genotypeToTraits,
+  traitsToGenotype,
+  HEAD_OPTIONS_MALE,
+  HEAD_OPTIONS_FEMALE,
+  BREAST_OPTIONS,
+  BODY_OPTIONS,
+} from "@/lib/genetics/gouldian";
 import { ArrowLeft, Bird, Calendar, Tag, Dna, GitBranch, Users, CalendarDays, CheckCircle2, Circle, Save } from "lucide-react";
 import { useLocation, useParams } from "wouter";
 import { format } from "date-fns";
@@ -153,22 +161,38 @@ export default function BirdDetail() {
     onSuccess: () => utils.birds.get.invalidate({ id: birdId }),
   });
 
-  const [genotypeVisual, setGenotypeVisual] = useState<string[]>([]);
-  const [genotypeSplits, setGenotypeSplits] = useState<string[]>([]);
-  const [genotypeSaved, setGenotypeSaved] = useState(false);
+  const [genotypeHead, setGenotypeHead]     = useState<string>('black');
+  const [genotypeBreast, setGenotypeBreast] = useState<string>('purple');
+  const [genotypeBody, setGenotypeBody]     = useState<string>('green');
+  const [genotypeSaved, setGenotypeSaved]   = useState(false);
 
   // Sync state from bird data when it loads
   useEffect(() => {
     if (!bird) return;
-    try { setGenotypeVisual(JSON.parse((bird as any).visualMutations ?? "[]")); } catch { setGenotypeVisual([]); }
-    try { setGenotypeSplits(JSON.parse((bird as any).splitFor ?? "[]")); } catch { setGenotypeSplits([]); }
-  }, [bird?.id, (bird as any)?.visualMutations, (bird as any)?.splitFor]);
+    try {
+      const visual       = JSON.parse((bird as any).visualMutations ?? "[]");
+      const splits       = JSON.parse((bird as any).splitFor ?? "[]");
+      const singleFactor = JSON.parse((bird as any).singleFactor ?? "[]");
+      const gender = (bird.gender === 'male' || bird.gender === 'female') ? bird.gender : 'male';
+      const traits = genotypeToTraits(gender, visual, splits, singleFactor);
+      setGenotypeHead(traits.head);
+      setGenotypeBreast(traits.breast);
+      setGenotypeBody(traits.body);
+    } catch {
+      setGenotypeHead('black');
+      setGenotypeBreast('purple');
+      setGenotypeBody('green');
+    }
+  }, [bird?.id, (bird as any)?.visualMutations, (bird as any)?.splitFor, (bird as any)?.singleFactor]);
 
   function saveGenotype() {
+    const gender = (bird?.gender === 'male' || bird?.gender === 'female') ? bird.gender : 'male';
+    const { visual, splits, singleFactor } = traitsToGenotype(genotypeHead, genotypeBreast, genotypeBody, gender);
     updateBird.mutate({
       id: birdId,
-      visualMutations: JSON.stringify(genotypeVisual),
-      splitFor: JSON.stringify(genotypeSplits),
+      visualMutations: JSON.stringify(visual),
+      splitFor: JSON.stringify(splits),
+      singleFactor: JSON.stringify(singleFactor),
     }, {
       onSuccess: () => { setGenotypeSaved(true); setTimeout(() => setGenotypeSaved(false), 2000); },
     });
@@ -541,7 +565,7 @@ export default function BirdDetail() {
                   <Dna className="h-4 w-4 text-primary" />
                   Colour Genetics
                 </CardTitle>
-                <p className="text-xs text-muted-foreground">Record this bird's known visual mutations and splits.</p>
+                <p className="text-xs text-muted-foreground">Select this bird's known colour traits. Options match the gouldianfinches.eu reference calculator.</p>
               </CardHeader>
               <CardContent>
                 {(() => {
@@ -558,68 +582,59 @@ export default function BirdDetail() {
                     );
                   }
 
+                  const isMale = bird.gender === "male";
+                  const headOptions = isMale ? HEAD_OPTIONS_MALE : HEAD_OPTIONS_FEMALE;
+
                   return (
                     <div className="space-y-4">
-                      <div className="grid gap-3">
-                        {mutations.map(mut => {
-                          const isVisual = genotypeVisual.includes(mut.id);
-                          const isSplit  = genotypeSplits.includes(mut.id);
-                          const isMale   = bird.gender === "male";
-                          const isSexLinked = mut.inheritance === "sex-linked-recessive";
+                      <div className="grid gap-4">
+                        {/* Head colour */}
+                        <div className="space-y-1.5">
+                          <label className="text-sm font-medium">Head Colour</label>
+                          <select
+                            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                            value={genotypeHead}
+                            onChange={e => setGenotypeHead(e.target.value)}
+                          >
+                            {headOptions.map(opt => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                        </div>
 
-                          function toggleVisual() {
-                            setGenotypeVisual(prev =>
-                              isVisual ? prev.filter(id => id !== mut.id) : [...prev, mut.id]
-                            );
-                            // Can't be both visual and split
-                            if (!isVisual) setGenotypeSplits(prev => prev.filter(id => id !== mut.id));
-                          }
-                          function toggleSplit() {
-                            setGenotypeSplits(prev =>
-                              isSplit ? prev.filter(id => id !== mut.id) : [...prev, mut.id]
-                            );
-                            if (!isSplit) setGenotypeVisual(prev => prev.filter(id => id !== mut.id));
-                          }
+                        {/* Breast colour */}
+                        <div className="space-y-1.5">
+                          <label className="text-sm font-medium">Breast Colour</label>
+                          <select
+                            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                            value={genotypeBreast}
+                            onChange={e => setGenotypeBreast(e.target.value)}
+                          >
+                            {BREAST_OPTIONS.map(opt => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                        </div>
 
-                          return (
-                            <div key={mut.id} className="flex items-center justify-between gap-3 p-3 rounded-xl border border-border bg-muted/30">
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium">{mut.name}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {isSexLinked ? "Sex-linked recessive" : "Autosomal recessive"}
-                                </p>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                                  <input
-                                    type="checkbox"
-                                    className="rounded"
-                                    checked={isVisual}
-                                    onChange={toggleVisual}
-                                  />
-                                  <span className="text-xs font-medium text-amber-700">Visual</span>
-                                </label>
-                                {/* Split only applicable for males (sex-linked) or any gender (autosomal) */}
-                                {(!isSexLinked || isMale) && (
-                                  <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                                    <input
-                                      type="checkbox"
-                                      className="rounded"
-                                      checked={isSplit}
-                                      onChange={toggleSplit}
-                                      disabled={isVisual}
-                                    />
-                                    <span className={`text-xs font-medium ${isVisual ? "text-muted-foreground" : "text-teal-700"}`}>Split</span>
-                                  </label>
-                                )}
-                                {isSexLinked && !isMale && (
-                                  <span className="text-xs text-muted-foreground italic">females can't be split</span>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
+                        {/* Body colour */}
+                        <div className="space-y-1.5">
+                          <label className="text-sm font-medium">Body Colour</label>
+                          <select
+                            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                            value={genotypeBody}
+                            onChange={e => setGenotypeBody(e.target.value)}
+                          >
+                            {BODY_OPTIONS.map(opt => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
+
+                      <p className="text-xs text-muted-foreground italic">
+                        "/" options mean the bird is visually the first colour but genetically carries the second.
+                        SF = single factor (one copy). DF = double factor (two copies).
+                      </p>
 
                       <Button
                         onClick={saveGenotype}

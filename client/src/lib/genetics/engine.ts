@@ -7,8 +7,10 @@
 //
 // Autosomal recessive: standard Mendelian — both parents must carry allele
 // Sex-linked recessive: locus on Z chromosome only
+// Incompletely dominant: heterozygous (Aa) shows intermediate phenotype (single factor)
+//   DD = wild type, Dd = single factor (SF), dd = double factor (DF, fully expressed)
 
-export type InheritanceType = 'autosomal-recessive' | 'sex-linked-recessive';
+export type InheritanceType = 'autosomal-recessive' | 'sex-linked-recessive' | 'incompletely-dominant';
 
 export interface MutationDef {
   id: string;
@@ -20,15 +22,17 @@ export interface MutationDef {
 
 export interface BirdGenotype {
   gender: 'male' | 'female';
-  visual: string[];   // Mutation IDs visually expressed
-  splits: string[];   // Mutation IDs carried but not expressed (males only for sex-linked)
+  visual: string[];        // Mutation IDs fully expressed (homozygous recessive OR double-factor IC)
+  splits: string[];        // Mutation IDs carried but not expressed (heterozygous recessive)
+  singleFactor: string[];  // Mutation IDs that are single-factor incompletely dominant (intermediate phenotype)
 }
 
 export interface OffspringOutcome {
   gender: 'male' | 'female';
-  visual: string[];
-  splits: string[];
-  probability: number; // 0–1 fraction
+  visual: string[];        // double factor or fully expressed
+  splits: string[];        // carried recessive
+  singleFactor: string[];  // single factor intermediate
+  probability: number;     // 0–1 fraction
 }
 
 // ─── Autosomal Recessive ──────────────────────────────────────────────────────
@@ -77,6 +81,30 @@ function getFemaleZAllele(isVisual: boolean): ZAllele {
   return isVisual ? 'Zm' : 'Z+';
 }
 
+// ─── Incompletely Dominant ────────────────────────────────────────────────────
+// Alleles: D = dominant (wild type), d = dilute/mutant
+// Genotypes: DD (normal/wild type), Dd (single factor — intermediate), dd (double factor — full expression)
+function predictIncompleteDominant(
+  dadDF: boolean, dadSF: boolean,
+  momDF: boolean, momSF: boolean,
+): { df: number; sf: number; normal: number } {
+  // Get alleles: DD=normal has [D,D], Dd=SF has [D,d], dd=DF has [d,d]
+  const dadAlleles: Array<'D' | 'd'> = dadDF ? ['d', 'd'] : dadSF ? ['D', 'd'] : ['D', 'D'];
+  const momAlleles: Array<'D' | 'd'> = momDF ? ['d', 'd'] : momSF ? ['D', 'd'] : ['D', 'D'];
+
+  let df = 0, sf = 0, normal = 0;
+  for (const d of dadAlleles) {
+    for (const m of momAlleles) {
+      const combo = d + m;
+      if (combo === 'dd') df++;
+      else if (combo === 'Dd' || combo === 'dD') sf++;
+      else normal++;
+    }
+  }
+  const total = 4;
+  return { df: df / total, sf: sf / total, normal: normal / total };
+}
+
 // ─── Main Predictor ───────────────────────────────────────────────────────────
 // Combines predictions across all mutations for a given pair.
 // Returns a deduplicated list of OffspringOutcome with combined probabilities.
@@ -89,35 +117,42 @@ export function predictOffspring(
   const results: OffspringOutcome[] = [];
 
   for (const gender of genders) {
-    const mutationOutcomes: Array<{ id: string; visual: number; split: number; normal: number }> = [];
+    const mutationOutcomes: Array<{ id: string; visual: number; sf: number; split: number; normal: number }> = [];
 
     for (const mut of mutations) {
       const dadVisual = male.visual.includes(mut.id);
       const dadSplit  = male.splits.includes(mut.id);
+      const dadSF     = male.singleFactor.includes(mut.id);
       const momVisual = female.visual.includes(mut.id);
+      const momSF     = female.singleFactor.includes(mut.id);
 
-      if (mut.inheritance === 'autosomal-recessive') {
+      if (mut.inheritance === 'incompletely-dominant') {
+        const r = predictIncompleteDominant(dadVisual, dadSF, momVisual, momSF);
+        mutationOutcomes.push({ id: mut.id, visual: r.df, sf: r.sf, split: 0, normal: r.normal });
+      } else if (mut.inheritance === 'autosomal-recessive') {
         const momSplit = female.splits.includes(mut.id);
         const r = predictAutosomal(dadVisual, dadSplit, momVisual, momSplit);
-        mutationOutcomes.push({ id: mut.id, ...r });
+        mutationOutcomes.push({ id: mut.id, visual: r.visual, sf: 0, split: r.split, normal: r.normal });
       } else {
+        // sex-linked-recessive
         const r = predictSexLinked(dadVisual, dadSplit, momVisual);
         if (gender === 'male') {
-          mutationOutcomes.push({ id: mut.id, ...r.sons });
+          mutationOutcomes.push({ id: mut.id, visual: r.sons.visual, sf: 0, split: r.sons.split, normal: r.sons.normal });
         } else {
-          mutationOutcomes.push({ id: mut.id, visual: r.daughters.visual, split: 0, normal: r.daughters.normal });
+          mutationOutcomes.push({ id: mut.id, visual: r.daughters.visual, sf: 0, split: 0, normal: r.daughters.normal });
         }
       }
     }
 
     // Cartesian product across mutations
-    type MutState = 'visual' | 'split' | 'normal';
+    type MutState = 'visual' | 'sf' | 'split' | 'normal';
     const combos: Array<{ states: Array<{ id: string; state: MutState }>; prob: number }> = [{ states: [], prob: 1 }];
 
     for (const mo of mutationOutcomes) {
       const next: typeof combos = [];
       for (const combo of combos) {
         if (mo.visual > 0) next.push({ states: [...combo.states, { id: mo.id, state: 'visual' }], prob: combo.prob * mo.visual });
+        if (mo.sf > 0)     next.push({ states: [...combo.states, { id: mo.id, state: 'sf'     }], prob: combo.prob * mo.sf     });
         if (mo.split > 0)  next.push({ states: [...combo.states, { id: mo.id, state: 'split'  }], prob: combo.prob * mo.split  });
         if (mo.normal > 0) next.push({ states: [...combo.states, { id: mo.id, state: 'normal' }], prob: combo.prob * mo.normal });
       }
@@ -129,8 +164,9 @@ export function predictOffspring(
       if (combo.prob === 0) continue;
       results.push({
         gender,
-        visual: combo.states.filter(s => s.state === 'visual').map(s => s.id),
-        splits: combo.states.filter(s => s.state === 'split').map(s => s.id),
+        visual:       combo.states.filter(s => s.state === 'visual').map(s => s.id),
+        singleFactor: combo.states.filter(s => s.state === 'sf').map(s => s.id),
+        splits:       combo.states.filter(s => s.state === 'split').map(s => s.id),
         probability: combo.prob * 0.5, // 50/50 gender probability
       });
     }
@@ -139,7 +175,7 @@ export function predictOffspring(
   // Merge identical outcomes
   const merged = new Map<string, OffspringOutcome>();
   for (const o of results) {
-    const key = `${o.gender}|${[...o.visual].sort().join(',')}|${[...o.splits].sort().join(',')}`;
+    const key = `${o.gender}|${[...o.visual].sort().join(',')}|${[...o.singleFactor].sort().join(',')}|${[...o.splits].sort().join(',')}`;
     if (merged.has(key)) {
       merged.get(key)!.probability += o.probability;
     } else {

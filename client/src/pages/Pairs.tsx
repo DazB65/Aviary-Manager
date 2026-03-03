@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { getMutationsForSpecies } from "@/lib/genetics/gouldian";
+import { getMutationsForSpecies, describeGouldianOutcome } from "@/lib/genetics/gouldian";
 import { predictOffspring } from "@/lib/genetics/engine";
 import type { BirdGenotype } from "@/lib/genetics/engine";
 import { Heart, Plus, Trash2, Pencil, ChevronRight, AlertTriangle, Dna, CalendarDays, ChevronDown, ChevronUp } from "lucide-react";
@@ -409,15 +409,16 @@ export default function Pairs() {
                               gender: "male",
                               visual: parseMuts((male as any)?.visualMutations),
                               splits: parseMuts((male as any)?.splitFor),
+                              singleFactor: parseMuts((male as any)?.singleFactor),
                             };
                             const femaleGenotype: BirdGenotype = {
                               gender: "female",
                               visual: parseMuts((female as any)?.visualMutations),
                               splits: parseMuts((female as any)?.splitFor),
+                              singleFactor: parseMuts((female as any)?.singleFactor),
                             };
 
                             const outcomes = predictOffspring(maleGenotype, femaleGenotype, mutations);
-                            const getMutName = (id: string) => mutations.find(m => m.id === id)?.name ?? id;
 
                             return (
                               <div className="mt-3 rounded-xl border border-violet-200 bg-violet-50/50 p-3">
@@ -432,16 +433,11 @@ export default function Pairs() {
                                       const pct = Math.round(o.probability * 1000) / 10;
                                       const genderIcon = o.gender === "male" ? "♂" : "♀";
                                       const genderColour = o.gender === "male" ? "text-blue-600" : "text-pink-600";
-                                      const visual = o.visual.map(getMutName);
-                                      const splits = o.splits.map(getMutName);
-                                      const desc = [
-                                        visual.length > 0 ? visual.join(" · ") : "Wild type",
-                                        splits.length > 0 ? `split: ${splits.join(", ")}` : "",
-                                      ].filter(Boolean).join(" / ");
+                                      const desc = describeGouldianOutcome(o);
                                       return (
                                         <div key={i} className="flex items-center justify-between gap-2 text-xs bg-white rounded-lg px-2.5 py-1.5 border border-violet-100">
                                           <span className={`font-semibold shrink-0 ${genderColour}`}>{genderIcon}</span>
-                                          <span className="flex-1 min-w-0 truncate text-foreground">{desc}</span>
+                                          <span className="flex-1 min-w-0 text-foreground">{desc}</span>
                                           <span className="shrink-0 font-semibold text-violet-700">{pct}%</span>
                                         </div>
                                       );
