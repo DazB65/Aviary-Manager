@@ -320,17 +320,15 @@ export default function Birds() {
                     {bird.photoUrl ? (
                       <img src={bird.photoUrl} alt={bird.name ?? "Bird"} className="w-full h-36 object-cover" />
                     ) : (
-                      <div className={`w-full h-36 relative overflow-hidden ${bird.gender === "male" ? "bg-blue-50" : bird.gender === "female" ? "bg-pink-50" : "bg-amber-50"} flex items-center justify-center`}>
-                        {/* Bird name/ring ID as large faded watermark */}
+                      <div className={`w-full h-36 overflow-hidden ${bird.gender === "male" ? "bg-blue-50" : bird.gender === "female" ? "bg-pink-50" : "bg-amber-50"} flex flex-col items-center justify-center gap-1`}>
+                        <span className="text-4xl leading-none">
+                          {bird.gender === "male" ? "♂" : bird.gender === "female" ? "♀" : "🐦"}
+                        </span>
                         <span
-                          className={`absolute font-black uppercase select-none pointer-events-none whitespace-nowrap ${bird.gender === "male" ? "text-blue-400" : bird.gender === "female" ? "text-pink-400" : "text-amber-400"}`}
-                          style={{ fontSize: "3.5rem", opacity: 0.2, transform: "rotate(-8deg)", letterSpacing: "0.04em" }}
+                          className={`font-black uppercase select-none pointer-events-none whitespace-nowrap ${bird.gender === "male" ? "text-blue-400" : bird.gender === "female" ? "text-pink-400" : "text-amber-400"}`}
+                          style={{ fontSize: "1.1rem", opacity: 0.5, letterSpacing: "0.08em" }}
                         >
                           {bird.name || bird.ringId || `#${bird.id}`}
-                        </span>
-                        {/* Gender symbol on top */}
-                        <span className="text-4xl relative z-10">
-                          {bird.gender === "male" ? "♂" : bird.gender === "female" ? "♀" : "🐦"}
                         </span>
                       </div>
                     )}
