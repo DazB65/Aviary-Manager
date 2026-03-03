@@ -43,7 +43,7 @@ function StatCard({
             <p className="text-white/80 text-sm font-medium mb-1">{label}</p>
             <div className="flex items-baseline gap-2">
               <p className="text-white text-3xl font-bold">{value}</p>
-              {subLabel && <p className="text-white/70 text-xs font-medium">{subLabel}</p>}
+              {subLabel && <p className="text-white/70 text-base font-semibold">{subLabel}</p>}
             </div>
           </div>
           <div className="bg-white/20 rounded-xl p-3">
