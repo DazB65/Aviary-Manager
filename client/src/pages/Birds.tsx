@@ -315,7 +315,7 @@ export default function Birds() {
             {sorted.map(bird => {
               const sp = speciesMap[bird.speciesId];
               return (
-                <Card key={bird.id} className={`group border border-border shadow-card hover:shadow-elevated transition-all duration-200 overflow-hidden ${inactiveStatuses.includes(bird.status) ? "opacity-60" : ""}`}>
+                <Card key={bird.id} onClick={() => setLocation(`/birds/${bird.id}`)} className={`group border border-border shadow-card hover:shadow-elevated transition-all duration-200 overflow-hidden cursor-pointer ${inactiveStatuses.includes(bird.status) ? "opacity-60" : ""}`}>
                   <div className="relative">
                     {bird.photoUrl ? (
                       <img src={bird.photoUrl} alt={bird.name ?? "Bird"} className="w-full h-36 object-cover" />
@@ -325,13 +325,13 @@ export default function Birds() {
                       </div>
                     )}
                     <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => setLocation(`/birds/${bird.id}`)} className="bg-white/90 hover:bg-white rounded-lg p-1.5 shadow-sm">
+                      <button onClick={(e) => { e.stopPropagation(); setLocation(`/birds/${bird.id}`); }} className="bg-white/90 hover:bg-white rounded-lg p-1.5 shadow-sm">
                         <Eye className="h-3.5 w-3.5 text-foreground" />
                       </button>
-                      <button onClick={() => openEdit(bird)} className="bg-white/90 hover:bg-white rounded-lg p-1.5 shadow-sm">
+                      <button onClick={(e) => { e.stopPropagation(); openEdit(bird); }} className="bg-white/90 hover:bg-white rounded-lg p-1.5 shadow-sm">
                         <Pencil className="h-3.5 w-3.5 text-foreground" />
                       </button>
-                      <button onClick={() => { if (confirm("Delete this bird?")) deleteBird.mutate({ id: bird.id }); }} className="bg-white/90 hover:bg-white rounded-lg p-1.5 shadow-sm">
+                      <button onClick={(e) => { e.stopPropagation(); if (confirm("Delete this bird?")) deleteBird.mutate({ id: bird.id }); }} className="bg-white/90 hover:bg-white rounded-lg p-1.5 shadow-sm">
                         <Trash2 className="h-3.5 w-3.5 text-destructive" />
                       </button>
                     </div>
@@ -381,7 +381,7 @@ export default function Birds() {
                     ? format(bird.dateOfBirth instanceof Date ? bird.dateOfBirth : new Date(String(bird.dateOfBirth)), "dd MMM yyyy")
                     : "—";
                   return (
-                    <tr key={bird.id} className={`hover:bg-muted/30 transition-colors group ${inactiveStatuses.includes(bird.status) ? "bg-muted/20 opacity-60" : "bg-white"}`}>
+                    <tr key={bird.id} onClick={() => setLocation(`/birds/${bird.id}`)} className={`hover:bg-muted/30 transition-colors group cursor-pointer ${inactiveStatuses.includes(bird.status) ? "bg-muted/20 opacity-60" : "bg-white"}`}>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className={`w-9 h-9 rounded-lg overflow-hidden ${bird.gender === "male" ? "bg-blue-50" : bird.gender === "female" ? "bg-pink-50" : "bg-amber-50"} flex items-center justify-center text-lg shrink-0`}>
@@ -409,13 +409,13 @@ export default function Birds() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => setLocation(`/birds/${bird.id}`)} className="p-1.5 rounded-lg hover:bg-muted" title="View">
+                          <button onClick={(e) => { e.stopPropagation(); setLocation(`/birds/${bird.id}`); }} className="p-1.5 rounded-lg hover:bg-muted" title="View">
                             <Eye className="h-3.5 w-3.5" />
                           </button>
-                          <button onClick={() => openEdit(bird)} className="p-1.5 rounded-lg hover:bg-muted" title="Edit">
+                          <button onClick={(e) => { e.stopPropagation(); openEdit(bird); }} className="p-1.5 rounded-lg hover:bg-muted" title="Edit">
                             <Pencil className="h-3.5 w-3.5" />
                           </button>
-                          <button onClick={() => { if (confirm("Delete this bird?")) deleteBird.mutate({ id: bird.id }); }} className="p-1.5 rounded-lg hover:bg-muted text-destructive" title="Delete">
+                          <button onClick={(e) => { e.stopPropagation(); if (confirm("Delete this bird?")) deleteBird.mutate({ id: bird.id }); }} className="p-1.5 rounded-lg hover:bg-muted text-destructive" title="Delete">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         </div>

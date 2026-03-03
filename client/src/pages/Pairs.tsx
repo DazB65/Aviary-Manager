@@ -331,7 +331,11 @@ export default function Pairs() {
                           )}
                           <div className="flex items-center gap-4">
                             {/* Male */}
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <button
+                              onClick={() => male && setLocation(`/birds/${male.id}`)}
+                              className="flex items-center gap-2 flex-1 min-w-0 text-left hover:opacity-75 transition-opacity cursor-pointer disabled:cursor-default"
+                              disabled={!male}
+                            >
                               <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-lg shrink-0 overflow-hidden">
                                 {male?.photoUrl ? <img src={male.photoUrl} alt="" className="w-full h-full object-cover rounded-lg" /> : "♂"}
                               </div>
@@ -339,14 +343,18 @@ export default function Pairs() {
                                 <p className="text-sm font-semibold truncate">{birdLabel(male)}</p>
                                 <p className="text-sm text-blue-600">Male</p>
                               </div>
-                            </div>
+                            </button>
                             {/* Heart */}
                             <div className="flex flex-col items-center gap-1 shrink-0">
                               <Heart className="h-5 w-5 text-rose-400 fill-rose-400" />
                               {pairingDateStr && <p className="text-xs text-muted-foreground whitespace-nowrap">{pairingDateStr}</p>}
                             </div>
                             {/* Female */}
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <button
+                              onClick={() => female && setLocation(`/birds/${female.id}`)}
+                              className="flex items-center gap-2 flex-1 min-w-0 text-left hover:opacity-75 transition-opacity cursor-pointer disabled:cursor-default"
+                              disabled={!female}
+                            >
                               <div className="w-10 h-10 rounded-lg bg-pink-50 flex items-center justify-center text-lg shrink-0 overflow-hidden">
                                 {female?.photoUrl ? <img src={female.photoUrl} alt="" className="w-full h-full object-cover rounded-lg" /> : "♀"}
                               </div>
@@ -354,7 +362,7 @@ export default function Pairs() {
                                 <p className="text-sm font-semibold truncate">{birdLabel(female)}</p>
                                 <p className="text-sm text-pink-600">Female</p>
                               </div>
-                            </div>
+                            </button>
                             {/* Status & Actions */}
                             <div className="flex items-center gap-2 shrink-0">
                               <Badge variant="outline" className={`text-sm ${STATUS_STYLES[pair.status]}`}>
