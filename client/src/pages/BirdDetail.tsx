@@ -284,18 +284,18 @@ export default function BirdDetail() {
         {/* Profile Header */}
         <Card className="border border-border shadow-card overflow-hidden">
           <div className={`h-28 flex flex-col items-center justify-center gap-0.5 overflow-hidden ${
-            bird.gender === "male"   ? "bg-gradient-to-r from-blue-400 to-blue-600" :
-            bird.gender === "female" ? "bg-gradient-to-r from-pink-400 to-rose-500" :
-                                       "bg-gradient-to-r from-amber-400 to-orange-500"
+            bird.gender === "male"   ? "bg-blue-50" :
+            bird.gender === "female" ? "bg-pink-50" :
+                                       "bg-amber-50"
           }`}>
-            <span className="text-3xl leading-none text-white drop-shadow">
+            <span className={`text-3xl leading-none ${bird.gender === "male" ? "text-blue-400" : bird.gender === "female" ? "text-pink-400" : "text-amber-400"}`}>
               {bird.gender === "male" ? "♂" : bird.gender === "female" ? "♀" : "🐦"}
             </span>
-            <span className="font-black uppercase tracking-widest text-white/80 leading-tight" style={{ fontSize: "1rem" }}>
+            <span className={`font-black uppercase tracking-widest leading-tight ${bird.gender === "male" ? "text-blue-400" : bird.gender === "female" ? "text-pink-400" : "text-amber-400"}`} style={{ fontSize: "1rem", opacity: 0.8 }}>
               {bird.name || bird.ringId || `#${bird.id}`}
             </span>
             {bird.colorMutation && (
-              <span className="text-base font-black uppercase tracking-widest text-white/70 leading-tight">
+              <span className={`text-base font-black uppercase tracking-widest leading-tight ${bird.gender === "male" ? "text-blue-400" : bird.gender === "female" ? "text-pink-400" : "text-amber-400"}`} style={{ opacity: 0.6 }}>
                 {bird.colorMutation}
               </span>
             )}
