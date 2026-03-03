@@ -41,8 +41,10 @@ function StatCard({
         <div className={`${gradient} p-5 flex items-center justify-between`}>
           <div>
             <p className="text-white/80 text-sm font-medium mb-1">{label}</p>
-            <p className="text-white text-3xl font-bold">{value}</p>
-            {subLabel && <p className="text-white/70 text-xs font-medium mt-1">{subLabel}</p>}
+            <div className="flex items-baseline gap-2">
+              <p className="text-white text-3xl font-bold">{value}</p>
+              {subLabel && <p className="text-white/70 text-xs font-medium">{subLabel}</p>}
+            </div>
           </div>
           <div className="bg-white/20 rounded-xl p-3">
             <Icon className="h-6 w-6 text-white" />
