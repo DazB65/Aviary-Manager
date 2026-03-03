@@ -12,7 +12,10 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { Heart, Plus, Trash2, Pencil, ChevronRight, AlertTriangle, Dna, CalendarDays } from "lucide-react";
+import { getMutationsForSpecies } from "@/lib/genetics/gouldian";
+import { predictOffspring } from "@/lib/genetics/engine";
+import type { BirdGenotype } from "@/lib/genetics/engine";
+import { Heart, Plus, Trash2, Pencil, ChevronRight, AlertTriangle, Dna, CalendarDays, ChevronDown, ChevronUp } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
@@ -148,6 +151,7 @@ export default function Pairs() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<PairFormData>(defaultForm);
+  const [predictingPairId, setPredictingPairId] = useState<number | null>(null);
   const utils = trpc.useUtils();
 
   const { data: pairs = [], isLoading } = trpc.pairs.list.useQuery();
@@ -371,7 +375,85 @@ export default function Pairs() {
                           <div className="mt-2 flex items-center gap-3 flex-wrap">
                             <PairInbreeding maleId={pair.maleId} femaleId={pair.femaleId} />
                             {pair.notes && <p className="text-xs text-muted-foreground">{pair.notes}</p>}
+                            {(() => {
+                              const maleSpeciesName = speciesMap[male?.speciesId ?? 0]?.commonName ?? "";
+                              const hasMod = getMutationsForSpecies(maleSpeciesName) !== null;
+                              if (!hasMod) return null;
+                              return (
+                                <button
+                                  className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100 transition-colors font-medium"
+                                  onClick={() => setPredictingPairId(predictingPairId === pair.id ? null : pair.id)}
+                                >
+                                  <Dna className="h-3.5 w-3.5" />
+                                  🧬 Predict Offspring
+                                  {predictingPairId === pair.id
+                                    ? <ChevronUp className="h-3 w-3" />
+                                    : <ChevronDown className="h-3 w-3" />
+                                  }
+                                </button>
+                              );
+                            })()}
                           </div>
+
+                          {/* Genetics Predictor Panel */}
+                          {predictingPairId === pair.id && (() => {
+                            const speciesName = speciesMap[male?.speciesId ?? 0]?.commonName ?? "";
+                            const mutations = getMutationsForSpecies(speciesName);
+                            if (!mutations) return null;
+
+                            function parseMuts(jsonStr: string | null | undefined): string[] {
+                              try { return JSON.parse(jsonStr ?? "[]"); } catch { return []; }
+                            }
+
+                            const maleGenotype: BirdGenotype = {
+                              gender: "male",
+                              visual: parseMuts((male as any)?.visualMutations),
+                              splits: parseMuts((male as any)?.splitFor),
+                            };
+                            const femaleGenotype: BirdGenotype = {
+                              gender: "female",
+                              visual: parseMuts((female as any)?.visualMutations),
+                              splits: parseMuts((female as any)?.splitFor),
+                            };
+
+                            const outcomes = predictOffspring(maleGenotype, femaleGenotype, mutations);
+                            const getMutName = (id: string) => mutations.find(m => m.id === id)?.name ?? id;
+
+                            return (
+                              <div className="mt-3 rounded-xl border border-violet-200 bg-violet-50/50 p-3">
+                                <p className="text-xs font-semibold text-violet-800 mb-2 flex items-center gap-1.5">
+                                  <Dna className="h-3.5 w-3.5" /> Predicted Offspring — {speciesName}
+                                </p>
+                                {outcomes.length === 0 ? (
+                                  <p className="text-xs text-muted-foreground">No genotype data recorded for these birds. Go to each bird's Genetics tab to set their mutations.</p>
+                                ) : (
+                                  <div className="space-y-1.5">
+                                    {outcomes.map((o, i) => {
+                                      const pct = Math.round(o.probability * 1000) / 10;
+                                      const genderIcon = o.gender === "male" ? "♂" : "♀";
+                                      const genderColour = o.gender === "male" ? "text-blue-600" : "text-pink-600";
+                                      const visual = o.visual.map(getMutName);
+                                      const splits = o.splits.map(getMutName);
+                                      const desc = [
+                                        visual.length > 0 ? visual.join(" · ") : "Wild type",
+                                        splits.length > 0 ? `split: ${splits.join(", ")}` : "",
+                                      ].filter(Boolean).join(" / ");
+                                      return (
+                                        <div key={i} className="flex items-center justify-between gap-2 text-xs bg-white rounded-lg px-2.5 py-1.5 border border-violet-100">
+                                          <span className={`font-semibold shrink-0 ${genderColour}`}>{genderIcon}</span>
+                                          <span className="flex-1 min-w-0 truncate text-foreground">{desc}</span>
+                                          <span className="shrink-0 font-semibold text-violet-700">{pct}%</span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                                <p className="text-xs text-muted-foreground mt-2 italic">
+                                  Update each bird's genotype in their Genetics tab for accurate predictions.
+                                </p>
+                              </div>
+                            );
+                          })()}
                         </CardContent>
                       </Card>
                     );

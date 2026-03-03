@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Bird, Calendar, Tag, Dna, GitBranch, Users, CalendarDays, CheckCircle2, Circle } from "lucide-react";
+import { getMutationsForSpecies } from "@/lib/genetics/gouldian";
+import { ArrowLeft, Bird, Calendar, Tag, Dna, GitBranch, Users, CalendarDays, CheckCircle2, Circle, Save } from "lucide-react";
 import { useLocation, useParams } from "wouter";
 import { format } from "date-fns";
+import { useState, useEffect } from "react";
 
 type PedigreeBird = {
   id: number;
@@ -144,6 +146,33 @@ export default function BirdDetail() {
   const { data: allEvents = [] } = trpc.events.list.useQuery();
 
   const speciesMap = Object.fromEntries(speciesList.map(s => [s.id, s]));
+
+  // ─── Genetics state ──────────────────────────────────────────────────────────
+  const utils = trpc.useUtils();
+  const updateBird = trpc.birds.update.useMutation({
+    onSuccess: () => utils.birds.get.invalidate({ id: birdId }),
+  });
+
+  const [genotypeVisual, setGenotypeVisual] = useState<string[]>([]);
+  const [genotypeSplits, setGenotypeSplits] = useState<string[]>([]);
+  const [genotypeSaved, setGenotypeSaved] = useState(false);
+
+  // Sync state from bird data when it loads
+  useEffect(() => {
+    if (!bird) return;
+    try { setGenotypeVisual(JSON.parse((bird as any).visualMutations ?? "[]")); } catch { setGenotypeVisual([]); }
+    try { setGenotypeSplits(JSON.parse((bird as any).splitFor ?? "[]")); } catch { setGenotypeSplits([]); }
+  }, [bird?.id, (bird as any)?.visualMutations, (bird as any)?.splitFor]);
+
+  function saveGenotype() {
+    updateBird.mutate({
+      id: birdId,
+      visualMutations: JSON.stringify(genotypeVisual),
+      splitFor: JSON.stringify(genotypeSplits),
+    }, {
+      onSuccess: () => { setGenotypeSaved(true); setTimeout(() => setGenotypeSaved(false), 2000); },
+    });
+  }
 
   // Events relevant to this bird: either linked directly or applies to all birds
   const birdEvents = allEvents.filter(e =>
@@ -319,6 +348,9 @@ export default function BirdDetail() {
             <TabsTrigger value="events" className="gap-2">
               <CalendarDays className="h-4 w-4" /> Events
               {birdEvents.length > 0 && <Badge variant="secondary" className="ml-1 text-xs">{birdEvents.length}</Badge>}
+            </TabsTrigger>
+            <TabsTrigger value="genetics" className="gap-2">
+              <Dna className="h-4 w-4" /> Genetics
             </TabsTrigger>
           </TabsList>
 
@@ -497,6 +529,112 @@ export default function BirdDetail() {
                     ))}
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Genetics Tab */}
+          <TabsContent value="genetics">
+            <Card className="border border-border shadow-card">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                  <Dna className="h-4 w-4 text-primary" />
+                  Colour Genetics
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">Record this bird's known visual mutations and splits.</p>
+              </CardHeader>
+              <CardContent>
+                {(() => {
+                  const speciesName = speciesMap[bird.speciesId]?.commonName ?? "";
+                  const mutations = getMutationsForSpecies(speciesName);
+
+                  if (!mutations) {
+                    return (
+                      <div className="text-center py-10 text-muted-foreground">
+                        <Dna className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                        <p className="text-sm font-medium">No genetics module available</p>
+                        <p className="text-xs mt-1">Genetics tracking is not yet supported for {speciesName || "this species"}.</p>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="space-y-4">
+                      <div className="grid gap-3">
+                        {mutations.map(mut => {
+                          const isVisual = genotypeVisual.includes(mut.id);
+                          const isSplit  = genotypeSplits.includes(mut.id);
+                          const isMale   = bird.gender === "male";
+                          const isSexLinked = mut.inheritance === "sex-linked-recessive";
+
+                          function toggleVisual() {
+                            setGenotypeVisual(prev =>
+                              isVisual ? prev.filter(id => id !== mut.id) : [...prev, mut.id]
+                            );
+                            // Can't be both visual and split
+                            if (!isVisual) setGenotypeSplits(prev => prev.filter(id => id !== mut.id));
+                          }
+                          function toggleSplit() {
+                            setGenotypeSplits(prev =>
+                              isSplit ? prev.filter(id => id !== mut.id) : [...prev, mut.id]
+                            );
+                            if (!isSplit) setGenotypeVisual(prev => prev.filter(id => id !== mut.id));
+                          }
+
+                          return (
+                            <div key={mut.id} className="flex items-center justify-between gap-3 p-3 rounded-xl border border-border bg-muted/30">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium">{mut.name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {isSexLinked ? "Sex-linked recessive" : "Autosomal recessive"}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                                  <input
+                                    type="checkbox"
+                                    className="rounded"
+                                    checked={isVisual}
+                                    onChange={toggleVisual}
+                                  />
+                                  <span className="text-xs font-medium text-amber-700">Visual</span>
+                                </label>
+                                {/* Split only applicable for males (sex-linked) or any gender (autosomal) */}
+                                {(!isSexLinked || isMale) && (
+                                  <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                                    <input
+                                      type="checkbox"
+                                      className="rounded"
+                                      checked={isSplit}
+                                      onChange={toggleSplit}
+                                      disabled={isVisual}
+                                    />
+                                    <span className={`text-xs font-medium ${isVisual ? "text-muted-foreground" : "text-teal-700"}`}>Split</span>
+                                  </label>
+                                )}
+                                {isSexLinked && !isMale && (
+                                  <span className="text-xs text-muted-foreground italic">females can't be split</span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <Button
+                        onClick={saveGenotype}
+                        disabled={updateBird.isPending}
+                        size="sm"
+                        className="gap-2"
+                      >
+                        {genotypeSaved
+                          ? <><CheckCircle2 className="h-4 w-4" /> Saved</>
+                          : <><Save className="h-4 w-4" /> Save Genotype</>
+                        }
+                      </Button>
+                    </div>
+                  );
+                })()}
               </CardContent>
             </Card>
           </TabsContent>

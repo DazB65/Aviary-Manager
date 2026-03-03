@@ -107,6 +107,8 @@ export const appRouter = router({
         fatherId: z.number().nullable().optional(),
         motherId: z.number().nullable().optional(),
         status: z.enum(["alive", "breeding", "resting", "deceased", "sold", "unknown"]).optional(),
+        visualMutations: z.string().optional(),
+        splitFor: z.string().optional(),
       }))
       .mutation(({ ctx, input }) => {
         const { id, ...data } = input;

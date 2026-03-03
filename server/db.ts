@@ -137,6 +137,16 @@ export async function getDb() {
     } catch (patchError) {
       console.warn("[Database] Schema patch (isIndefinite):", patchError);
     }
+    try {
+      await _db.execute(sql`ALTER TABLE birds ADD COLUMN IF NOT EXISTS "visualMutations" text`);
+    } catch (patchError) {
+      console.warn("[Database] Schema patch (visualMutations):", patchError);
+    }
+    try {
+      await _db.execute(sql`ALTER TABLE birds ADD COLUMN IF NOT EXISTS "splitFor" text`);
+    } catch (patchError) {
+      console.warn("[Database] Schema patch (splitFor):", patchError);
+    }
 
     // Seed species if the table is empty (first deploy / fresh DB).
     try {
