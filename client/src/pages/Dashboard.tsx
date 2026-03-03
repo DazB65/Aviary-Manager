@@ -22,12 +22,14 @@ function StatCard({
   label,
   value,
   gradient,
+  subLabel,
   onClick,
 }: {
   icon: React.ElementType;
   label: string;
   value: number | string;
   gradient: string;
+  subLabel?: string;
   onClick?: () => void;
 }) {
   return (
@@ -40,6 +42,7 @@ function StatCard({
           <div>
             <p className="text-white/80 text-sm font-medium mb-1">{label}</p>
             <p className="text-white text-3xl font-bold">{value}</p>
+            {subLabel && <p className="text-white/70 text-xs font-medium mt-1">{subLabel}</p>}
           </div>
           <div className="bg-white/20 rounded-xl p-3">
             <Icon className="h-6 w-6 text-white" />
@@ -101,6 +104,10 @@ export default function Dashboard() {
 
   const recentBirds = (birds ?? []).slice(0, 4);
 
+  const activeBirds = (birds ?? []).filter(b => ["alive", "breeding", "resting"].includes(b.status));
+  const maleCount = activeBirds.filter(b => b.gender === "male").length;
+  const femaleCount = activeBirds.filter(b => b.gender === "female").length;
+
   return (
     <DashboardLayout>
       <div className="space-y-8 max-w-6xl mx-auto">
@@ -155,6 +162,7 @@ export default function Dashboard() {
             label="Total Birds"
             value={statsLoading ? "—" : (stats?.totalBirds ?? 0)}
             gradient="bg-gradient-to-br from-amber-400 to-orange-500"
+            subLabel={birds ? `♂ ${maleCount}  ♀ ${femaleCount}` : undefined}
             onClick={() => setLocation("/birds")}
           />
           <StatCard
