@@ -2,10 +2,11 @@ import type { MutationDef, BirdGenotype, OffspringOutcome } from './engine';
 
 // ─── Gouldian Finch Genetics Module ──────────────────────────────────────────
 // Based on http://www.gouldianfinches.eu/en/genetics-forecast/ (the reference "bible")
+// Supporting references: finchstuff.com/gouldianmutations
 //
 // HEAD:
-//   head_red  = sex-linked recessive (Z chromosome). Males: ZrZr=red, ZrZ+=split/black, Z+Z+=black
-//               Females: ZrW=red, Z+W=black. Females CANNOT be split.
+//   head_red    = sex-linked recessive (Z chromosome). Males: ZrZr=red, ZrZ+=split/black, Z+Z+=black
+//                 Females: ZrW=red, Z+W=black. Females CANNOT be split.
 //   head_yellow = autosomal recessive. yy=yellow, Yy=split, YY=black
 //   Note: yellow is epistatic to red (yellow bird cannot display red, even if carrying it)
 //
@@ -14,16 +15,17 @@ import type { MutationDef, BirdGenotype, OffspringOutcome } from './engine';
 //   breast_white = autosomal recessive, epistatic to lilac. ww=white, Ww=split-white
 //
 // BODY:
-//   body_dilute = incompletely dominant. DD=green, Dd=Yellow SF, dd=Yellow DF
-//   body_blue   = autosomal recessive. bb=blue, Bb=split-blue, BB=green
+//   australian_yellow = autosomal recessive. ayay=Australian Yellow, Ayay=split, AyAy=green
+//                       Birds CAN be "Green split to Australian Yellow" (hidden carrier).
+//   body_blue         = autosomal recessive. bb=blue, Bb=split-blue, BB=green
 
 export const GOULDIAN_MUTATIONS: MutationDef[] = [
-  { id: 'head_red',     name: 'Red Head',         locus: 'head_red',     inheritance: 'sex-linked-recessive',  description: 'Red head. Sex-linked recessive — males can be split, females cannot.' },
-  { id: 'head_yellow',  name: 'Yellow Head',       locus: 'head_yellow',  inheritance: 'autosomal-recessive',   description: 'Yellow/orange head. Autosomal recessive. Epistatic over red head.' },
-  { id: 'breast_lilac', name: 'Lilac Breast',      locus: 'breast_lilac', inheritance: 'autosomal-recessive',   description: 'Lilac breast. Autosomal recessive. Masked by white breast.' },
-  { id: 'breast_white', name: 'White Breast',      locus: 'breast_white', inheritance: 'autosomal-recessive',   description: 'White breast. Autosomal recessive. Epistatic over lilac.' },
-  { id: 'body_dilute',  name: 'Yellow Body (Dilute)', locus: 'body_dilute', inheritance: 'incompletely-dominant', description: 'Yellow body. Incompletely dominant: one copy=Yellow SF, two copies=Yellow DF.' },
-  { id: 'body_blue',    name: 'Blue Body',          locus: 'body_blue',    inheritance: 'autosomal-recessive',   description: 'Blue body. Autosomal recessive. Interacts with dilute to produce Pastel Blue and Silver.' },
+  { id: 'head_red',          name: 'Red Head',              locus: 'head_red',          inheritance: 'sex-linked-recessive', description: 'Red head. Sex-linked recessive — males can be split, females cannot.' },
+  { id: 'head_yellow',       name: 'Yellow Head',           locus: 'head_yellow',       inheritance: 'autosomal-recessive',  description: 'Yellow/orange head. Autosomal recessive. Epistatic over red head.' },
+  { id: 'breast_lilac',      name: 'Lilac Breast',          locus: 'breast_lilac',      inheritance: 'autosomal-recessive',  description: 'Lilac breast. Autosomal recessive. Masked by white breast.' },
+  { id: 'breast_white',      name: 'White Breast',          locus: 'breast_white',      inheritance: 'autosomal-recessive',  description: 'White breast. Autosomal recessive. Epistatic over lilac.' },
+  { id: 'australian_yellow', name: 'Australian Yellow Body', locus: 'australian_yellow', inheritance: 'autosomal-recessive',  description: 'Australian Yellow body. Autosomal recessive. Both parents must carry or display. Birds can be "Green split to Australian Yellow".' },
+  { id: 'body_blue',         name: 'Blue Body',             locus: 'body_blue',         inheritance: 'autosomal-recessive',  description: 'Blue body. Autosomal recessive. Birds can be split carriers.' },
 ];
 
 // ─── Trait Dropdown Options ───────────────────────────────────────────────────
@@ -69,16 +71,16 @@ export const BREAST_OPTIONS: TraitOption[] = [
 ];
 
 // BODY OPTIONS — same for both genders
+// Australian Yellow is autosomal recessive — birds CAN be split/hidden carriers.
 export const BODY_OPTIONS: TraitOption[] = [
-  { value: 'green',               label: 'Green body',                          visual: [],               splits: [],             singleFactor: [] },
-  { value: 'green_split_blue',    label: 'Green body / split Blue',             visual: [],               splits: ['body_blue'],  singleFactor: [] },
-  { value: 'yellow_sf',           label: 'Yellow body SF',                      visual: [],               splits: [],             singleFactor: ['body_dilute'] },
-  { value: 'yellow_sf_split_blue',label: 'Yellow body SF / split Blue',         visual: [],               splits: ['body_blue'],  singleFactor: ['body_dilute'] },
-  { value: 'yellow_df',           label: 'Yellow body DF',                      visual: ['body_dilute'],  splits: [],             singleFactor: [] },
-  { value: 'yellow_df_split_blue',label: 'Yellow body DF / split Blue',         visual: ['body_dilute'],  splits: ['body_blue'],  singleFactor: [] },
-  { value: 'blue',                label: 'Blue body',                           visual: ['body_blue'],    splits: [],             singleFactor: [] },
-  { value: 'pastel_blue_sf',      label: 'Pastel Blue SF',                      visual: ['body_blue'],    splits: [],             singleFactor: ['body_dilute'] },
-  { value: 'silver_df',           label: 'Silver DF',                           visual: ['body_dilute', 'body_blue'], splits: [], singleFactor: [] },
+  { value: 'green',               label: 'Green body',                                   visual: [],                    splits: [],                                    singleFactor: [] },
+  { value: 'green_split_ay',      label: 'Green body / split Australian Yellow',          visual: [],                    splits: ['australian_yellow'],                  singleFactor: [] },
+  { value: 'green_split_blue',    label: 'Green body / split Blue',                       visual: [],                    splits: ['body_blue'],                          singleFactor: [] },
+  { value: 'green_split_ay_blue', label: 'Green body / split Australian Yellow & Blue',   visual: [],                    splits: ['australian_yellow', 'body_blue'],     singleFactor: [] },
+  { value: 'australian_yellow',   label: 'Australian Yellow body',                        visual: ['australian_yellow'], splits: [],                                    singleFactor: [] },
+  { value: 'ay_split_blue',       label: 'Australian Yellow body / split Blue',           visual: ['australian_yellow'], splits: ['body_blue'],                          singleFactor: [] },
+  { value: 'blue',                label: 'Blue body',                                     visual: ['body_blue'],         splits: [],                                    singleFactor: [] },
+  { value: 'blue_split_ay',       label: 'Blue body / split Australian Yellow',           visual: ['body_blue'],         splits: ['australian_yellow'],                  singleFactor: [] },
 ];
 
 
@@ -115,7 +117,7 @@ export function genotypeToTraits(
 
   const headIds = ['head_red', 'head_yellow'];
   const breastIds = ['breast_lilac', 'breast_white'];
-  const bodyIds = ['body_dilute', 'body_blue'];
+  const bodyIds = ['australian_yellow', 'body_blue'];
 
   function matchGroup(ids: string[], options: TraitOption[]): string {
     const gVisual = visual.filter(id => ids.includes(id));
@@ -205,18 +207,24 @@ export function describeGouldianOutcome(outcome: OffspringOutcome): string {
     else                          breast = 'Purple breast';
   }
 
-  // BODY — dilute (IC) × blue interaction
+  // BODY — Australian Yellow (autosomal recessive) × Blue (autosomal recessive)
+  const isAY       = v.includes('australian_yellow');
   const isBlue     = v.includes('body_blue');
-  const isDiluteDf = v.includes('body_dilute');
-  const isDiluteSf = sf.includes('body_dilute');
+  const splitAY    = sp.includes('australian_yellow');
   const splitBlue  = sp.includes('body_blue');
   let body: string;
-  if (isDiluteDf && isBlue)       body = 'Silver DF';
-  else if (isDiluteSf && isBlue)  body = 'Pastel Blue SF';
-  else if (isBlue)                body = splitBlue ? 'Blue body' : 'Blue body';
-  else if (isDiluteDf)            body = splitBlue ? 'Yellow DF / split Blue' : 'Yellow DF';
-  else if (isDiluteSf)            body = splitBlue ? 'Yellow SF / split Blue'  : 'Yellow SF';
-  else                            body = splitBlue ? 'Green body / split Blue'  : 'Green body';
+  if (isAY && isBlue) {
+    body = 'Australian Yellow body / Blue body';
+  } else if (isAY) {
+    body = splitBlue ? 'Australian Yellow body / split Blue' : 'Australian Yellow body';
+  } else if (isBlue) {
+    body = splitAY ? 'Blue body / split Australian Yellow' : 'Blue body';
+  } else {
+    if (splitAY && splitBlue) body = 'Green body / split Australian Yellow & Blue';
+    else if (splitAY)         body = 'Green body / split Australian Yellow';
+    else if (splitBlue)       body = 'Green body / split Blue';
+    else                      body = 'Green body';
+  }
 
   return `${head} · ${breast} · ${body}`;
 }
