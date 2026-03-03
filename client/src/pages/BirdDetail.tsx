@@ -295,7 +295,7 @@ export default function BirdDetail() {
               {bird.name || bird.ringId || `#${bird.id}`}
             </span>
             {bird.colorMutation && (
-              <span className="text-xs font-medium tracking-wide text-white/60 leading-tight">
+              <span className="text-base font-black uppercase tracking-widest text-white/70 leading-tight">
                 {bird.colorMutation}
               </span>
             )}
