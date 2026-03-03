@@ -283,7 +283,23 @@ export default function BirdDetail() {
 
         {/* Profile Header */}
         <Card className="border border-border shadow-card overflow-hidden">
-          <div className="bg-gradient-to-r from-amber-400 to-orange-500 h-24" />
+          <div className={`h-28 flex flex-col items-center justify-center gap-0.5 overflow-hidden ${
+            bird.gender === "male"   ? "bg-gradient-to-r from-blue-400 to-blue-600" :
+            bird.gender === "female" ? "bg-gradient-to-r from-pink-400 to-rose-500" :
+                                       "bg-gradient-to-r from-amber-400 to-orange-500"
+          }`}>
+            <span className="text-3xl leading-none text-white drop-shadow">
+              {bird.gender === "male" ? "♂" : bird.gender === "female" ? "♀" : "🐦"}
+            </span>
+            <span className="font-black uppercase tracking-widest text-white/80 leading-tight" style={{ fontSize: "1rem" }}>
+              {bird.name || bird.ringId || `#${bird.id}`}
+            </span>
+            {bird.colorMutation && (
+              <span className="text-xs font-medium tracking-wide text-white/60 leading-tight">
+                {bird.colorMutation}
+              </span>
+            )}
+          </div>
           <CardContent className="px-6 pb-6">
             <div className="flex items-end gap-5 -mt-10">
               <div className={`w-20 h-20 rounded-2xl border-4 border-white shadow-md overflow-hidden ${bird.gender === "male" ? "bg-blue-50" : bird.gender === "female" ? "bg-pink-50" : "bg-amber-50"} flex items-center justify-center text-3xl`}>
