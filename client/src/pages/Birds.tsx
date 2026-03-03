@@ -320,8 +320,18 @@ export default function Birds() {
                     {bird.photoUrl ? (
                       <img src={bird.photoUrl} alt={bird.name ?? "Bird"} className="w-full h-36 object-cover" />
                     ) : (
-                      <div className={`w-full h-36 ${bird.gender === "male" ? "bg-blue-50" : bird.gender === "female" ? "bg-pink-50" : "bg-amber-50"} flex items-center justify-center text-4xl`}>
-                        {bird.gender === "male" ? "♂" : bird.gender === "female" ? "♀" : "🐦"}
+                      <div className={`w-full h-36 relative overflow-hidden ${bird.gender === "male" ? "bg-blue-50" : bird.gender === "female" ? "bg-pink-50" : "bg-amber-50"} flex items-center justify-center`}>
+                        {/* Bird name/ring ID as large faded watermark */}
+                        <span
+                          className={`absolute font-black uppercase select-none pointer-events-none whitespace-nowrap ${bird.gender === "male" ? "text-blue-400" : bird.gender === "female" ? "text-pink-400" : "text-amber-400"}`}
+                          style={{ fontSize: "3.5rem", opacity: 0.2, transform: "rotate(-8deg)", letterSpacing: "0.04em" }}
+                        >
+                          {bird.name || bird.ringId || `#${bird.id}`}
+                        </span>
+                        {/* Gender symbol on top */}
+                        <span className="text-4xl relative z-10">
+                          {bird.gender === "male" ? "♂" : bird.gender === "female" ? "♀" : "🐦"}
+                        </span>
                       </div>
                     )}
                     <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
