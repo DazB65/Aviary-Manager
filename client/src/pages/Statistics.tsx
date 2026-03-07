@@ -21,7 +21,7 @@ export default function Statistics() {
 
   const speciesById = Object.fromEntries(speciesList.map(s => [s.id, s]));
 
-  const aliveBirds = (birds ?? []).filter(b => b.status === "alive");
+  const aliveBirds = (birds ?? []).filter(b => !["deceased", "sold"].includes(b.status));
   const maleCount = aliveBirds.filter(b => b.gender === "male").length;
   const femaleCount = aliveBirds.filter(b => b.gender === "female").length;
 
