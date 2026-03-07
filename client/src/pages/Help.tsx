@@ -298,6 +298,12 @@ export default function Help() {
             </div>
           ))
         )}
+        {/* Contact */}
+        <div className="text-center text-sm text-muted-foreground pt-4 border-t border-border">
+          <p>Can't find what you're looking for? Email us at{" "}
+            <a href="mailto:aviarymanager@icloud.com" className="text-teal-600 hover:underline">aviarymanager@icloud.com</a>
+          </p>
+        </div>
       </div>
     </DashboardLayout>
   );
