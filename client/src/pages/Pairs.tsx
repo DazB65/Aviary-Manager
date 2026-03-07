@@ -334,6 +334,7 @@ export default function Pairs() {
                               <div className="min-w-0">
                                 <p className="text-sm font-semibold truncate">{birdLabel(male)}</p>
                                 <p className="text-sm text-blue-600">Male</p>
+                                {male?.colorMutation && <p className="text-sm text-amber-600 truncate">{male.colorMutation}</p>}
                               </div>
                             </div>
                             {/* Heart */}
@@ -349,6 +350,7 @@ export default function Pairs() {
                               <div className="min-w-0">
                                 <p className="text-sm font-semibold truncate">{birdLabel(female)}</p>
                                 <p className="text-sm text-pink-600">Female</p>
+                                {female?.colorMutation && <p className="text-sm text-amber-600 truncate">{female.colorMutation}</p>}
                               </div>
                             </div>
                             {/* Status & Actions */}
