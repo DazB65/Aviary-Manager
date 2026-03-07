@@ -287,6 +287,7 @@ export default function Landing() {
         <div className="flex justify-center gap-6 mt-4">
           <button onClick={() => setLocation("/login")} className="hover:text-white transition-colors">Sign in</button>
           <button onClick={() => setLocation("/register")} className="hover:text-white transition-colors">Register</button>
+          <a href="mailto:aviarymanager@icloud.com" className="hover:text-white transition-colors">Contact</a>
         </div>
       </footer>
     </div>

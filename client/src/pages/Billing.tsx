@@ -240,9 +240,9 @@ export default function Billing() {
           </Card>
         )}
 
-        {/* Test card notice */}
         <p className="text-xs text-center text-gray-400">
-          Test payments: use card <strong>4242 4242 4242 4242</strong>, any future expiry, any CVC.
+          Questions about your plan? Email us at{" "}
+          <a href="mailto:aviarymanager@icloud.com" className="underline hover:text-gray-200 transition-colors">aviarymanager@icloud.com</a>
         </p>
       </div>
     </DashboardLayout>
