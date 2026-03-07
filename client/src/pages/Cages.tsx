@@ -69,13 +69,18 @@ export default function Cages() {
                         onClick={() => setLocation(`/birds/${bird.id}`)}
                         className="text-left rounded-xl border border-border p-3 hover:border-primary/40 hover:bg-primary/5 transition-all"
                       >
-                        <div className={`w-10 h-10 rounded-lg ${bird.gender === "male" ? "bg-blue-50" : bird.gender === "female" ? "bg-pink-50" : "bg-amber-50"} flex items-center justify-center mb-2 text-lg`}>
+                        <div className={`w-10 h-10 rounded-lg ${bird.gender === "male" ? "bg-blue-50" : bird.gender === "female" ? "bg-pink-50" : "bg-amber-50"} flex items-center justify-center mb-2 text-lg overflow-hidden`}>
                           {bird.photoUrl
                             ? <img src={bird.photoUrl} alt={bird.name ?? "Bird"} className="w-full h-full object-cover rounded-lg" />
                             : bird.gender === "male" ? "♂" : bird.gender === "female" ? "♀" : "🐦"}
                         </div>
-                        <p className="text-sm font-medium truncate">{bird.name || bird.ringId || `Bird #${bird.id}`}</p>
-                        <p className="text-xs text-muted-foreground truncate">{bird.colorMutation || "—"}</p>
+                        <p className="text-sm font-semibold truncate">{bird.name || bird.ringId || `Bird #${bird.id}`}</p>
+                        <p className={`text-sm ${bird.gender === "male" ? "text-blue-600" : bird.gender === "female" ? "text-pink-600" : "text-muted-foreground"}`}>
+                          {bird.gender === "male" ? "Male" : bird.gender === "female" ? "Female" : "Unknown"}
+                        </p>
+                        {bird.colorMutation
+                          ? <p className="text-sm text-amber-600 truncate">{bird.colorMutation}</p>
+                          : <p className="text-sm text-muted-foreground">—</p>}
                       </button>
                     ))}
                   </div>
@@ -100,11 +105,18 @@ export default function Cages() {
                         onClick={() => setLocation(`/birds/${bird.id}`)}
                         className="text-left rounded-xl border border-border p-3 hover:border-primary/40 hover:bg-primary/5 transition-all"
                       >
-                        <div className={`w-10 h-10 rounded-lg ${bird.gender === "male" ? "bg-blue-50" : bird.gender === "female" ? "bg-pink-50" : "bg-amber-50"} flex items-center justify-center mb-2 text-lg`}>
-                          {bird.gender === "male" ? "♂" : bird.gender === "female" ? "♀" : "🐦"}
+                        <div className={`w-10 h-10 rounded-lg ${bird.gender === "male" ? "bg-blue-50" : bird.gender === "female" ? "bg-pink-50" : "bg-amber-50"} flex items-center justify-center mb-2 text-lg overflow-hidden`}>
+                          {bird.photoUrl
+                            ? <img src={bird.photoUrl} alt={bird.name ?? "Bird"} className="w-full h-full object-cover rounded-lg" />
+                            : bird.gender === "male" ? "♂" : bird.gender === "female" ? "♀" : "🐦"}
                         </div>
-                        <p className="text-sm font-medium truncate">{bird.name || bird.ringId || `Bird #${bird.id}`}</p>
-                        <p className="text-xs text-muted-foreground truncate">{bird.colorMutation || "—"}</p>
+                        <p className="text-sm font-semibold truncate">{bird.name || bird.ringId || `Bird #${bird.id}`}</p>
+                        <p className={`text-sm ${bird.gender === "male" ? "text-blue-600" : bird.gender === "female" ? "text-pink-600" : "text-muted-foreground"}`}>
+                          {bird.gender === "male" ? "Male" : bird.gender === "female" ? "Female" : "Unknown"}
+                        </p>
+                        {bird.colorMutation
+                          ? <p className="text-sm text-amber-600 truncate">{bird.colorMutation}</p>
+                          : <p className="text-sm text-muted-foreground">—</p>}
                       </button>
                     ))}
                   </div>
