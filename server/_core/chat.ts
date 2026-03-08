@@ -11,6 +11,11 @@ import { createOpenAI } from "@ai-sdk/openai";
 import type { Express } from "express";
 import { z } from "zod/v4";
 import { createPatchedFetch } from "./patchedFetch";
+import { BirdService } from "../services/birdService";
+import { StatsService } from "../services/statsService";
+import { SpeciesService } from "../services/speciesService";
+import { EventService } from "../services/eventService";
+import { sdk } from "./sdk";
 
 /**
  * Creates an OpenAI-compatible provider with patched fetch.
@@ -29,52 +34,63 @@ function createLLMProvider() {
 /**
  * Example tool registry - customize these for your app.
  */
-const tools = {
-  getWeather: tool({
-    description: "Get the current weather for a location",
-    inputSchema: z.object({
-      location: z
-        .string()
-        .describe("The city and country, e.g. 'Tokyo, Japan'"),
-      unit: z.enum(["celsius", "fahrenheit"]).optional().default("celsius"),
-    }),
-    execute: async ({ location, unit }) => {
-      // Simulate weather API call
-      const temp = Math.floor(Math.random() * 30) + 5;
-      const conditions = ["sunny", "cloudy", "rainy", "partly cloudy"][
-        Math.floor(Math.random() * 4)
-      ] as string;
-      return {
-        location,
-        temperature: unit === "fahrenheit" ? Math.round(temp * 1.8 + 32) : temp,
-        unit,
-        conditions,
-        humidity: Math.floor(Math.random() * 50) + 30,
-      };
+const tools = (userId: number) => ({
+  getFlockStats: tool({
+    description: "Get the total number of birds, active pairs, and eggs incubating for the user's aviary flock.",
+    inputSchema: z.object({}),
+    execute: async () => {
+      const stats = await StatsService.getDashboardStatsByUser(userId);
+      return stats;
     },
   }),
 
-  calculate: tool({
-    description: "Perform a mathematical calculation",
+  searchBirds: tool({
+    description: "Search for birds in the aviary. You can filter by species name, ring ID, gender, or status.",
     inputSchema: z.object({
-      expression: z
-        .string()
-        .describe("The math expression to evaluate, e.g. '2 + 2'"),
+      query: z.string().describe("Optional search term to match against bird name, species, ringId, or color").optional(),
+      status: z.enum(["alive", "breeding", "resting", "deceased", "sold", "unknown"]).optional(),
+      gender: z.enum(["male", "female", "unknown"]).optional(),
     }),
-    execute: async ({ expression }) => {
-      try {
-        // Simple safe eval for basic math
-        const sanitized = expression.replace(/[^0-9+\-*/().%\s]/g, "");
-        const result = Function(
-          `"use strict"; return (${sanitized})`
-        )() as number;
-        return { expression, result };
-      } catch {
-        return { expression, error: "Invalid expression" };
-      }
+    execute: async ({ query, status, gender }) => {
+      const birds = await BirdService.getBirdsByUser(userId);
+      const speciesList = await SpeciesService.getAllSpecies();
+
+      const speciesMap = Object.fromEntries(speciesList.map(s => [s.id, s.commonName.toLowerCase()]));
+
+      return birds
+        .filter(b => {
+          if (status && b.status !== status) return false;
+          if (gender && b.gender !== gender) return false;
+
+          if (query) {
+            const q = query.toLowerCase();
+            const speciesName = speciesMap[b.speciesId] || "";
+            return (
+              b.name?.toLowerCase().includes(q) ||
+              b.ringId?.toLowerCase().includes(q) ||
+              b.colorMutation?.toLowerCase().includes(q) ||
+              speciesName.includes(q)
+            );
+          }
+          return true;
+        })
+        .slice(0, 10); // return at most 10 to avoid token limits
     },
   }),
-};
+
+  getUpcomingEvents: tool({
+    description: "Get a list of upcoming events and reminders (like vet visits, banding, weaning) for the aviary.",
+    inputSchema: z.object({}),
+    execute: async () => {
+      const events = await EventService.getEventsByUser(userId);
+      const today = new Date().toISOString().split("T")[0];
+      return events.filter(e => {
+        const d = String(e.eventDate).includes("T") ? String(e.eventDate).split("T")[0] : String(e.eventDate);
+        return !e.completed && d >= today;
+      }).sort((a, b) => a.eventDate < b.eventDate ? -1 : 1).slice(0, 5);
+    },
+  }),
+});
 
 /**
  * Registers the /api/chat endpoint for streaming AI responses.
@@ -92,6 +108,12 @@ export function registerChatRoutes(app: Express) {
 
   app.post("/api/chat", async (req, res) => {
     try {
+      const user = await sdk.authenticateRequest(req);
+      if (!user) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
       const { messages } = req.body;
 
       if (!messages || !Array.isArray(messages)) {
@@ -102,9 +124,9 @@ export function registerChatRoutes(app: Express) {
       const result = streamText({
         model: openai.chat("gpt-4o"),
         system:
-          "You are a helpful assistant. You have access to tools for getting weather and doing calculations. Use them when appropriate.",
+          "You are an expert aviculture assistant. You help the user manage their aviary, which is called 'Aviary Manager'. You have access to tools that can fetch their live bird stats, search their bird database, and check their upcoming care events. Use these tools to answer their questions accurately. Do not make up data about their birds.",
         messages,
-        tools,
+        tools: tools(user.id),
         stopWhen: stepCountIs(5),
       });
 

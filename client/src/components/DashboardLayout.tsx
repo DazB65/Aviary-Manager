@@ -23,12 +23,14 @@ import {
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
 import { trpc } from "@/lib/trpc";
-import { BarChart2, Bird, CalendarDays, CreditCard, Egg, Heart, HelpCircle, Home, LayoutDashboard, LogOut, PanelLeft, Settings, Users, MapPin } from "lucide-react";
+import { BarChart2, Bird, CalendarDays, CreditCard, Egg, Heart, HelpCircle, Home, LayoutDashboard, LogOut, PanelLeft, Settings, Users, MapPin, Bot } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { useAppTour } from "@/hooks/useAppTour";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
+import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "./ui/sheet";
+import { AIChatBox } from "./AIChatBox";
 
 const mainMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
@@ -113,7 +115,7 @@ function DashboardLayoutContent({
 
   useEffect(() => {
     maybeStartTour();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -309,6 +311,49 @@ function DashboardLayoutContent({
         )}
         <main className="flex-1 p-4">{children}</main>
       </SidebarInset>
+
+      {/* AI Assistant FAB & Sheet */}
+      <Sheet>
+        <SheetTrigger asChild>
+          <Button
+            size="icon"
+            className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-2xl bg-primary hover:bg-primary/90 text-primary-foreground z-50 transition-transform hover:scale-105"
+            aria-label="Open AI Assistant"
+          >
+            <Bot className="h-6 w-6" />
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="right" className="w-[400px] sm:w-[540px] p-0 flex flex-col border-l">
+          <div className="flex bg-primary/10 p-4 items-center gap-3 border-b">
+            <div className="bg-primary p-2 rounded-xl text-primary-foreground shadow-sm">
+              <Bot className="h-5 w-5" />
+            </div>
+            <div>
+              <SheetTitle className="text-lg">Aviary Assistant</SheetTitle>
+              <SheetDescription className="text-xs">
+                Ask questions about your flock, upcoming events, and stats.
+              </SheetDescription>
+            </div>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            {user && (
+              <AIChatBox
+                chatId={`assistant-global-${user.id}`}
+                initialMessages={[]}
+                api="/api/chat"
+                placeholder="Message your Aviary Assistant..."
+                className="h-full border-0 rounded-none shadow-none"
+                emptyStateMessage="Hello! I'm your AI Aviary Assistant. I can help you search birds, check flock stats, or review upcoming events."
+                suggestedPrompts={[
+                  "What's my total flock size?",
+                  "Show me my upcoming events",
+                  "Search for birds that are breeding",
+                ]}
+              />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </>
   );
 }
