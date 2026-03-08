@@ -45,8 +45,13 @@ export async function runMigrations() {
   try {
     const db = getDb();
 
-    // SAFETY CATCH: Force the exact missing column if Railway DB caching swallowed the drizzle migration file.
+    // SAFETY CATCH: Force the exact missing enum value and column if Railway DB caching swallowed the drizzle migration file.
     console.log("[DB] Executing fallback DDL brute-force...");
+    try {
+      await db.execute(sql`ALTER TYPE egg_outcome ADD VALUE IF NOT EXISTS 'fledged';`);
+    } catch (enumErr) {
+      console.log("[DB] Enum brute-force note:", enumErr);
+    }
     await db.execute(sql`ALTER TABLE "clutchEggs" ADD COLUMN IF NOT EXISTS "outcomeDate" date;`);
 
     // LOG CURRENT REALITY: Ask PostgreSQL exactly what columns exist
