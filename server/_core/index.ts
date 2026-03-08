@@ -12,6 +12,7 @@ import { registerStripeRoutes } from "../stripeRoutes";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { runMigrations } from "../db";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -52,6 +53,16 @@ async function startServer() {
   registerChatRoutes(app);
   // PDF generation routes
   registerPdfRoutes(app);
+
+  // Run pending database migrations
+  try {
+    await runMigrations();
+  } catch (dbError) {
+    console.error("[DB] Migration failed:", dbError);
+    // Don't crash immediately unless critical, but often it's safe to halt.
+    // We'll just log it so Railway can debug it.
+  }
+
   // tRPC API
   app.use(
     "/api/trpc",

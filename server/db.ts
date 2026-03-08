@@ -40,3 +40,9 @@ export async function closeDb() {
   }
 }
 
+export async function runMigrations() {
+  console.log("[DB] Running migrations...");
+  const db = getDb();
+  await migrate(db, { migrationsFolder: MIGRATIONS_FOLDER });
+  console.log("[DB] Migrations complete.");
+}
