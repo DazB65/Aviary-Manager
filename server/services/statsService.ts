@@ -36,13 +36,28 @@ export class StatsService {
             return d >= todayStr && d <= futureStr;
         }).length;
 
-        const upcomingEvents = allEvents.filter(e => {
-            if (!e.eventDate) return false;
+        const upcomingEvents = allEvents
+            .filter(e => {
+                if (!e.eventDate) return false;
 
-            // Extract just the YYYY-MM-DD part from the database value
-            const d = String(e.eventDate).split("T")[0];
-            return d >= todayStr && d <= futureStr;
-        }).length;
+                // Extract just the YYYY-MM-DD part from the database value
+                const d = String(e.eventDate).split("T")[0];
+                return d >= todayStr;
+            })
+            // Sort chronologically just in case we need to pick the earliest of a series
+            .sort((a, b) => {
+                const da = String(a.eventDate).split("T")[0];
+                const dbStr = String(b.eventDate).split("T")[0];
+                return da.localeCompare(dbStr);
+            })
+            // Filter out multiple instances of the same recurring series so the count matches the list
+            .reduce((acc: typeof allEvents, curr) => {
+                if (curr.seriesId && acc.some(e => e.seriesId === curr.seriesId)) {
+                    return acc;
+                }
+                acc.push(curr);
+                return acc;
+            }, []).length;
 
         return {
             totalBirds: allBirds.length,
