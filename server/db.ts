@@ -42,7 +42,16 @@ export async function closeDb() {
 
 export async function runMigrations() {
   console.log("[DB] Running migrations...");
-  const db = getDb();
-  await migrate(db, { migrationsFolder: MIGRATIONS_FOLDER });
-  console.log("[DB] Migrations complete.");
+  try {
+    const db = getDb();
+
+    // SAFETY CATCH: Force the exact missing column if Railway DB caching swallowed the drizzle migration file.
+    console.log("[DB] Executing fallback DDL brute-force...");
+    await db.execute(sql`ALTER TABLE "clutchEggs" ADD COLUMN IF NOT EXISTS "outcomeDate" date;`);
+
+    await migrate(db, { migrationsFolder: MIGRATIONS_FOLDER });
+    console.log("[DB] Migrations complete.");
+  } catch (err) {
+    console.error("[DB] Migration failed (this may be harmless if brute force succeeded):", err);
+  }
 }
