@@ -101,7 +101,18 @@ export default function Dashboard() {
     .slice(0, 5);
 
   const upcomingEvents = (events ?? [])
-    .filter(e => !e.completed)
+    .filter(e => {
+      if (e.completed || !e.eventDate) return false;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const eventDate = new Date(e.eventDate);
+      eventDate.setHours(0, 0, 0, 0);
+
+      return eventDate >= today;
+    })
+    .sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime())
     .slice(0, 5);
 
   const recentBirds = (birds ?? []).slice(0, 4);
