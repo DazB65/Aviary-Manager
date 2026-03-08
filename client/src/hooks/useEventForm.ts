@@ -64,32 +64,27 @@ export function generateDates(
 export function useEventForm(event?: any) {
     const form = useForm<EventFormData>({
         resolver: zodResolver(eventSchema),
-        defaultValues: defaultEventForm,
-    });
-
-    useEffect(() => {
-        if (event) {
-            form.reset({
-                title: event.title,
-                eventType: (event.eventType ?? "other") as EventFormData["eventType"],
-                eventDate: event.eventDate
-                    ? (event.eventDate instanceof Date
-                        ? format(event.eventDate, "yyyy-MM-dd")
-                        : String(event.eventDate).split("T")[0])
-                    : "",
-                birdId: event.birdId ? String(event.birdId) : "",
-                pairId: event.pairId ? String(event.pairId) : "",
-                notes: event.notes ?? "",
-                recurrence: "none",
-                recurrenceCount: 2,
-                neverEnding: false,
-                customInterval: 3,
-                customUnit: "months",
-            });
-        } else {
-            form.reset(defaultEventForm);
+        values: event ? {
+            title: event.title || "",
+            eventType: (event.eventType ?? "other") as EventFormData["eventType"],
+            eventDate: event.eventDate
+                ? (event.eventDate instanceof Date
+                    ? format(event.eventDate, "yyyy-MM-dd")
+                    : String(event.eventDate).split("T")[0])
+                : "",
+            birdId: event.allBirds ? "all" : (event.birdId ? String(event.birdId) : ""),
+            pairId: event.pairId ? String(event.pairId) : "",
+            notes: event.notes ?? "",
+            recurrence: "none",
+            recurrenceCount: 2,
+            neverEnding: Boolean(event.isIndefinite),
+            customInterval: event.recurrenceInterval ?? 3,
+            customUnit: (event.recurrenceUnit as any) ?? "months",
+        } : defaultEventForm,
+        resetOptions: {
+            keepDirtyValues: false,
         }
-    }, [event, form]);
+    });
 
     return form;
 }
