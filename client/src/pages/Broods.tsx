@@ -10,15 +10,21 @@ import {
 import { Plus, Egg } from "lucide-react";
 import { useState } from "react";
 import { useBroods } from "@/hooks/useBroods";
+import { useBirds } from "@/hooks/useBirds";
 import { BroodCard } from "@/components/broods/BroodCard";
 import { BroodFormModal } from "@/components/broods/BroodFormModal";
+import { BirdFormModal } from "@/components/birds/BirdFormModal";
 import type { BroodFormData } from "@/hooks/useBroodForm";
+import type { BirdFormData } from "@/hooks/useBirdForm";
 
 export default function Broods() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingBrood, setEditingBrood] = useState<any>(null);
   const [filterPairId, setFilterPairId] = useState("all");
+
+  const [birdModalOpen, setBirdModalOpen] = useState(false);
+  const [birdFromEgg, setBirdFromEgg] = useState<any>(null);
 
   const {
     broods,
@@ -32,6 +38,35 @@ export default function Broods() {
     deleteBrood,
     syncEggs,
   } = useBroods();
+
+  // Pull in bird mutation logic
+  const {
+    createBird,
+    uploadPhoto,
+    userSettings,
+    birds,
+    speciesList
+  } = useBirds();
+
+  const handleConvertToBird = (broodId: number, eggNumber: number, outcomeDate: string | null) => {
+    const brood = broods.find((b) => b.id === broodId);
+    if (!brood) return;
+    const pair = pairs.find((p) => p.id === brood.pairId);
+    if (!pair) return;
+    const male = birdMap[pair.maleId];
+
+    setBirdFromEgg({
+      speciesId: male?.speciesId,
+      fatherId: pair.maleId,
+      motherId: pair.femaleId,
+      dateOfBirth: brood.actualHatchDate || brood.expectedHatchDate || undefined,
+      fledgedDate: outcomeDate || undefined,
+      status: "alive",
+      gender: "unknown",
+      notes: `Automatically added from Brood #${broodId}, Egg #${eggNumber}`
+    });
+    setBirdModalOpen(true);
+  };
 
   const openAdd = () => {
     setEditingId(null);
@@ -83,6 +118,47 @@ export default function Broods() {
         },
       });
     }
+  };
+
+  const handleBirdSubmit = (data: BirdFormData) => {
+    const payload = {
+      speciesId: Number(data.speciesId),
+      ringId: data.ringId || undefined,
+      name: data.name || undefined,
+      gender: data.gender,
+      dateOfBirth: data.dateOfBirth || undefined,
+      fledgedDate: data.fledgedDate || undefined,
+      cageNumber: data.cageNumber || undefined,
+      colorMutation: data.colorMutation || undefined,
+      photoUrl: data.photoUrl || undefined,
+      notes: data.notes || undefined,
+      status: data.status,
+      fatherId: data.fatherId ? Number(data.fatherId) : undefined,
+      motherId: data.motherId ? Number(data.motherId) : undefined,
+    };
+
+    createBird.mutate(payload, {
+      onSuccess: () => {
+        setBirdModalOpen(false);
+      }
+    });
+  };
+
+  const handleUploadPhoto = async (file: File) => {
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        try {
+          const dataBase64 = (ev.target?.result as string).split(",")[1];
+          const result = await uploadPhoto.mutateAsync({ filename: file.name, contentType: file.type, dataBase64 });
+          resolve(result.url);
+        } catch (e) {
+          reject(e);
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   };
 
   const filtered = filterPairId === "all" ? broods : broods.filter((b) => String(b.pairId) === filterPairId);
@@ -147,6 +223,7 @@ export default function Broods() {
                       deleteBrood.mutate({ id: brood.id });
                     }
                   }}
+                  onConvertToBird={handleConvertToBird}
                 />
               );
             })}
@@ -165,6 +242,19 @@ export default function Broods() {
         birdMap={birdMap}
         onSubmit={handleSubmit}
         isSubmitting={createBrood.isPending || updateBrood.isPending}
+      />
+
+      <BirdFormModal
+        open={birdModalOpen}
+        onOpenChange={setBirdModalOpen}
+        editingId={null} // We are always creating a new bird here
+        initialBird={birdFromEgg}
+        userSettings={userSettings}
+        speciesList={speciesList}
+        birdsList={birds}
+        onSubmit={handleBirdSubmit}
+        isSubmitting={createBird.isPending}
+        onUploadPhoto={handleUploadPhoto}
       />
     </DashboardLayout>
   );

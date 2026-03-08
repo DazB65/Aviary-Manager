@@ -107,21 +107,21 @@ export function EggCell({
     );
 }
 
-export function ClutchEggGrid({ broodId, eggsLaid }: { broodId: number; eggsLaid: number }) {
+export function ClutchEggGrid({
+    broodId,
+    eggsLaid,
+    onConvertToBird
+}: {
+    broodId: number;
+    eggsLaid: number;
+    onConvertToBird?: (eggNumber: number, outcomeDate: string | null) => void;
+}) {
     const utils = trpc.useUtils();
     const { data: eggs = [], isLoading } = trpc.clutchEggs.byBrood.useQuery({ broodId });
 
     const [localOutcomes, setLocalOutcomes] = useState<Record<number, EggOutcome>>({});
     const [localOutcomeDates, setLocalOutcomeDates] = useState<Record<number, string | null>>({});
     const [pendingEggs, setPendingEggs] = useState<Set<number>>(new Set());
-
-    const convertToBird = trpc.clutchEggs.convertToBird.useMutation({
-        onSuccess: () => {
-            utils.birds.list.invalidate();
-            toast.success("Egg successfully converted to a Bird!");
-        },
-        onError: (e) => toast.error(e.message),
-    });
 
     const upsertEgg = trpc.clutchEggs.upsert.useMutation({
         onMutate: ({ eggNumber, outcome, outcomeDate }) => {
@@ -216,11 +216,11 @@ export function ClutchEggGrid({ broodId, eggsLaid }: { broodId: number; eggsLaid
                             num={num}
                             outcome={getOutcome(num)}
                             outcomeDate={getOutcomeDate(num)}
-                            isPending={pendingEggs.has(num) || (convertToBird.isPending && convertToBird.variables?.eggNumber === num)}
+                            isPending={pendingEggs.has(num)}
                             onSelect={(o, d) => handleSelect(num, o, d)}
                             onConvertToBird={
-                                getOutcome(num) === "fledged"
-                                    ? () => convertToBird.mutate({ broodId, eggNumber: num })
+                                getOutcome(num) === "fledged" && onConvertToBird
+                                    ? () => onConvertToBird(num, getOutcomeDate(num))
                                     : undefined
                             }
                         />

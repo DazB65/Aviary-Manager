@@ -27,9 +27,10 @@ interface BroodCardProps {
     pairLabel: string;
     onEdit: () => void;
     onDelete: () => void;
+    onConvertToBird?: (broodId: number, eggNumber: number, outcomeDate: string | null) => void;
 }
 
-export function BroodCard({ brood, pairLabel, onEdit, onDelete }: BroodCardProps) {
+export function BroodCard({ brood, pairLabel, onEdit, onDelete, onConvertToBird }: BroodCardProps) {
     const [expanded, setExpanded] = useState(false);
     const hatchCountdown = brood.status === "incubating" ? daysUntil(brood.expectedHatchDate) : null;
     const fertilityCountdown = brood.status === "incubating" ? daysUntil(brood.fertilityCheckDate) : null;
@@ -108,7 +109,15 @@ export function BroodCard({ brood, pairLabel, onEdit, onDelete }: BroodCardProps
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
                             Individual Egg Outcomes
                         </p>
-                        <ClutchEggGrid broodId={brood.id} eggsLaid={brood.eggsLaid ?? 0} />
+                        <ClutchEggGrid
+                            broodId={brood.id}
+                            eggsLaid={brood.eggsLaid ?? 0}
+                            onConvertToBird={
+                                onConvertToBird
+                                    ? (eggNum, date) => onConvertToBird(brood.id, eggNum, date)
+                                    : undefined
+                            }
+                        />
                     </div>
                 )}
             </CardContent>
