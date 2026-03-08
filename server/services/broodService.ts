@@ -51,22 +51,46 @@ export class BroodService {
         });
     }
 
-    static async getEggsByBrood(broodId: number, userId: number): Promise<ClutchEgg[]> {
+    static async getEggsByBrood(broodId: number, userId: number) {
         const db = getDb();
         if (!db) return [];
         return db
-            .select()
+            .select({
+                id: clutchEggs.id,
+                broodId: clutchEggs.broodId,
+                userId: clutchEggs.userId,
+                eggNumber: clutchEggs.eggNumber,
+                outcome: clutchEggs.outcome,
+                outcomeDate: clutchEggs.outcomeDate,
+                notes: clutchEggs.notes,
+                birdId: clutchEggs.birdId,
+                updatedAt: clutchEggs.updatedAt,
+                ringId: birds.ringId,
+            })
             .from(clutchEggs)
+            .leftJoin(birds, eq(clutchEggs.birdId, birds.id))
             .where(and(eq(clutchEggs.broodId, broodId), eq(clutchEggs.userId, userId)))
             .orderBy(asc(clutchEggs.eggNumber));
     }
 
-    static async getEggsByUser(userId: number): Promise<ClutchEgg[]> {
+    static async getEggsByUser(userId: number) {
         const db = getDb();
         if (!db) return [];
         return db
-            .select()
+            .select({
+                id: clutchEggs.id,
+                broodId: clutchEggs.broodId,
+                userId: clutchEggs.userId,
+                eggNumber: clutchEggs.eggNumber,
+                outcome: clutchEggs.outcome,
+                outcomeDate: clutchEggs.outcomeDate,
+                notes: clutchEggs.notes,
+                birdId: clutchEggs.birdId,
+                updatedAt: clutchEggs.updatedAt,
+                ringId: birds.ringId,
+            })
             .from(clutchEggs)
+            .leftJoin(birds, eq(clutchEggs.birdId, birds.id))
             .where(eq(clutchEggs.userId, userId))
             .orderBy(asc(clutchEggs.eggNumber));
     }

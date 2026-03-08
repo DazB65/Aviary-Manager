@@ -9,6 +9,7 @@ export function EggCell({
     outcome,
     outcomeDate,
     birdId,
+    ringId,
     isPending,
     onSelect,
     onConvertToBird,
@@ -17,6 +18,7 @@ export function EggCell({
     outcome: EggOutcome;
     outcomeDate?: string | null;
     birdId?: number | null;
+    ringId?: string | null;
     isPending: boolean;
     onSelect: (o: EggOutcome, date?: string | null) => void;
     onConvertToBird?: () => void;
@@ -40,7 +42,9 @@ export function EggCell({
         `}
             >
                 <span className="text-xl leading-none">{cfg.emoji}</span>
-                <span className={`text-[9px] font-bold leading-none ${cfg.text}`}>#{num}</span>
+                <span className={`text-[9px] font-bold leading-none ${cfg.text} truncate max-w-full px-1`}>
+                    {ringId ? ringId : `#${num}`}
+                </span>
                 <span className={`text-[8px] leading-none ${cfg.text} opacity-80`}>{cfg.label}</span>
             </button>
 
@@ -49,7 +53,7 @@ export function EggCell({
                     <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
                     <div className="absolute z-20 top-full mt-1 left-1/2 -translate-x-1/2 bg-white border border-border rounded-xl shadow-elevated p-2 min-w-[140px]">
                         <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide px-1 mb-1.5 flex justify-between items-center">
-                            <span>Egg #{num}</span>
+                            <span>Egg #{num}{ringId ? ` - ${ringId}` : ""}</span>
                             <button onClick={() => setOpen(false)} className="text-[10px] hover:text-foreground">✕</button>
                         </p>
                         <div className="space-y-0.5">
@@ -181,10 +185,12 @@ export function ClutchEggGrid({
     const serverMap: Record<number, EggOutcome> = {};
     const serverDateMap: Record<number, string | null> = {};
     const serverBirdIdMap: Record<number, number | null> = {};
-    for (const e of eggs) {
+    const serverRingIdMap: Record<number, string | null> = {};
+    for (const e of eggs as any[]) {
         serverMap[e.eggNumber] = e.outcome as EggOutcome;
         serverDateMap[e.eggNumber] = e.outcomeDate ? String(e.outcomeDate).split("T")[0] : null;
         serverBirdIdMap[e.eggNumber] = e.birdId ?? null;
+        serverRingIdMap[e.eggNumber] = e.ringId ?? null;
     }
 
     function getOutcome(num: number): EggOutcome {
@@ -199,6 +205,10 @@ export function ClutchEggGrid({
 
     function getBirdId(num: number): number | null {
         return serverBirdIdMap[num] ?? null;
+    }
+
+    function getRingId(num: number): string | null {
+        return serverRingIdMap[num] ?? null;
     }
 
     function handleSelect(eggNumber: number, outcome: EggOutcome, outcomeDate?: string | null) {
@@ -237,6 +247,7 @@ export function ClutchEggGrid({
                             outcome={getOutcome(num)}
                             outcomeDate={getOutcomeDate(num)}
                             birdId={getBirdId(num)}
+                            ringId={getRingId(num)}
                             isPending={pendingEggs.has(num)}
                             onSelect={(o, d) => handleSelect(num, o, d)}
                             onConvertToBird={
