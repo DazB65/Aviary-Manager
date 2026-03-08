@@ -19,7 +19,7 @@ export const birdStatusEnum = pgEnum("bird_status", ["alive", "breeding", "resti
 export const pairStatusEnum = pgEnum("pair_status", ["active", "resting", "retired"]);
 export const broodStatusEnum = pgEnum("brood_status", ["incubating", "hatched", "failed", "abandoned"]);
 export const eventTypeEnum = pgEnum("event_type", ["vet", "banding", "medication", "weaning", "sale", "supplements", "other"]);
-export const eggOutcomeEnum = pgEnum("egg_outcome", ["unknown", "fertile", "infertile", "cracked", "hatched", "died"]);
+export const eggOutcomeEnum = pgEnum("egg_outcome", ["unknown", "fertile", "infertile", "cracked", "hatched", "died", "fledged"]);
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -164,6 +164,7 @@ export const clutchEggs = pgTable("clutchEggs", {
   userId: integer("userId").notNull(),
   eggNumber: integer("eggNumber").notNull(), // 1-based egg position in the clutch
   outcome: eggOutcomeEnum("outcome").default("unknown").notNull(),
+  outcomeDate: date("outcomeDate"), // Optional date specific to the current outcome stat (e.g. hatched date, fledged date)
   notes: text("notes"),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 }, (table) => ({

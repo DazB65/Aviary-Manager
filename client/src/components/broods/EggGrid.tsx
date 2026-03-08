@@ -6,16 +6,19 @@ import { EGG_OUTCOME_CONFIG, OUTCOME_OPTIONS, type EggOutcome } from "./constant
 export function EggCell({
     num,
     outcome,
+    outcomeDate,
     isPending,
     onSelect,
 }: {
     num: number;
     outcome: EggOutcome;
+    outcomeDate?: string | null;
     isPending: boolean;
-    onSelect: (o: EggOutcome) => void;
+    onSelect: (o: EggOutcome, date?: string | null) => void;
 }) {
     const [open, setOpen] = useState(false);
     const cfg = EGG_OUTCOME_CONFIG[outcome];
+    const needsDate = ["hatched", "fledged", "died"].includes(outcome);
 
     return (
         <div className="relative">
@@ -40,8 +43,9 @@ export function EggCell({
                 <>
                     <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
                     <div className="absolute z-20 top-full mt-1 left-1/2 -translate-x-1/2 bg-white border border-border rounded-xl shadow-elevated p-2 min-w-[140px]">
-                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide px-1 mb-1.5">
-                            Egg #{num} outcome
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide px-1 mb-1.5 flex justify-between items-center">
+                            <span>Egg #{num}</span>
+                            <button onClick={() => setOpen(false)} className="text-[10px] hover:text-foreground">✕</button>
                         </p>
                         <div className="space-y-0.5">
                             {OUTCOME_OPTIONS.map((opt) => {
@@ -51,8 +55,9 @@ export function EggCell({
                                     <button
                                         key={opt}
                                         onClick={() => {
-                                            onSelect(opt);
-                                            setOpen(false);
+                                            const optNeedsDate = ["hatched", "fledged", "died"].includes(opt);
+                                            onSelect(opt, optNeedsDate ? (outcomeDate || new Date().toISOString().split("T")[0]) : null);
+                                            if (!optNeedsDate) setOpen(false);
                                         }}
                                         className={`
                       w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-xs transition-colors
@@ -69,6 +74,17 @@ export function EggCell({
                                 );
                             })}
                         </div>
+                        {needsDate && (
+                            <div className="mt-2 pt-2 border-t border-border">
+                                <label className="text-[10px] text-muted-foreground block mb-1">Outcome Date</label>
+                                <input
+                                    type="date"
+                                    value={outcomeDate || ""}
+                                    onChange={(e) => onSelect(outcome, e.target.value)}
+                                    className="w-full text-xs p-1.5 border border-border rounded-md outline-none focus:ring-1 focus:ring-primary"
+                                />
+                            </div>
+                        )}
                     </div>
                 </>
             )}
@@ -81,11 +97,13 @@ export function ClutchEggGrid({ broodId, eggsLaid }: { broodId: number; eggsLaid
     const { data: eggs = [], isLoading } = trpc.clutchEggs.byBrood.useQuery({ broodId });
 
     const [localOutcomes, setLocalOutcomes] = useState<Record<number, EggOutcome>>({});
+    const [localOutcomeDates, setLocalOutcomeDates] = useState<Record<number, string | null>>({});
     const [pendingEggs, setPendingEggs] = useState<Set<number>>(new Set());
 
     const upsertEgg = trpc.clutchEggs.upsert.useMutation({
-        onMutate: ({ eggNumber, outcome }) => {
+        onMutate: ({ eggNumber, outcome, outcomeDate }) => {
             setLocalOutcomes((prev) => ({ ...prev, [eggNumber]: outcome as EggOutcome }));
+            setLocalOutcomeDates((prev) => ({ ...prev, [eggNumber]: outcomeDate ?? null }));
             setPendingEggs((prev) => new Set(prev).add(eggNumber));
         },
         onSuccess: (_data, { eggNumber }) => {
@@ -103,6 +121,11 @@ export function ClutchEggGrid({ broodId, eggsLaid }: { broodId: number; eggsLaid
                 return s;
             });
             setLocalOutcomes((prev) => {
+                const copy = { ...prev };
+                delete copy[eggNumber];
+                return copy;
+            });
+            setLocalOutcomeDates((prev) => {
                 const copy = { ...prev };
                 delete copy[eggNumber];
                 return copy;
@@ -128,26 +151,36 @@ export function ClutchEggGrid({ broodId, eggsLaid }: { broodId: number; eggsLaid
         );
 
     const serverMap: Record<number, EggOutcome> = {};
-    for (const e of eggs) serverMap[e.eggNumber] = e.outcome as EggOutcome;
+    const serverDateMap: Record<number, string | null> = {};
+    for (const e of eggs) {
+        serverMap[e.eggNumber] = e.outcome as EggOutcome;
+        serverDateMap[e.eggNumber] = e.outcomeDate ? String(e.outcomeDate).split("T")[0] : null;
+    }
 
     function getOutcome(num: number): EggOutcome {
         if (num in localOutcomes) return localOutcomes[num];
         return serverMap[num] ?? "unknown";
     }
 
-    function handleSelect(eggNumber: number, outcome: EggOutcome) {
-        upsertEgg.mutate({ broodId, eggNumber, outcome });
+    function getOutcomeDate(num: number): string | null {
+        if (num in localOutcomeDates) return localOutcomeDates[num];
+        return serverDateMap[num] ?? null;
+    }
+
+    function handleSelect(eggNumber: number, outcome: EggOutcome, outcomeDate?: string | null) {
+        upsertEgg.mutate({ broodId, eggNumber, outcome, outcomeDate: outcomeDate ?? undefined });
     }
 
     const allOutcomes = [...Array(eggsLaid)].map((_, i) => getOutcome(i + 1));
-    const fertile = allOutcomes.filter((o) => o === "fertile" || o === "hatched").length;
+    const fertile = allOutcomes.filter((o) => o === "fertile" || o === "hatched" || o === "fledged").length;
     const hatched = allOutcomes.filter((o) => o === "hatched").length;
+    const fledged = allOutcomes.filter((o) => o === "fledged").length;
     const infertile = allOutcomes.filter((o) => o === "infertile").length;
     const cracked = allOutcomes.filter((o) => o === "cracked").length;
     const died = allOutcomes.filter((o) => o === "died").length;
     const pending = allOutcomes.filter((o) => o === "unknown").length;
     const fertilityRate = eggsLaid > 0 ? Math.round((fertile / eggsLaid) * 100) : 0;
-    const hatchRate = fertile > 0 ? Math.round((hatched / fertile) * 100) : 0;
+    const hatchRate = fertile > 0 ? Math.round(((hatched + fledged) / fertile) * 100) : 0;
 
     return (
         <div className="space-y-4">
@@ -163,8 +196,9 @@ export function ClutchEggGrid({ broodId, eggsLaid }: { broodId: number; eggsLaid
                             key={num}
                             num={num}
                             outcome={getOutcome(num)}
+                            outcomeDate={getOutcomeDate(num)}
                             isPending={pendingEggs.has(num)}
-                            onSelect={(o) => handleSelect(num, o)}
+                            onSelect={(o, d) => handleSelect(num, o, d)}
                         />
                     );
                 })}
@@ -179,6 +213,11 @@ export function ClutchEggGrid({ broodId, eggsLaid }: { broodId: number; eggsLaid
                 {hatched > 0 && (
                     <span className="px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 font-medium border border-teal-200">
                         🐣 {hatched} hatched · {hatchRate}% hatch rate
+                    </span>
+                )}
+                {fledged > 0 && (
+                    <span className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 font-medium border border-blue-200">
+                        🕊️ {fledged} fledged
                     </span>
                 )}
                 {infertile > 0 && (

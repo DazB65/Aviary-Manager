@@ -14,7 +14,7 @@ export const STATUS_ICONS: Record<string, React.ReactNode> = {
   abandoned: <XCircle className="h-3.5 w-3.5" />,
 };
 
-export type EggOutcome = "unknown" | "fertile" | "infertile" | "cracked" | "hatched" | "died";
+export type EggOutcome = "unknown" | "fertile" | "infertile" | "cracked" | "hatched" | "died" | "fledged";
 
 export const EGG_OUTCOME_CONFIG: Record<
   EggOutcome,
@@ -25,8 +25,9 @@ export const EGG_OUTCOME_CONFIG: Record<
   infertile: { label: "Infertile", emoji: "⚪", bg: "bg-slate-100", text: "text-slate-500", border: "border-slate-300", ring: "ring-slate-400" },
   cracked: { label: "Cracked", emoji: "💔", bg: "bg-orange-50", text: "text-orange-600", border: "border-orange-300", ring: "ring-orange-400" },
   hatched: { label: "Hatched", emoji: "🐣", bg: "bg-teal-50", text: "text-teal-700", border: "border-teal-300", ring: "ring-teal-400" },
+  fledged: { label: "Fledged", emoji: "🕊️", bg: "bg-blue-50", text: "text-blue-600", border: "border-blue-300", ring: "ring-blue-400" },
   died: { label: "Died", emoji: "🖤", bg: "bg-red-50", text: "text-red-600", border: "border-red-200", ring: "ring-red-400" },
 };
 
-export const OUTCOME_OPTIONS: EggOutcome[] = ["unknown", "fertile", "infertile", "cracked", "hatched", "died"];
+export const OUTCOME_OPTIONS: EggOutcome[] = ["unknown", "fertile", "infertile", "cracked", "hatched", "fledged", "died"];
 

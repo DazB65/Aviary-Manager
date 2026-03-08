@@ -65,16 +65,17 @@ export class BroodService {
         userId: number,
         eggNumber: number,
         outcome: ClutchEgg["outcome"],
-        notes?: string
+        notes?: string,
+        outcomeDate?: string
     ): Promise<void> {
         const db = getDb();
         if (!db) return;
         await db
             .insert(clutchEggs)
-            .values({ broodId, userId, eggNumber, outcome, notes: notes ?? null })
+            .values({ broodId, userId, eggNumber, outcome, notes: notes ?? null, outcomeDate: outcomeDate ?? null })
             .onConflictDoUpdate({
                 target: [clutchEggs.broodId, clutchEggs.eggNumber],
-                set: { outcome, notes: notes ?? null },
+                set: { outcome, notes: notes ?? null, outcomeDate: outcomeDate ?? null },
             });
     }
 

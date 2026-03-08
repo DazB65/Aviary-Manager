@@ -378,11 +378,12 @@ export const appRouter = router({
       .input(z.object({
         broodId: z.number(),
         eggNumber: z.number().int().min(1),
-        outcome: z.enum(["unknown", "fertile", "infertile", "cracked", "hatched", "died"]),
+        outcome: z.enum(["unknown", "fertile", "infertile", "cracked", "hatched", "died", "fledged"]),
+        outcomeDate: z.string().optional(),
         notes: z.string().optional(),
       }))
       .mutation(({ ctx, input }) =>
-        BroodService.upsertClutchEgg(input.broodId, ctx.user.id, input.eggNumber, input.outcome, input.notes)
+        BroodService.upsertClutchEgg(input.broodId, ctx.user.id, input.eggNumber, input.outcome, input.notes, input.outcomeDate)
       ),
     sync: protectedProcedure
       .input(z.object({ broodId: z.number(), eggsLaid: z.number().int().min(0) }))
