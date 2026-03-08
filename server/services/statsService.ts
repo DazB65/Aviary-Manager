@@ -17,17 +17,26 @@ export class StatsService {
         const today = new Date();
         const in14Days = new Date(today);
         in14Days.setDate(today.getDate() + 14);
-        const todayStr = today.toISOString().split("T")[0];
-        const futureStr = in14Days.toISOString().split("T")[0];
+
+        const formatDate = (date: Date) => {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        };
+
+        const todayStr = formatDate(today);
+        const futureStr = formatDate(in14Days);
 
         const upcomingHatches = allBroods.filter(b => {
             if (!b.expectedHatchDate) return false;
-            const d = String(b.expectedHatchDate).includes("T") ? String(b.expectedHatchDate).split("T")[0] : String(b.expectedHatchDate);
+            const d = formatDate(new Date(b.expectedHatchDate));
             return d >= todayStr && d <= futureStr;
         }).length;
 
         const upcomingEvents = allEvents.filter(e => {
-            const d = String(e.eventDate).includes("T") ? String(e.eventDate).split("T")[0] : String(e.eventDate);
+            if (!e.eventDate) return false;
+            const d = formatDate(new Date(e.eventDate));
             return d >= todayStr && d <= futureStr;
         }).length;
 
