@@ -22,7 +22,6 @@ export default function Broods() {
 
   const {
     broods,
-    allEggs,
     pairs,
     speciesMap,
     birdMap,
@@ -141,7 +140,6 @@ export default function Broods() {
                 <BroodCard
                   key={brood.id}
                   brood={brood}
-                  allEggs={allEggs}
                   pairLabel={pair ? pairLabel(pair) : `Pair #${brood.pairId}`}
                   onEdit={() => openEdit(brood)}
                   onDelete={() => {

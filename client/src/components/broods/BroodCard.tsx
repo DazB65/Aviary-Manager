@@ -24,13 +24,12 @@ function daysUntil(val: Date | string | null | undefined): string | null {
 
 interface BroodCardProps {
     brood: any;
-    allEggs: any[];
     pairLabel: string;
     onEdit: () => void;
     onDelete: () => void;
 }
 
-export function BroodCard({ brood, allEggs, pairLabel, onEdit, onDelete }: BroodCardProps) {
+export function BroodCard({ brood, pairLabel, onEdit, onDelete }: BroodCardProps) {
     const [expanded, setExpanded] = useState(false);
     const hatchCountdown = brood.status === "incubating" ? daysUntil(brood.expectedHatchDate) : null;
     const fertilityCountdown = brood.status === "incubating" ? daysUntil(brood.fertilityCheckDate) : null;
@@ -109,7 +108,7 @@ export function BroodCard({ brood, allEggs, pairLabel, onEdit, onDelete }: Brood
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
                             Individual Egg Outcomes
                         </p>
-                        <ClutchEggGrid broodId={brood.id} eggsLaid={brood.eggsLaid ?? 0} allEggs={allEggs} />
+                        <ClutchEggGrid broodId={brood.id} eggsLaid={brood.eggsLaid ?? 0} />
                     </div>
                 )}
             </CardContent>
