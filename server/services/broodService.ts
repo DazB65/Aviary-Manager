@@ -4,6 +4,7 @@ import {
     broods,
     clutchEggs,
     birds,
+    breedingPairs,
     type InsertBrood,
 } from "../../drizzle/schema";
 
@@ -128,5 +129,43 @@ export class BroodService {
                 await db.delete(clutchEggs).where(eq(clutchEggs.id, egg.id));
             }
         }
+    }
+
+    static async convertToBird(broodId: number, userId: number, eggNumber: number): Promise<number> {
+        const db = getDb();
+        if (!db) throw new Error("DB unavailable");
+
+        return await db.transaction(async (tx) => {
+            // 1. Fetch Brood
+            const [brood] = await tx.select().from(broods).where(and(eq(broods.id, broodId), eq(broods.userId, userId)));
+            if (!brood) throw new Error("Brood not found");
+
+            // 2. Fetch Pair
+            const [pair] = await tx.select().from(breedingPairs).where(and(eq(breedingPairs.id, brood.pairId), eq(breedingPairs.userId, userId)));
+            if (!pair) throw new Error("Pair not found");
+
+            // 3. Fetch Male parent to get speciesId
+            const [male] = await tx.select().from(birds).where(and(eq(birds.id, pair.maleId), eq(birds.userId, userId)));
+            if (!male) throw new Error("Male parent not found");
+
+            // 4. Fetch the specific Egg
+            const [egg] = await tx.select().from(clutchEggs).where(and(eq(clutchEggs.broodId, broodId), eq(clutchEggs.eggNumber, eggNumber), eq(clutchEggs.userId, userId)));
+            if (!egg || egg.outcome !== "fledged") throw new Error("Egg is not fledged");
+
+            // 5. Insert new Bird
+            const [newBird] = await tx.insert(birds).values({
+                userId,
+                speciesId: male.speciesId, // adopt parents' species
+                status: "alive",
+                gender: "unknown",
+                fatherId: pair.maleId,
+                motherId: pair.femaleId,
+                dateOfBirth: brood.actualHatchDate,
+                fledgedDate: egg.outcomeDate,
+                notes: `Automatically added from Brood #${broodId}, Egg #${eggNumber}`
+            }).returning({ id: birds.id });
+
+            return newBird.id;
+        });
     }
 }

@@ -9,12 +9,14 @@ export function EggCell({
     outcomeDate,
     isPending,
     onSelect,
+    onConvertToBird,
 }: {
     num: number;
     outcome: EggOutcome;
     outcomeDate?: string | null;
     isPending: boolean;
     onSelect: (o: EggOutcome, date?: string | null) => void;
+    onConvertToBird?: () => void;
 }) {
     const [open, setOpen] = useState(false);
     const cfg = EGG_OUTCOME_CONFIG[outcome];
@@ -85,6 +87,19 @@ export function EggCell({
                                 />
                             </div>
                         )}
+                        {outcome === "fledged" && onConvertToBird && (
+                            <div className="mt-2 pt-2 border-t border-border">
+                                <button
+                                    onClick={() => {
+                                        setOpen(false);
+                                        onConvertToBird();
+                                    }}
+                                    className="w-full text-xs font-semibold bg-emerald-100 text-emerald-700 py-1.5 rounded-md hover:bg-emerald-200 transition-colors"
+                                >
+                                    Move to Flock
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </>
             )}
@@ -99,6 +114,14 @@ export function ClutchEggGrid({ broodId, eggsLaid }: { broodId: number; eggsLaid
     const [localOutcomes, setLocalOutcomes] = useState<Record<number, EggOutcome>>({});
     const [localOutcomeDates, setLocalOutcomeDates] = useState<Record<number, string | null>>({});
     const [pendingEggs, setPendingEggs] = useState<Set<number>>(new Set());
+
+    const convertToBird = trpc.clutchEggs.convertToBird.useMutation({
+        onSuccess: () => {
+            utils.birds.list.invalidate();
+            toast.success("Egg successfully converted to a Bird!");
+        },
+        onError: (e) => toast.error(e.message),
+    });
 
     const upsertEgg = trpc.clutchEggs.upsert.useMutation({
         onMutate: ({ eggNumber, outcome, outcomeDate }) => {
@@ -193,8 +216,13 @@ export function ClutchEggGrid({ broodId, eggsLaid }: { broodId: number; eggsLaid
                             num={num}
                             outcome={getOutcome(num)}
                             outcomeDate={getOutcomeDate(num)}
-                            isPending={pendingEggs.has(num)}
+                            isPending={pendingEggs.has(num) || (convertToBird.isPending && convertToBird.variables?.eggNumber === num)}
                             onSelect={(o, d) => handleSelect(num, o, d)}
+                            onConvertToBird={
+                                getOutcome(num) === "fledged"
+                                    ? () => convertToBird.mutate({ broodId, eggNumber: num })
+                                    : undefined
+                            }
                         />
                     );
                 })}

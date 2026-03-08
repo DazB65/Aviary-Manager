@@ -39,6 +39,14 @@ export function useBroods() {
 
     const syncEggs = trpc.clutchEggs.sync.useMutation();
 
+    const convertToBird = trpc.clutchEggs.convertToBird.useMutation({
+        onSuccess: () => {
+            utils.birds.list.invalidate();
+            toast.success("Egg successfully converted to a Bird!");
+        },
+        onError: (e) => toast.error(e.message),
+    });
+
     const speciesMap = useMemo(() => Object.fromEntries(speciesList.map((s) => [s.id, s])), [speciesList]);
     const birdMap = useMemo(() => Object.fromEntries(birds.map((b) => [b.id, b])), [birds]);
 
@@ -63,5 +71,6 @@ export function useBroods() {
         updateBrood,
         deleteBrood,
         syncEggs,
+        convertToBird,
     };
 }

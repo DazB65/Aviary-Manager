@@ -392,6 +392,9 @@ export const appRouter = router({
     deleteByBrood: protectedProcedure
       .input(z.object({ broodId: z.number() }))
       .mutation(({ ctx, input }) => BroodService.deleteEggsByBrood(input.broodId, ctx.user.id)),
+    convertToBird: protectedProcedure
+      .input(z.object({ broodId: z.number(), eggNumber: z.number().int().min(1) }))
+      .mutation(({ ctx, input }) => BroodService.convertToBird(input.broodId, ctx.user.id, input.eggNumber)),
   }),
   // ─── Dashboard ──────────────────────────────────────────────────────
   dashboard: router({
