@@ -40,9 +40,14 @@ export function useBroods() {
     const syncEggs = trpc.clutchEggs.sync.useMutation();
 
     const convertToBird = trpc.clutchEggs.convertToBird.useMutation({
-        onSuccess: () => {
+        onSuccess: (newBirdId) => {
             utils.birds.list.invalidate();
-            toast.success("Egg successfully converted to a Bird!");
+            toast.success("Egg successfully converted to a Bird!", {
+                action: {
+                    label: "View Profile",
+                    onClick: () => window.location.href = `/birds/${newBirdId}`
+                }
+            });
         },
         onError: (e) => toast.error(e.message),
     });
