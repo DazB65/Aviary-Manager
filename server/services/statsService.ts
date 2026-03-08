@@ -30,13 +30,17 @@ export class StatsService {
 
         const upcomingHatches = allBroods.filter(b => {
             if (!b.expectedHatchDate) return false;
-            const d = formatDate(new Date(b.expectedHatchDate));
+
+            // Extract just the YYYY-MM-DD part from the database value
+            const d = String(b.expectedHatchDate).split("T")[0];
             return d >= todayStr && d <= futureStr;
         }).length;
 
         const upcomingEvents = allEvents.filter(e => {
             if (!e.eventDate) return false;
-            const d = formatDate(new Date(e.eventDate));
+
+            // Extract just the YYYY-MM-DD part from the database value
+            const d = String(e.eventDate).split("T")[0];
             return d >= todayStr && d <= futureStr;
         }).length;
 
