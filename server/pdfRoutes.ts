@@ -1,6 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { sdk } from "./_core/sdk";
-import { getAllSpecies } from "./db";
+import { SpeciesService } from "./services/speciesService";
 import { generatePedigreePdf } from "./pedigreePdf";
 
 /**
@@ -32,7 +32,7 @@ export function registerPdfRoutes(app: Express) {
       }
 
       // Build species map
-      const speciesList = await getAllSpecies();
+      const speciesList = await SpeciesService.getAllSpecies();
       const speciesMap: Record<number, { commonName: string }> = {};
       for (const s of speciesList) speciesMap[s.id] = { commonName: s.commonName };
 

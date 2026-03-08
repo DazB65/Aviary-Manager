@@ -4,17 +4,16 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import {
-  getAllSpecies, createSpecies,
-  getBirdsByUser, getBirdById, createBird, updateBird, deleteBird,
-  getPairsByUser, getPairById, createPair, updatePair, deletePair,
-  getBroodsByUser, getBroodsByPair, createBrood, updateBrood, deleteBrood,
-  getEventsByUser, createEvent, updateEvent, deleteEvent, deleteAllEvents, toggleEventComplete,
-  getUserSettings, upsertUserSettings,
-  getDashboardStats, getSeasonStats, getAllUsers, setUserPlan, deleteUser,
-  getPedigree, calcInbreedingCoefficient, getDescendants, getSiblings,
-  getEggsByBrood, upsertClutchEgg, deleteEggsByBrood, syncClutchEggs,
-} from "./db";
+import { SpeciesService } from "./services/speciesService";
+import { BirdService } from "./services/birdService";
+import { PairService } from "./services/pairService";
+import { BroodService } from "./services/broodService";
+import { EventService } from "./services/eventService";
+import { SettingsService } from "./services/settingsService";
+import { StatsService } from "./services/statsService";
+import { UserService } from "./services/userService";
+import { PedigreeService } from "./services/pedigreeService";
+
 import { storagePut } from "./storage";
 import { nanoid } from "nanoid";
 
@@ -39,7 +38,7 @@ export const appRouter = router({
 
   // ─── Species ───────────────────────────────────────────────────────────────
   species: router({
-    list: publicProcedure.query(() => getAllSpecies()),
+    list: publicProcedure.query(() => SpeciesService.getAllSpecies()),
     create: protectedProcedure
       .input(z.object({
         commonName: z.string().min(1),
@@ -50,22 +49,22 @@ export const appRouter = router({
         clutchSizeMax: z.number().int().optional(),
       }))
       .mutation(({ ctx, input }) =>
-        createSpecies({ ...input, isCustom: true, userId: ctx.user.id })
+        SpeciesService.createSpecies({ ...input, isCustom: true, userId: ctx.user.id } as any)
       ),
   }),
 
   // ─── Birds ─────────────────────────────────────────────────────────────────
   birds: router({
-    list: protectedProcedure.query(({ ctx }) => getBirdsByUser(ctx.user.id)),
+    list: protectedProcedure.query(({ ctx }) => BirdService.getBirdsByUser(ctx.user.id)),
 
     get: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .query(({ ctx, input }) => getBirdById(input.id, ctx.user.id)),
+      .query(({ ctx, input }) => BirdService.getBirdById(input.id, ctx.user.id)),
 
     create: protectedProcedure
       .input(z.object({
         speciesId: z.number(),
-         ringId: z.string().optional(),
+        ringId: z.string().optional(),
         name: z.string().optional(),
         gender: z.enum(["male", "female", "unknown"]).default("unknown"),
         dateOfBirth: z.string().optional(),
@@ -81,7 +80,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         // Free plan: max 20 birds
         if (ctx.user.plan === "free") {
-          const existing = await getBirdsByUser(ctx.user.id);
+          const existing = await BirdService.getBirdsByUser(ctx.user.id);
           if (existing.length >= 20) {
             throw new TRPCError({
               code: "FORBIDDEN",
@@ -89,7 +88,7 @@ export const appRouter = router({
             });
           }
         }
-        return createBird({ ...input, userId: ctx.user.id } as any);
+        return BirdService.createBird({ ...input, userId: ctx.user.id } as any);
       }),
     update: protectedProcedure
       .input(z.object({
@@ -110,21 +109,21 @@ export const appRouter = router({
       }))
       .mutation(({ ctx, input }) => {
         const { id, ...data } = input;
-        return updateBird(id, ctx.user.id, data as any);
+        return BirdService.updateBird(id, ctx.user.id, data as any);
       }),
 
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(({ ctx, input }) => deleteBird(input.id, ctx.user.id)),
+      .mutation(({ ctx, input }) => BirdService.deleteBird(input.id, ctx.user.id)),
     pedigree: protectedProcedure
       .input(z.object({ id: z.number(), generations: z.number().min(1).max(5).default(5) }))
-      .query(({ ctx, input }) => getPedigree(input.id, ctx.user.id, input.generations)),
+      .query(({ ctx, input }) => PedigreeService.getPedigree(input.id, ctx.user.id, input.generations)),
     descendants: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .query(({ ctx, input }) => getDescendants(input.id, ctx.user.id)),
+      .query(({ ctx, input }) => PedigreeService.getDescendants(input.id, ctx.user.id)),
     siblings: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .query(({ ctx, input }) => getSiblings(input.id, ctx.user.id)),
+      .query(({ ctx, input }) => PedigreeService.getSiblings(input.id, ctx.user.id)),
     uploadPhoto: protectedProcedure
       .input(z.object({
         filename: z.string(),
@@ -154,11 +153,14 @@ export const appRouter = router({
 
   // ─── Breeding Pairs ────────────────────────────────────────────────────────
   pairs: router({
-    list: protectedProcedure.query(({ ctx }) => getPairsByUser(ctx.user.id)),
+    list: protectedProcedure.query(({ ctx }) => PairService.getPairsByUser(ctx.user.id)),
 
     get: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .query(({ ctx, input }) => getPairById(input.id, ctx.user.id)),
+      .query(async ({ ctx, input }) => {
+        const pairs = await PairService.getPairsByUser(ctx.user.id);
+        return pairs.find((p: any) => p.id === input.id);
+      }),
 
     create: protectedProcedure
       .input(z.object({
@@ -172,7 +174,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         // Free plan: max 5 breeding pairs
         if (ctx.user.plan === "free") {
-          const existing = await getPairsByUser(ctx.user.id);
+          const existing = await PairService.getPairsByUser(ctx.user.id);
           if (existing.length >= 5) {
             throw new TRPCError({
               code: "FORBIDDEN",
@@ -181,21 +183,22 @@ export const appRouter = router({
           }
         }
         // Check for duplicate pair in same season
-        const existing = await getPairsByUser(ctx.user.id);
+        const existing = await PairService.getPairsByUser(ctx.user.id);
         const duplicate = existing.find(
-          p => p.maleId === input.maleId && p.femaleId === input.femaleId &&
-               (p.season ?? null) === (input.season ?? null)
+          (p: any) => p.maleId === input.maleId && p.femaleId === input.femaleId &&
+            (p.season ?? null) === (input.season ?? null)
         );
         if (duplicate) {
           const yearStr = input.season ? ` in ${input.season}` : "";
           throw new TRPCError({ code: "CONFLICT", message: `This pair already exists${yearStr}. You can pair the same birds in a different year.` });
         }
-        const pair = await createPair({ ...input, userId: ctx.user.id } as any);
+
+        const pair = await PairService.createPair({ ...input, userId: ctx.user.id } as any);
         // Auto-set bird status to "breeding" when an active pair is created
         if ((input.status ?? "active") === "active") {
           await Promise.all([
-            updateBird(input.maleId, ctx.user.id, { status: "breeding" }),
-            updateBird(input.femaleId, ctx.user.id, { status: "breeding" }),
+            BirdService.updateBird(input.maleId, ctx.user.id, { status: "breeding" }),
+            BirdService.updateBird(input.femaleId, ctx.user.id, { status: "breeding" }),
           ]);
         }
         return pair;
@@ -213,17 +216,21 @@ export const appRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         const { id, ...data } = input;
+
         // Fetch pair first to get maleId/femaleId (may not be in update payload)
-        const existing = await getPairById(id, ctx.user.id);
-        await updatePair(id, ctx.user.id, data as any);
+        const allPairs = await PairService.getPairsByUser(ctx.user.id);
+        const existing = allPairs.find(p => p.id === id);
+
+        await PairService.updatePair(id, ctx.user.id, data as any);
+
         // Sync bird statuses when pair status changes
         if (data.status !== undefined && existing) {
           const maleId = data.maleId ?? existing.maleId;
           const femaleId = data.femaleId ?? existing.femaleId;
           const birdStatus = data.status === "active" ? "breeding" : "alive";
           await Promise.all([
-            updateBird(maleId, ctx.user.id, { status: birdStatus }),
-            updateBird(femaleId, ctx.user.id, { status: birdStatus }),
+            BirdService.updateBird(maleId, ctx.user.id, { status: birdStatus }),
+            BirdService.updateBird(femaleId, ctx.user.id, { status: birdStatus }),
           ]);
         }
       }),
@@ -232,33 +239,40 @@ export const appRouter = router({
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
         // Revert bird statuses to "alive" before removing the pair
-        const pair = await getPairById(input.id, ctx.user.id);
-        await deletePair(input.id, ctx.user.id);
+        const allPairs = await PairService.getPairsByUser(ctx.user.id);
+        const pair = allPairs.find(p => p.id === input.id);
+
+        await PairService.deletePair(input.id, ctx.user.id);
+
         if (pair) {
           await Promise.all([
-            updateBird(pair.maleId, ctx.user.id, { status: "alive" }),
-            updateBird(pair.femaleId, ctx.user.id, { status: "alive" }),
+            BirdService.updateBird(pair.maleId, ctx.user.id, { status: "alive" }),
+            BirdService.updateBird(pair.femaleId, ctx.user.id, { status: "alive" }),
           ]);
         }
       }),
     inbreeding: protectedProcedure
       .input(z.object({ maleId: z.number(), femaleId: z.number() }))
-      .query(({ ctx, input }) => calcInbreedingCoefficient(input.maleId, input.femaleId, ctx.user.id)),
+      // Simplified simulation of cross-checking paths for now since logic is complex
+      .query(({ ctx, input }) => PedigreeService.calcInbreedingCoefficient(input.maleId, input.femaleId, ctx.user.id)),
     siblingCheck: protectedProcedure
       .input(z.object({ maleId: z.number(), femaleId: z.number() }))
       .query(async ({ ctx, input }) => {
-        const siblings = await getSiblings(input.maleId, ctx.user.id);
+        const siblings = await PedigreeService.getSiblings(input.maleId, ctx.user.id);
         const match = siblings.find(s => s.id === input.femaleId);
         return match ? match.siblingType : null;
       }),
   }),
-  // ─── Broodss ────────────────────────────────────────────────────────────────
+  // ─── Broods ─────────────────────────────────────────────────────────────────
   broods: router({
-    list: protectedProcedure.query(({ ctx }) => getBroodsByUser(ctx.user.id)),
+    list: protectedProcedure.query(({ ctx }) => BroodService.getBroodsByUser(ctx.user.id)),
 
     byPair: protectedProcedure
       .input(z.object({ pairId: z.number() }))
-      .query(({ ctx, input }) => getBroodsByPair(input.pairId, ctx.user.id)),
+      .query(async ({ ctx, input }) => {
+        const broods = await BroodService.getBroodsByUser(ctx.user.id);
+        return broods.filter(b => b.pairId === input.pairId);
+      }),
 
     create: protectedProcedure
       .input(z.object({
@@ -266,17 +280,18 @@ export const appRouter = router({
         season: z.string().optional(),
         eggsLaid: z.number().int().min(0).default(0),
         layDate: z.string().optional(),
-        incubationDays: z.number().int().min(1).default(14), // passed from species
+        incubationDays: z.number().int().min(1).default(14),
         actualHatchDate: z.string().optional(),
         chicksSurvived: z.number().int().min(0).default(0),
         status: z.enum(["incubating", "hatched", "failed", "abandoned"]).default("incubating"),
         notes: z.string().optional(),
       }))
-      .mutation(({ ctx, input }) => {
+      .mutation(async ({ ctx, input }) => {
         const { incubationDays, ...rest } = input;
         const fertilityCheckDate = rest.layDate ? addDays(rest.layDate, 7) : undefined;
-        const expectedHatchDate = rest.layDate ? addDays(rest.layDate, incubationDays) : undefined;
-        return createBrood({ ...rest, fertilityCheckDate, expectedHatchDate, userId: ctx.user.id } as any);
+        let expectedHatchDate = undefined;
+        if (rest.layDate) expectedHatchDate = addDays(rest.layDate, incubationDays);
+        return BroodService.createBrood({ ...rest, fertilityCheckDate, expectedHatchDate, userId: ctx.user.id } as any);
       }),
 
     update: protectedProcedure
@@ -298,17 +313,17 @@ export const appRouter = router({
           data.fertilityCheckDate = addDays(data.layDate, 7);
           data.expectedHatchDate = addDays(data.layDate, incubationDays);
         }
-        return updateBrood(id, ctx.user.id, data as any);
+        return BroodService.updateBrood(id, ctx.user.id, data as any);
       }),
 
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(({ ctx, input }) => deleteBrood(input.id, ctx.user.id)),
+      .mutation(({ ctx, input }) => BroodService.deleteBrood(input.id, ctx.user.id)),
   }),
 
   // ─── Events ────────────────────────────────────────────────────────────────
   events: router({
-    list: protectedProcedure.query(({ ctx }) => getEventsByUser(ctx.user.id)),
+    list: protectedProcedure.query(({ ctx }) => EventService.getEventsByUser(ctx.user.id)),
 
     create: protectedProcedure
       .input(z.object({
@@ -325,7 +340,7 @@ export const appRouter = router({
         isIndefinite: z.boolean().optional(),
       }))
       .mutation(({ ctx, input }) =>
-        createEvent({ ...input, userId: ctx.user.id } as any)
+        EventService.createEvent({ ...input, userId: ctx.user.id } as any)
       ),
 
     update: protectedProcedure
@@ -342,24 +357,23 @@ export const appRouter = router({
       }))
       .mutation(({ ctx, input }) => {
         const { id, ...data } = input;
-        return updateEvent(id, ctx.user.id, data as any);
+        return EventService.updateEvent(id, data as any);
       }),
 
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(({ ctx, input }) => deleteEvent(input.id, ctx.user.id)),
+      .mutation(({ ctx, input }) => EventService.deleteEvent(input.id, ctx.user.id)),
     toggleComplete: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(({ ctx, input }) => toggleEventComplete(input.id, ctx.user.id)),
+      .mutation(({ ctx, input }) => EventService.toggleEventComplete(input.id, ctx.user.id)),
     deleteAll: protectedProcedure
-      .mutation(({ ctx }) => deleteAllEvents(ctx.user.id)),
+      .mutation(({ ctx }) => EventService.deleteAllEventsForUser(ctx.user.id)),
   }),
 
-  // ─── Clutch Eggs ──────────────────────────────────────────────────────────
   clutchEggs: router({
     byBrood: protectedProcedure
       .input(z.object({ broodId: z.number() }))
-      .query(({ ctx, input }) => getEggsByBrood(input.broodId, ctx.user.id)),
+      .query(({ ctx, input }) => BroodService.getEggsByBrood(input.broodId, ctx.user.id)),
     upsert: protectedProcedure
       .input(z.object({
         broodId: z.number(),
@@ -368,21 +382,23 @@ export const appRouter = router({
         notes: z.string().optional(),
       }))
       .mutation(({ ctx, input }) =>
-        upsertClutchEgg(input.broodId, ctx.user.id, input.eggNumber, input.outcome, input.notes)
+        BroodService.upsertClutchEgg(input.broodId, ctx.user.id, input.eggNumber, input.outcome, input.notes)
       ),
     sync: protectedProcedure
       .input(z.object({ broodId: z.number(), eggsLaid: z.number().int().min(0) }))
-      .mutation(({ ctx, input }) => syncClutchEggs(input.broodId, ctx.user.id, input.eggsLaid)),
+      .mutation(({ ctx, input }) => BroodService.syncClutchEggs(input.broodId, ctx.user.id, input.eggsLaid)),
     deleteByBrood: protectedProcedure
       .input(z.object({ broodId: z.number() }))
-      .mutation(({ ctx, input }) => deleteEggsByBrood(input.broodId, ctx.user.id)),
+      .mutation(({ ctx, input }) => BroodService.deleteEggsByBrood(input.broodId, ctx.user.id)),
   }),
-   // ─── Dashboard ──────────────────────────────────────────────────────
+  // ─── Dashboard ──────────────────────────────────────────────────────
   dashboard: router({
-    stats: protectedProcedure.query(({ ctx }) => getDashboardStats(ctx.user.id)),
+    stats: protectedProcedure.query(({ ctx }) => StatsService.getDashboardStatsByUser(ctx.user.id)),
     seasonStats: protectedProcedure
       .input(z.object({ year: z.number().int().min(2000).max(2100) }))
-      .query(({ ctx, input }) => getSeasonStats(ctx.user.id, input.year)),
+      .query(({ ctx, input }) => {
+        return StatsService.getSeasonStats(ctx.user.id, input.year);
+      }),
   }),
   // ─── Admin ──────────────────────────────────────────────────────────
   admin: router({
@@ -390,7 +406,7 @@ export const appRouter = router({
       if (ctx.user.role !== "admin") {
         throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
       }
-      return getAllUsers();
+      return UserService.getAllUsers();
     }),
     setPlan: protectedProcedure
       .input(z.object({ userId: z.number(), plan: z.enum(["free", "pro"]) }))
@@ -398,7 +414,7 @@ export const appRouter = router({
         if (ctx.user.role !== "admin") {
           throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
         }
-        return setUserPlan(input.userId, input.plan);
+        return UserService.setUserPlan(input.userId, input.plan);
       }),
     deleteUser: protectedProcedure
       .input(z.object({ userId: z.number() }))
@@ -409,12 +425,12 @@ export const appRouter = router({
         if (input.userId === ctx.user.id) {
           throw new TRPCError({ code: "BAD_REQUEST", message: "You cannot delete your own account" });
         }
-        return deleteUser(input.userId);
+        return UserService.deleteUser(input.userId);
       }),
   }),
   // ─── User Settings ────────────────────────────────────────────────────────
   settings: router({
-    get: protectedProcedure.query(({ ctx }) => getUserSettings(ctx.user.id)),
+    get: protectedProcedure.query(({ ctx }) => SettingsService.getUserSettings(ctx.user.id)),
     update: protectedProcedure
       .input(z.object({
         favouriteSpeciesIds: z.array(z.number()).optional(),
@@ -422,11 +438,11 @@ export const appRouter = router({
         breedingYear: z.number().int().min(2000).max(2100).nullable().optional(),
       }))
       .mutation(({ ctx, input }) =>
-        upsertUserSettings(ctx.user.id, {
+        SettingsService.updateUserSettings(ctx.user.id, {
           favouriteSpeciesIds: input.favouriteSpeciesIds,
           defaultSpeciesId: input.defaultSpeciesId ?? null,
-          breedingYear: input.breedingYear ?? null,
-        })
+          breedingYear: input.breedingYear ? input.breedingYear.toString() : null,
+        } as any)
       ),
   }),
 });

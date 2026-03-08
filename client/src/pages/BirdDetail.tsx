@@ -179,7 +179,7 @@ export default function BirdDetail() {
 
   const species = speciesMap[bird.speciesId];
   const dobStr = bird.dateOfBirth
-    ? format(bird.dateOfBirth instanceof Date ? bird.dateOfBirth : new Date(String(bird.dateOfBirth)), "dd MMM yyyy")
+    ? format(typeof bird.dateOfBirth === 'object' && bird.dateOfBirth ? bird.dateOfBirth : new Date(String(bird.dateOfBirth)), "dd MMM yyyy")
     : null;
   const fledgedStr = (bird as any).fledgedDate
     ? format((bird as any).fledgedDate instanceof Date ? (bird as any).fledgedDate : new Date(String((bird as any).fledgedDate)), "dd MMM yyyy")
@@ -223,7 +223,7 @@ export default function BirdDetail() {
               a.click();
             }}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="12" y1="18" x2="12" y2="12" /><line x1="9" y1="15" x2="15" y2="15" /></svg>
             Export Pedigree PDF
           </Button>
         </div>
@@ -244,14 +244,13 @@ export default function BirdDetail() {
                 <h1 className="font-display text-2xl font-bold">{bird.name || bird.ringId || `Bird #${bird.id}`}</h1>
                 <p className="text-muted-foreground">{species?.commonName ?? "Unknown species"}</p>
               </div>
-              <Badge className={`mb-1 border ${
-                bird.status === "alive" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+              <Badge className={`mb-1 border ${bird.status === "alive" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
                 bird.status === "breeding" ? "bg-pink-50 text-pink-700 border-pink-200" :
-                bird.status === "resting" ? "bg-amber-50 text-amber-700 border-amber-200" :
-                bird.status === "sold" ? "bg-blue-50 text-blue-700 border-blue-200" :
-                "bg-gray-50 text-gray-500 border-gray-200"
-              }`} variant="outline">
-                {{alive:"Alive",breeding:"🥚 Breeding",resting:"💤 Resting",deceased:"Deceased",sold:"Sold",unknown:"Unknown"}[bird.status] ?? bird.status}
+                  bird.status === "resting" ? "bg-amber-50 text-amber-700 border-amber-200" :
+                    bird.status === "sold" ? "bg-blue-50 text-blue-700 border-blue-200" :
+                      "bg-gray-50 text-gray-500 border-gray-200"
+                }`} variant="outline">
+                {{ alive: "Alive", breeding: "🥚 Breeding", resting: "💤 Resting", deceased: "Deceased", sold: "Sold", unknown: "Unknown" }[bird.status] ?? bird.status}
               </Badge>
             </div>
 
@@ -442,11 +441,10 @@ export default function BirdDetail() {
                           </div>
                           <div className="flex flex-col items-end gap-1 shrink-0">
                             <span className={`text-base ${genderColor}`}>{genderIcon}</span>
-                            <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
-                              isFullSibling
-                                ? "bg-purple-100 text-purple-700"
-                                : "bg-blue-50 text-blue-600"
-                            }`}>
+                            <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${isFullSibling
+                              ? "bg-purple-100 text-purple-700"
+                              : "bg-blue-50 text-blue-600"
+                              }`}>
                               {isFullSibling ? "Full" : "Half"}
                             </span>
                           </div>
@@ -489,7 +487,7 @@ export default function BirdDetail() {
                           <p className={`text-sm font-medium ${ev.completed ? "line-through text-muted-foreground" : ""}`}>{ev.title}</p>
                           <p className="text-xs text-muted-foreground">
                             {(ev as any).allBirds ? "🐦 All birds · " : ""}
-                            {ev.eventDate ? format(ev.eventDate instanceof Date ? ev.eventDate : new Date(String(ev.eventDate)), "dd MMM yyyy") : "—"}
+                            {ev.eventDate ? format(typeof ev.eventDate === 'object' && ev.eventDate ? ev.eventDate : new Date(String(ev.eventDate)), "dd MMM yyyy") : "—"}
                           </p>
                         </div>
                         <Badge variant="outline" className="text-xs shrink-0">{ev.eventType}</Badge>

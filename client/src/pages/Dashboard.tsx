@@ -89,8 +89,8 @@ export default function Dashboard() {
   const upcomingBroods = (broods ?? [])
     .filter(b => b.status === "incubating" && b.expectedHatchDate)
     .sort((a, b) => {
-      const da = a.expectedHatchDate instanceof Date ? a.expectedHatchDate : new Date(String(a.expectedHatchDate));
-      const db2 = b.expectedHatchDate instanceof Date ? b.expectedHatchDate : new Date(String(b.expectedHatchDate));
+      const da = typeof a.expectedHatchDate === 'object' && a.expectedHatchDate ? a.expectedHatchDate : new Date(String(a.expectedHatchDate));
+      const db2 = typeof b.expectedHatchDate === 'object' && b.expectedHatchDate ? b.expectedHatchDate : new Date(String(b.expectedHatchDate));
       return da.getTime() - db2.getTime();
     })
     .slice(0, 5);
@@ -150,13 +150,30 @@ export default function Dashboard() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            icon={Bird}
-            label="Total Birds"
-            value={statsLoading ? "—" : (stats?.totalBirds ?? 0)}
-            gradient="bg-gradient-to-br from-amber-400 to-orange-500"
+          <Card
+            className={`cursor-pointer hover:shadow-elevated transition-all duration-200 border-0 overflow-hidden hover:-translate-y-0.5`}
             onClick={() => setLocation("/birds")}
-          />
+          >
+            <CardContent className="p-0">
+              <div className="bg-gradient-to-br from-amber-400 to-orange-500 p-5 flex items-center justify-between min-h-[116px]">
+                <div className="flex flex-col h-full justify-between">
+                  <div>
+                    <p className="text-white/80 text-sm font-medium mb-1">Total Birds</p>
+                    <p className="text-white text-3xl font-bold">{statsLoading ? "—" : (stats?.totalBirds ?? 0)}</p>
+                  </div>
+                  {!statsLoading && stats && (
+                    <div className="flex gap-2 text-white/90 text-xs mt-2 font-medium">
+                      <span>♂ {stats.totalMales}</span>
+                      <span>♀ {stats.totalFemales}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="bg-white/20 rounded-xl p-3">
+                  <Bird className="h-6 w-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
           <StatCard
             icon={Heart}
             label="Active Pairs"

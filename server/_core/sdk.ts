@@ -5,7 +5,7 @@ import { parse as parseCookieHeader } from "cookie";
 import type { Request } from "express";
 import { SignJWT, jwtVerify } from "jose";
 import type { User } from "../../drizzle/schema";
-import * as db from "../db";
+import { UserService } from "../services/userService";
 import { ENV } from "./env";
 import type {
   ExchangeTokenRequest,
@@ -273,7 +273,7 @@ class SDKServer {
     // ── Email-auth users: openId is a numeric string (their DB id) ──────────
     const numericId = parseInt(sessionUserId, 10);
     if (!isNaN(numericId) && String(numericId) === sessionUserId) {
-      const user = await db.getUserById(numericId);
+      const user = await UserService.getUserById(numericId);
       if (!user) throw ForbiddenError("User not found");
       // Invalidate sessions issued before the last password change
       if (user.passwordChangedAt && session.iat) {
@@ -285,19 +285,19 @@ class SDKServer {
     }
 
     // ── Manus OAuth users: openId is a Manus openId string ──────────────────
-    let user = await db.getUserByOpenId(sessionUserId);
+    let user = await UserService.getUserByOpenId(sessionUserId);
 
     if (!user) {
       try {
         const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
-        await db.upsertUser({
+        await UserService.upsertUser({
           openId: userInfo.openId,
           name: userInfo.name || null,
           email: userInfo.email ?? null,
           loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
           lastSignedIn: signedInAt,
         });
-        user = await db.getUserByOpenId(userInfo.openId);
+        user = await UserService.getUserByOpenId(userInfo.openId);
       } catch (error) {
         console.error("[Auth] Failed to sync user from OAuth:", error);
         throw ForbiddenError("Failed to sync user info");
@@ -307,7 +307,7 @@ class SDKServer {
     if (!user) throw ForbiddenError("User not found");
 
     if (user.openId) {
-      await db.upsertUser({ openId: user.openId, lastSignedIn: signedInAt });
+      await UserService.upsertUser({ openId: user.openId, lastSignedIn: signedInAt });
     }
 
     return user;

@@ -453,9 +453,8 @@ export default function ComponentsShowcase() {
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
-                        className={`w-full justify-start text-left font-normal ${
-                          !datePickerDate && "text-muted-foreground"
-                        }`}
+                        className={`w-full justify-start text-left font-normal ${!datePickerDate && "text-muted-foreground"
+                          }`}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {datePickerDate ? (
@@ -522,14 +521,14 @@ export default function ComponentsShowcase() {
                       >
                         {selectedFramework
                           ? [
-                              { value: "react", label: "React" },
-                              { value: "vue", label: "Vue" },
-                              { value: "angular", label: "Angular" },
-                              { value: "svelte", label: "Svelte" },
-                              { value: "nextjs", label: "Next.js" },
-                              { value: "nuxt", label: "Nuxt" },
-                              { value: "remix", label: "Remix" },
-                            ].find(fw => fw.value === selectedFramework)?.label
+                            { value: "react", label: "React" },
+                            { value: "vue", label: "Vue" },
+                            { value: "angular", label: "Angular" },
+                            { value: "svelte", label: "Svelte" },
+                            { value: "nextjs", label: "Next.js" },
+                            { value: "nuxt", label: "Nuxt" },
+                            { value: "remix", label: "Remix" },
+                          ].find(fw => fw.value === selectedFramework)?.label
                           : "Select framework..."}
                         <CalendarIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
@@ -562,11 +561,10 @@ export default function ComponentsShowcase() {
                                 }}
                               >
                                 <Check
-                                  className={`mr-2 h-4 w-4 ${
-                                    selectedFramework === framework.value
-                                      ? "opacity-100"
-                                      : "opacity-0"
-                                  }`}
+                                  className={`mr-2 h-4 w-4 ${selectedFramework === framework.value
+                                    ? "opacity-100"
+                                    : "opacity-0"
+                                    }`}
                                 />
                                 {framework.label}
                               </CommandItem>
@@ -1387,9 +1385,11 @@ export default function ComponentsShowcase() {
                     </p>
                   </div>
                   <AIChatBox
+                    chatId="demo"
+                    initialMessages={[]}
                     api="/api/chat"
                     placeholder="Try sending a message..."
-                    height="500px"
+                    className="h-[500px]"
                     emptyStateMessage="How can I help you today?"
                     suggestedPrompts={[
                       "What's the weather in Tokyo?",

@@ -1,5 +1,5 @@
 import PDFDocument from "pdfkit";
-import { getPedigree } from "./db";
+import { PedigreeService } from "./services/pedigreeService";
 
 type PedigreeBird = {
   id: number;
@@ -15,17 +15,17 @@ type PedigreeBird = {
 
 // Colour palette
 const COLORS = {
-  primary:    "#0d9488", // teal-600
-  secondary:  "#f59e0b", // amber-500
-  male:       "#3b82f6", // blue-500
-  female:     "#f43f5e", // rose-500
-  unknown:    "#94a3b8", // slate-400
-  cardBg:     "#f8fafc", // slate-50
-  border:     "#e2e8f0", // slate-200
-  text:       "#1e293b", // slate-900
-  muted:      "#64748b", // slate-500
-  white:      "#ffffff",
-  headerBg:   "#0d9488",
+  primary: "#0d9488", // teal-600
+  secondary: "#f59e0b", // amber-500
+  male: "#3b82f6", // blue-500
+  female: "#f43f5e", // rose-500
+  unknown: "#94a3b8", // slate-400
+  cardBg: "#f8fafc", // slate-50
+  border: "#e2e8f0", // slate-200
+  text: "#1e293b", // slate-900
+  muted: "#64748b", // slate-500
+  white: "#ffffff",
+  headerBg: "#0d9488",
 };
 
 function genderColor(gender: string): string {
@@ -53,7 +53,7 @@ export async function generatePedigreePdf(
   userId: number,
   speciesMap: Record<number, { commonName: string }>
 ): Promise<Buffer> {
-  const pedigreeMap = await getPedigree(birdId, userId, 5);
+  const pedigreeMap = await PedigreeService.getPedigree(birdId, 5);
   const subject = pedigreeMap[birdId];
 
   return new Promise((resolve, reject) => {
