@@ -98,6 +98,9 @@ export class BirdService {
                 await tx.delete(breedingPairs).where(and(inArray(breedingPairs.id, pairIds), eq(breedingPairs.userId, userId)));
             }
 
+            // Unlink from any eggs
+            await tx.update(clutchEggs).set({ birdId: null }).where(and(eq(clutchEggs.birdId, id), eq(clutchEggs.userId, userId)));
+
             // Finally, delete the bird
             await tx.delete(birds).where(and(eq(birds.id, id), eq(birds.userId, userId)));
         });

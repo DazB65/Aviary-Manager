@@ -1,4 +1,4 @@
-import { eq, and, desc, asc } from "drizzle-orm";
+import { eq, and, desc, asc, sql } from "drizzle-orm";
 import { getDb } from "../db";
 import {
     broods,
@@ -101,7 +101,8 @@ export class BroodService {
                 set: {
                     outcome,
                     outcomeDate: safeDate,
-                    notes: safeNotes
+                    notes: safeNotes,
+                    birdId: outcome === "fledged" ? sql`${clutchEggs.birdId}` : null
                 },
             });
     }
