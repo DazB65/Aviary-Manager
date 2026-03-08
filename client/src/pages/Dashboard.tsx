@@ -159,16 +159,19 @@ export default function Dashboard() {
                 <div className="flex flex-col h-full justify-between">
                   <div>
                     <p className="text-white/80 text-sm font-medium mb-1">Total Birds</p>
-                    <p className="text-white text-3xl font-bold">{statsLoading ? "—" : (stats?.totalBirds ?? 0)}</p>
-                  </div>
-                  {!statsLoading && stats && (
-                    <div className="flex gap-2 text-white/90 text-xs mt-2 font-medium">
-                      <span>♂ {stats.totalMales}</span>
-                      <span>♀ {stats.totalFemales}</span>
+                    <div className="flex flex-col">
+                      <p className="text-white text-3xl font-bold leading-none">{statsLoading ? "—" : (stats?.totalBirds ?? 0)}</p>
+                      {!statsLoading && stats && (
+                        <div className="flex gap-2 text-white/90 text-[11px] mt-1.5 font-medium tracking-wide">
+                          <span>♂ {stats.totalMales}</span>
+                          <span>•</span>
+                          <span>♀ {stats.totalFemales}</span>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
-                <div className="bg-white/20 rounded-xl p-3">
+                <div className="bg-white/20 rounded-xl p-3 shrink-0">
                   <Bird className="h-6 w-6 text-white" />
                 </div>
               </div>
