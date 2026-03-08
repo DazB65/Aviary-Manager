@@ -32,17 +32,17 @@ export function EggCell({
             <button
                 onClick={() => setOpen((o) => !o)}
                 disabled={isPending}
-                title={`Egg ${num}: ${cfg.label} — click to change`}
+                title={ringId ? `Egg ${num} (Ring: ${ringId}): ${cfg.label} — click to change` : `Egg ${num}: ${cfg.label} — click to change`}
                 className={`
-          w-14 h-16 rounded-xl border-2 flex flex-col items-center justify-center gap-1
+          w-16 h-20 rounded-xl border-2 flex flex-col items-center justify-center gap-1
           transition-all hover:scale-105 active:scale-95 select-none
           ${cfg.bg} ${cfg.border}
           ${isPending ? "opacity-50 cursor-wait" : "cursor-pointer"}
           ${open ? `ring-2 ${cfg.ring} ring-offset-1` : ""}
         `}
             >
-                <span className="text-xl leading-none">{cfg.emoji}</span>
-                <span className={`text-[9px] font-bold leading-none ${cfg.text} truncate max-w-full px-1`}>
+                <span className="text-[1.35rem] leading-none">{cfg.emoji}</span>
+                <span className={`text-[10px] font-bold leading-none ${cfg.text} truncate max-w-full px-1`}>
                     {ringId ? ringId : `#${num}`}
                 </span>
                 <span className={`text-[8px] leading-none ${cfg.text} opacity-80`}>{cfg.label}</span>
