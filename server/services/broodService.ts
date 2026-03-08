@@ -81,15 +81,27 @@ export class BroodService {
         const db = getDb();
         if (!db) return;
 
-        const safeDate = outcomeDate ? outcomeDate : null;
-        const safeNotes = notes ? notes : null;
+        // If the date is an empty string (""), default to null so Drizzle sends it properly to Postgres
+        const safeDate = outcomeDate?.trim() ? outcomeDate : null;
+        const safeNotes = notes?.trim() ? notes : null;
 
         await db
             .insert(clutchEggs)
-            .values({ broodId, userId, eggNumber, outcome, notes: safeNotes, outcomeDate: safeDate })
+            .values({
+                broodId,
+                userId,
+                eggNumber,
+                outcome,
+                notes: safeNotes,
+                outcomeDate: safeDate
+            })
             .onConflictDoUpdate({
                 target: [clutchEggs.broodId, clutchEggs.eggNumber],
-                set: { outcome, notes: safeNotes, outcomeDate: safeDate },
+                set: {
+                    outcome,
+                    notes: safeNotes,
+                    outcomeDate: safeDate
+                },
             });
     }
 
