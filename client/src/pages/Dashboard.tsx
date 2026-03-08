@@ -37,12 +37,16 @@ function StatCard({
       onClick={onClick}
     >
       <CardContent className="p-0">
-        <div className={`${gradient} p-5 flex items-center justify-between`}>
-          <div>
-            <p className="text-white/80 text-sm font-medium mb-1">{label}</p>
-            <p className="text-white text-3xl font-bold">{value}</p>
+        <div className={`${gradient} p-5 flex items-center justify-between min-h-[116px]`}>
+          <div className="flex flex-col h-full justify-between">
+            <div>
+              <p className="text-white/80 text-sm font-medium mb-1">{label}</p>
+              <div className="flex items-end gap-3 mt-1">
+                <p className="text-white text-3xl font-bold leading-none">{value}</p>
+              </div>
+            </div>
           </div>
-          <div className="bg-white/20 rounded-xl p-3">
+          <div className="bg-white/20 rounded-xl p-3 shrink-0">
             <Icon className="h-6 w-6 text-white" />
           </div>
         </div>
