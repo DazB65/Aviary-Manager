@@ -11,6 +11,7 @@ import type { BirdFormData } from "@/hooks/useBirdForm";
 import { BirdGrid } from "@/components/birds/BirdGrid";
 import { BirdList } from "@/components/birds/BirdList";
 import { BirdFormModal } from "@/components/birds/BirdFormModal";
+import { GenderIcon } from "@/components/ui/GenderIcon";
 
 export default function Birds() {
   const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
@@ -167,9 +168,9 @@ export default function Birds() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All genders</SelectItem>
-              <SelectItem value="male">♂ Male</SelectItem>
-              <SelectItem value="female">♀ Female</SelectItem>
-              <SelectItem value="unknown">Unknown</SelectItem>
+              <SelectItem value="male"><div className="flex items-center gap-1.5"><GenderIcon gender="male" className="w-4 h-4" /> Male</div></SelectItem>
+              <SelectItem value="female"><div className="flex items-center gap-1.5"><GenderIcon gender="female" className="w-4 h-4" /> Female</div></SelectItem>
+              <SelectItem value="unknown"><div className="flex items-center gap-1.5"><GenderIcon gender="unknown" className="w-4 h-4" /> Unknown</div></SelectItem>
             </SelectContent>
           </Select>
           {inactiveBirdsCount > 0 && (

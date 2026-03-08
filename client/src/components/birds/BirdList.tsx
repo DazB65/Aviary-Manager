@@ -4,6 +4,7 @@ import { STATUS_COLORS, STATUS_LABELS, GENDER_LABELS } from "./constants";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
 import type { SortCol } from "@/hooks/useBirds";
+import { GenderIcon } from "@/components/ui/GenderIcon";
 
 interface BirdListProps {
     birds: any[];
@@ -83,18 +84,18 @@ export function BirdList({
                             <tr
                                 key={bird.id}
                                 className={`hover:bg-muted/30 transition-colors group ${inactiveStatuses.includes(bird.status)
-                                        ? "bg-muted/20 opacity-60"
-                                        : "bg-white"
+                                    ? "bg-muted/20 opacity-60"
+                                    : "bg-white"
                                     }`}
                             >
                                 <td className="px-4 py-3">
                                     <div className="flex items-center gap-3">
                                         <div
                                             className={`w-9 h-9 rounded-lg overflow-hidden ${bird.gender === "male"
-                                                    ? "bg-blue-50"
-                                                    : bird.gender === "female"
-                                                        ? "bg-pink-50"
-                                                        : "bg-amber-50"
+                                                ? "bg-blue-50"
+                                                : bird.gender === "female"
+                                                    ? "bg-pink-50"
+                                                    : "bg-amber-50"
                                                 } flex items-center justify-center text-lg shrink-0`}
                                         >
                                             {bird.photoUrl ? (
@@ -103,12 +104,8 @@ export function BirdList({
                                                     alt={bird.name ?? "Bird"}
                                                     className="w-full h-full object-cover"
                                                 />
-                                            ) : bird.gender === "male" ? (
-                                                "♂"
-                                            ) : bird.gender === "female" ? (
-                                                "♀"
                                             ) : (
-                                                "🐦"
+                                                <GenderIcon gender={bird.gender} className="w-5 h-5" />
                                             )}
                                         </div>
                                         <span className="font-semibold truncate max-w-32">

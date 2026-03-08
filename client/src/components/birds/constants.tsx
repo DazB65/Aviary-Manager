@@ -1,4 +1,11 @@
-export const GENDER_LABELS: Record<string, string> = { male: "♂ Male", female: "♀ Female", unknown: "? Unknown" };
+import React from 'react';
+import { GenderIcon } from '@/components/ui/GenderIcon';
+
+export const GENDER_LABELS: Record<string, React.ReactNode> = {
+  male: <span className="flex items-center gap-1.5"> <GenderIcon gender="male" className = "w-3.5 h-3.5" /> Male </span>, 
+  female: <span className="flex items-center gap-1.5"> <GenderIcon gender="female" className = "w-3.5 h-3.5" /> Female </span>, 
+  unknown: <span className="flex items-center gap-1.5"> <GenderIcon gender="unknown" className = "w-3.5 h-3.5" /> Unknown </span>
+};
 
 export const STATUS_COLORS: Record<string, string> = {
   alive: "bg-emerald-50 text-emerald-700 border-emerald-200",

@@ -48,7 +48,7 @@ export function useBroods() {
         const female = birdMap[pair.femaleId];
         const mLabel = male ? male.name || male.ringId || `#${male.id}` : "?";
         const fLabel = female ? female.name || female.ringId || `#${female.id}` : "?";
-        return `${mLabel} ♂ × ${fLabel} ♀`;
+        return `${mLabel} × ${fLabel}`;
     }
 
     return {

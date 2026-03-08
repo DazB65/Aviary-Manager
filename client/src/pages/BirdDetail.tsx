@@ -7,6 +7,7 @@ import { trpc } from "@/lib/trpc";
 import { ArrowLeft, Bird, Calendar, Tag, Dna, GitBranch, Users, CalendarDays, CheckCircle2, Circle } from "lucide-react";
 import { useLocation, useParams } from "wouter";
 import { format } from "date-fns";
+import { GenderIcon } from "@/components/ui/GenderIcon";
 
 type PedigreeBird = {
   id: number;
@@ -47,7 +48,6 @@ function PedigreeCard({
     );
   }
 
-  const genderIcon = bird.gender === "male" ? "♂" : bird.gender === "female" ? "♀" : "🐦";
   const genderColor = bird.gender === "male" ? "text-blue-500" : bird.gender === "female" ? "text-rose-500" : "text-muted-foreground";
 
   return (
@@ -59,8 +59,8 @@ function PedigreeCard({
         {bird.photoUrl ? (
           <img src={bird.photoUrl} alt={bird.name ?? "Bird"} className={`${imgClasses[size]} rounded-lg object-cover shrink-0`} />
         ) : (
-          <div className={`${imgClasses[size]} rounded-lg ${bird.gender === "male" ? "bg-blue-50" : bird.gender === "female" ? "bg-pink-50" : "bg-amber-50"} flex items-center justify-center shrink-0 ${textClasses[size]}`}>
-            {genderIcon}
+          <div className={`${imgClasses[size]} rounded-lg ${bird.gender === "male" ? "bg-blue-50" : bird.gender === "female" ? "bg-pink-50" : "bg-amber-50"} flex items-center justify-center shrink-0`}>
+            <GenderIcon gender={bird.gender} className={size === "sm" ? "w-3 h-3" : "w-4 h-4"} />
           </div>
         )}
         <div className="min-w-0">
@@ -69,7 +69,7 @@ function PedigreeCard({
         </div>
       </div>
       {bird.colorMutation && size !== "sm" && <p className="text-xs text-amber-600 truncate">{bird.colorMutation}</p>}
-      <p className={`${textClasses[size]} ${genderColor} font-medium`}>{genderIcon} {bird.gender === "male" ? "Male" : bird.gender === "female" ? "Female" : "?"}</p>
+      <p className={`${textClasses[size]} ${genderColor} font-medium flex items-center gap-1.5`}><GenderIcon gender={bird.gender} className="w-3.5 h-3.5" /> {bird.gender === "male" ? "Male" : bird.gender === "female" ? "Female" : "?"}</p>
     </button>
   );
 }
@@ -237,7 +237,7 @@ export default function BirdDetail() {
                 {bird.photoUrl ? (
                   <img src={bird.photoUrl} alt={bird.name ?? "Bird"} className="w-full h-full object-cover" />
                 ) : (
-                  bird.gender === "male" ? "♂" : bird.gender === "female" ? "♀" : "🐦"
+                  <GenderIcon gender={bird.gender} className="w-10 h-10" />
                 )}
               </div>
               <div className="pb-1 flex-1 min-w-0">
@@ -267,7 +267,10 @@ export default function BirdDetail() {
                 <Bird className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-xs text-muted-foreground">Gender</p>
-                  <p className="font-medium">{bird.gender === "male" ? "♂ Male" : bird.gender === "female" ? "♀ Female" : "Unknown"}</p>
+                  <p className="font-medium flex items-center gap-1.5">
+                    <GenderIcon gender={bird.gender} className="w-4 h-4" />
+                    {bird.gender === "male" ? "Male" : bird.gender === "female" ? "Female" : "Unknown"}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-2 text-sm">
@@ -374,25 +377,23 @@ export default function BirdDetail() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {descendants.map(d => {
                       const dSpecies = speciesMap[d.speciesId];
-                      const genderIcon = d.gender === "male" ? "♂" : d.gender === "female" ? "♀" : "🐦";
-                      const genderColor = d.gender === "male" ? "text-blue-500" : d.gender === "female" ? "text-rose-500" : "text-muted-foreground";
                       return (
                         <button
                           key={d.id}
                           onClick={() => setLocation(`/birds/${d.id}`)}
                           className="flex items-center gap-3 p-3 rounded-xl border border-border bg-white hover:shadow-elevated hover:border-primary/40 transition-all text-left"
                         >
-                          <div className={`w-10 h-10 rounded-xl ${d.gender === "male" ? "bg-blue-50" : d.gender === "female" ? "bg-pink-50" : "bg-amber-50"} flex items-center justify-center text-lg shrink-0 overflow-hidden`}>
+                          <div className={`w-10 h-10 rounded-xl ${d.gender === "male" ? "bg-blue-50" : d.gender === "female" ? "bg-pink-50" : "bg-amber-50"} flex items-center justify-center shrink-0 overflow-hidden`}>
                             {d.photoUrl ? (
                               <img src={d.photoUrl} alt={d.name ?? "Bird"} className="w-full h-full object-cover" />
-                            ) : genderIcon}
+                            ) : <GenderIcon gender={d.gender} className="w-5 h-5" />}
                           </div>
                           <div className="min-w-0">
                             <p className="text-sm font-semibold truncate">{d.name || d.ringId || `#${d.id}`}</p>
                             <p className="text-xs text-muted-foreground truncate">{dSpecies?.commonName ?? "—"}</p>
                             {d.colorMutation && <p className="text-xs text-amber-600 truncate">{d.colorMutation}</p>}
                           </div>
-                          <span className={`ml-auto text-base shrink-0 ${genderColor}`}>{genderIcon}</span>
+                          <span className="ml-auto shrink-0"><GenderIcon gender={d.gender} className="w-5 h-5" /></span>
                         </button>
                       );
                     })}
@@ -422,8 +423,6 @@ export default function BirdDetail() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {siblings.map(s => {
                       const sSpecies = speciesMap[s.speciesId];
-                      const genderIcon = s.gender === "male" ? "♂" : s.gender === "female" ? "♀" : "🐦";
-                      const genderColor = s.gender === "male" ? "text-blue-500" : s.gender === "female" ? "text-rose-500" : "text-muted-foreground";
                       const isFullSibling = s.siblingType === "full";
                       return (
                         <button
@@ -431,17 +430,17 @@ export default function BirdDetail() {
                           onClick={() => setLocation(`/birds/${s.id}`)}
                           className="flex items-center gap-3 p-3 rounded-xl border border-border bg-white hover:shadow-elevated hover:border-primary/40 transition-all text-left"
                         >
-                          <div className={`w-10 h-10 rounded-xl ${s.gender === "male" ? "bg-blue-50" : s.gender === "female" ? "bg-pink-50" : "bg-amber-50"} flex items-center justify-center text-lg shrink-0 overflow-hidden`}>
+                          <div className={`w-10 h-10 rounded-xl ${s.gender === "male" ? "bg-blue-50" : s.gender === "female" ? "bg-pink-50" : "bg-amber-50"} flex items-center justify-center shrink-0 overflow-hidden`}>
                             {s.photoUrl ? (
                               <img src={s.photoUrl} alt={s.name ?? "Bird"} className="w-full h-full object-cover" />
-                            ) : genderIcon}
+                            ) : <GenderIcon gender={s.gender} className="w-5 h-5" />}
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-semibold truncate">{s.name || s.ringId || `#${s.id}`}</p>
                             <p className="text-xs text-muted-foreground truncate">{sSpecies?.commonName ?? "—"}</p>
                           </div>
                           <div className="flex flex-col items-end gap-1 shrink-0">
-                            <span className={`text-base ${genderColor}`}>{genderIcon}</span>
+                            <span className="text-base"><GenderIcon gender={s.gender} className="w-5 h-5" /></span>
                             <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${isFullSibling
                               ? "bg-purple-100 text-purple-700"
                               : "bg-blue-50 text-blue-600"

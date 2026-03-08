@@ -2,8 +2,9 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { BarChart2, Bird, Egg, TrendingUp } from "lucide-react";
+import { GenderIcon } from "@/components/ui/GenderIcon";
 
-function StatBlock({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
+function StatBlock({ label, value, sub }: { label: string; value: string | number; sub?: React.ReactNode }) {
   return (
     <div className="text-center p-4 rounded-xl border border-border bg-muted/30">
       <p className="text-3xl font-bold text-foreground">{value}</p>
@@ -71,7 +72,7 @@ export default function Statistics() {
 
         {/* Overview */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <StatBlock label="Live Birds" value={aliveBirds.length} sub={`${maleCount}♂ · ${femaleCount}♀`} />
+          <StatBlock label="Live Birds" value={aliveBirds.length} sub={<span className="flex items-center justify-center gap-1.5">{maleCount} <GenderIcon gender="male" className="w-3.5 h-3.5" /> · {femaleCount} <GenderIcon gender="female" className="w-3.5 h-3.5" /></span>} />
           <StatBlock label="Active Pairs" value={activePairs.length} />
           <StatBlock label="Total Broods" value={allBroods.length} />
           <StatBlock label="Hatch Rate" value={`${overallHatchRate}%`} sub={`${totalHatched} / ${totalEggs} eggs`} />

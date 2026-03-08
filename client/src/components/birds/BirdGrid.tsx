@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Eye, Pencil, Trash2 } from "lucide-react";
 import { STATUS_COLORS, STATUS_LABELS, GENDER_LABELS } from "./constants";
 import { useLocation } from "wouter";
+import { GenderIcon } from "@/components/ui/GenderIcon";
 
 interface BirdGridProps {
     birds: any[];
@@ -35,13 +36,13 @@ export function BirdGrid({ birds, speciesMap, inactiveStatuses, onEdit, onDelete
                             ) : (
                                 <div
                                     className={`w-full h-36 ${bird.gender === "male"
-                                            ? "bg-blue-50"
-                                            : bird.gender === "female"
-                                                ? "bg-pink-50"
-                                                : "bg-amber-50"
+                                        ? "bg-blue-50"
+                                        : bird.gender === "female"
+                                            ? "bg-pink-50"
+                                            : "bg-amber-50"
                                         } flex items-center justify-center text-4xl`}
                                 >
-                                    {bird.gender === "male" ? "♂" : bird.gender === "female" ? "♀" : "🐦"}
+                                    <GenderIcon gender={bird.gender} className="w-12 h-12" />
                                 </div>
                             )}
                             <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -108,6 +109,6 @@ export function BirdGrid({ birds, speciesMap, inactiveStatuses, onEdit, onDelete
                     </Card>
                 );
             })}
-        </div>
+        </div >
     );
 }

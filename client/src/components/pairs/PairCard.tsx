@@ -5,6 +5,7 @@ import { Heart, ChevronRight, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { STATUS_STYLES, STATUS_LABELS } from "./constants";
 import { PairInbreeding } from "./InbreedingUI";
+import { GenderIcon } from "@/components/ui/GenderIcon";
 
 interface PairCardProps {
     pair: any;
@@ -55,11 +56,11 @@ export function PairCard({
                 <div className="flex items-center gap-4">
                     {/* Male */}
                     <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-lg shrink-0 overflow-hidden">
+                        <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center shrink-0 overflow-hidden">
                             {male?.photoUrl ? (
                                 <img src={male.photoUrl} alt="" className="w-full h-full object-cover rounded-lg" />
                             ) : (
-                                "♂"
+                                <GenderIcon gender="male" className="w-5 h-5" />
                             )}
                         </div>
                         <div className="min-w-0">
@@ -79,7 +80,7 @@ export function PairCard({
                     </div>
                     {/* Female */}
                     <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <div className="w-10 h-10 rounded-lg bg-pink-50 flex items-center justify-center text-lg shrink-0 overflow-hidden">
+                        <div className="w-10 h-10 rounded-lg bg-pink-50 flex items-center justify-center shrink-0 overflow-hidden">
                             {female?.photoUrl ? (
                                 <img
                                     src={female.photoUrl}
@@ -87,7 +88,7 @@ export function PairCard({
                                     className="w-full h-full object-cover rounded-lg"
                                 />
                             ) : (
-                                "♀"
+                                <GenderIcon gender="female" className="w-5 h-5" />
                             )}
                         </div>
                         <div className="min-w-0">

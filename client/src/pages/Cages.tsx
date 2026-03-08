@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { Bird, Home } from "lucide-react";
 import { useLocation } from "wouter";
+import { GenderIcon } from "@/components/ui/GenderIcon";
 
 export default function Cages() {
   const [, setLocation] = useLocation();
@@ -72,7 +73,7 @@ export default function Cages() {
                         <div className={`w-10 h-10 rounded-lg ${bird.gender === "male" ? "bg-blue-50" : bird.gender === "female" ? "bg-pink-50" : "bg-amber-50"} flex items-center justify-center mb-2 text-lg overflow-hidden`}>
                           {bird.photoUrl
                             ? <img src={bird.photoUrl} alt={bird.name ?? "Bird"} className="w-full h-full object-cover rounded-lg" />
-                            : bird.gender === "male" ? "♂" : bird.gender === "female" ? "♀" : "🐦"}
+                            : <GenderIcon gender={bird.gender} className="w-5 h-5" />}
                         </div>
                         <p className="text-sm font-semibold truncate">{bird.name || bird.ringId || `Bird #${bird.id}`}</p>
                         <p className={`text-sm ${bird.gender === "male" ? "text-blue-600" : bird.gender === "female" ? "text-pink-600" : "text-muted-foreground"}`}>
@@ -108,7 +109,7 @@ export default function Cages() {
                         <div className={`w-10 h-10 rounded-lg ${bird.gender === "male" ? "bg-blue-50" : bird.gender === "female" ? "bg-pink-50" : "bg-amber-50"} flex items-center justify-center mb-2 text-lg overflow-hidden`}>
                           {bird.photoUrl
                             ? <img src={bird.photoUrl} alt={bird.name ?? "Bird"} className="w-full h-full object-cover rounded-lg" />
-                            : bird.gender === "male" ? "♂" : bird.gender === "female" ? "♀" : "🐦"}
+                            : <GenderIcon gender={bird.gender} className="w-5 h-5" />}
                         </div>
                         <p className="text-sm font-semibold truncate">{bird.name || bird.ringId || `Bird #${bird.id}`}</p>
                         <p className={`text-sm ${bird.gender === "male" ? "text-blue-600" : bird.gender === "female" ? "text-pink-600" : "text-muted-foreground"}`}>

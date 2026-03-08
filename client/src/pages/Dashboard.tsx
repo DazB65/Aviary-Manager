@@ -8,6 +8,7 @@ import { Bird, CalendarDays, CheckCircle2, ChevronRight, Circle, Egg, Heart, Tre
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { format, isToday, isTomorrow, parseISO } from "date-fns";
+import { GenderIcon } from "@/components/ui/GenderIcon";
 
 function formatDateLabel(dateVal: Date | string | null | undefined): string {
   if (!dateVal) return "—";
@@ -163,9 +164,9 @@ export default function Dashboard() {
                       <p className="text-white text-3xl font-bold leading-none">{statsLoading ? "—" : (stats?.totalBirds ?? 0)}</p>
                       {!statsLoading && stats && (
                         <div className="flex gap-2 text-white/90 text-[11px] mt-1.5 font-medium tracking-wide">
-                          <span>♂ {stats.totalMales}</span>
+                          <span className="flex items-center gap-1"><GenderIcon gender="male" className="w-3 h-3" /> {stats.totalMales}</span>
                           <span>•</span>
-                          <span>♀ {stats.totalFemales}</span>
+                          <span className="flex items-center gap-1"><GenderIcon gender="female" className="w-3 h-3" /> {stats.totalFemales}</span>
                         </div>
                       )}
                     </div>
@@ -331,7 +332,7 @@ export default function Dashboard() {
                       {bird.photoUrl ? (
                         <img src={bird.photoUrl} alt={bird.name ?? "Bird"} className="w-full h-full object-cover rounded-lg" />
                       ) : (
-                        bird.gender === "male" ? "♂" : bird.gender === "female" ? "♀" : "🐦"
+                        <GenderIcon gender={bird.gender} className="w-5 h-5" />
                       )}
                     </div>
                     <p className="text-sm font-medium truncate">{bird.name || bird.ringId || `Bird #${bird.id}`}</p>

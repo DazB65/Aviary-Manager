@@ -20,6 +20,7 @@ import { Upload } from "lucide-react";
 import { useRef, useCallback, useState } from "react";
 import { Controller } from "react-hook-form";
 import { useBirdForm, type BirdFormData } from "@/hooks/useBirdForm";
+import { GenderIcon } from "@/components/ui/GenderIcon";
 
 interface BirdFormModalProps {
     open: boolean;
@@ -228,9 +229,9 @@ export function BirdFormModal({
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="unknown">? Unknown (determine later)</SelectItem>
-                                            <SelectItem value="male">♂ Male</SelectItem>
-                                            <SelectItem value="female">♀ Female</SelectItem>
+                                            <SelectItem value="unknown"><div className="flex items-center gap-1.5"><GenderIcon gender="unknown" className="w-4 h-4" /> Unknown</div></SelectItem>
+                                            <SelectItem value="male"><div className="flex items-center gap-1.5"><GenderIcon gender="male" className="w-4 h-4" /> Male</div></SelectItem>
+                                            <SelectItem value="female"><div className="flex items-center gap-1.5"><GenderIcon gender="female" className="w-4 h-4" /> Female</div></SelectItem>
                                         </SelectContent>
                                     </Select>
                                 )}
