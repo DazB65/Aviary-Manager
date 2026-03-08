@@ -49,6 +49,14 @@ export async function runMigrations() {
     console.log("[DB] Executing fallback DDL brute-force...");
     await db.execute(sql`ALTER TABLE "clutchEggs" ADD COLUMN IF NOT EXISTS "outcomeDate" date;`);
 
+    // LOG CURRENT REALITY: Ask PostgreSQL exactly what columns exist
+    const schemaCheck = await db.execute(sql`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'clutchEggs';
+    `);
+    console.log("[DB] EXACT schema for clutchEggs on Railway:", schemaCheck.map(r => r.column_name));
+
     await migrate(db, { migrationsFolder: MIGRATIONS_FOLDER });
     console.log("[DB] Migrations complete.");
   } catch (err) {
