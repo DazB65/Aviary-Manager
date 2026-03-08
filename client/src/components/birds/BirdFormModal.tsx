@@ -323,6 +323,7 @@ export function BirdFormModal({
                                             <SelectItem value="alive">Alive</SelectItem>
                                             <SelectItem value="breeding">🥚 Breeding</SelectItem>
                                             <SelectItem value="resting">💤 Resting</SelectItem>
+                                            <SelectItem value="fledged">🪶 Fledged</SelectItem>
                                             <SelectItem value="deceased">Deceased</SelectItem>
                                             <SelectItem value="sold">Sold</SelectItem>
                                             <SelectItem value="unknown">Unknown</SelectItem>

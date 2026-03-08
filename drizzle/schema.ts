@@ -12,14 +12,14 @@ import {
 } from "drizzle-orm/pg-core";
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
-export const planEnum        = pgEnum("plan",        ["free", "pro"]);
-export const roleEnum        = pgEnum("role",        ["user", "admin"]);
-export const genderEnum      = pgEnum("gender",      ["male", "female", "unknown"]);
-export const birdStatusEnum  = pgEnum("bird_status", ["alive", "breeding", "resting", "deceased", "sold", "unknown"]);
-export const pairStatusEnum  = pgEnum("pair_status", ["active", "resting", "retired"]);
-export const broodStatusEnum = pgEnum("brood_status",["incubating", "hatched", "failed", "abandoned"]);
-export const eventTypeEnum   = pgEnum("event_type",  ["vet", "banding", "medication", "weaning", "sale", "supplements", "other"]);
-export const eggOutcomeEnum  = pgEnum("egg_outcome", ["unknown", "fertile", "infertile", "cracked", "hatched", "died"]);
+export const planEnum = pgEnum("plan", ["free", "pro"]);
+export const roleEnum = pgEnum("role", ["user", "admin"]);
+export const genderEnum = pgEnum("gender", ["male", "female", "unknown"]);
+export const birdStatusEnum = pgEnum("bird_status", ["alive", "breeding", "resting", "fledged", "deceased", "sold", "unknown"]);
+export const pairStatusEnum = pgEnum("pair_status", ["active", "resting", "retired"]);
+export const broodStatusEnum = pgEnum("brood_status", ["incubating", "hatched", "failed", "abandoned"]);
+export const eventTypeEnum = pgEnum("event_type", ["vet", "banding", "medication", "weaning", "sale", "supplements", "other"]);
+export const eggOutcomeEnum = pgEnum("egg_outcome", ["unknown", "fertile", "infertile", "cracked", "hatched", "died"]);
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),

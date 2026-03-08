@@ -247,10 +247,11 @@ export default function BirdDetail() {
               <Badge className={`mb-1 border ${bird.status === "alive" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
                 bird.status === "breeding" ? "bg-pink-50 text-pink-700 border-pink-200" :
                   bird.status === "resting" ? "bg-amber-50 text-amber-700 border-amber-200" :
-                    bird.status === "sold" ? "bg-blue-50 text-blue-700 border-blue-200" :
-                      "bg-gray-50 text-gray-500 border-gray-200"
+                    bird.status === "fledged" ? "bg-cyan-50 text-cyan-700 border-cyan-200" :
+                      bird.status === "sold" ? "bg-blue-50 text-blue-700 border-blue-200" :
+                        "bg-gray-50 text-gray-500 border-gray-200"
                 }`} variant="outline">
-                {{ alive: "Alive", breeding: "🥚 Breeding", resting: "💤 Resting", deceased: "Deceased", sold: "Sold", unknown: "Unknown" }[bird.status] ?? bird.status}
+                {{ alive: "Alive", breeding: "🥚 Breeding", resting: "💤 Resting", fledged: "🪶 Fledged", deceased: "Deceased", sold: "Sold", unknown: "Unknown" }[bird.status] ?? bird.status}
               </Badge>
             </div>
 
