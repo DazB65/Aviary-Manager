@@ -36,6 +36,13 @@
       "when": 1772956220127,
       "tag": "0004_marvelous_phantom_reporter",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1773007904524,
+      "tag": "0005_real_monster_badoon",
+      "breakpoints": true
     }
   ]
 }

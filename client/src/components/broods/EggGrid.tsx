@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { EGG_OUTCOME_CONFIG, OUTCOME_OPTIONS, type EggOutcome } from "./constants";
@@ -7,6 +8,7 @@ export function EggCell({
     num,
     outcome,
     outcomeDate,
+    birdId,
     isPending,
     onSelect,
     onConvertToBird,
@@ -14,6 +16,7 @@ export function EggCell({
     num: number;
     outcome: EggOutcome;
     outcomeDate?: string | null;
+    birdId?: number | null;
     isPending: boolean;
     onSelect: (o: EggOutcome, date?: string | null) => void;
     onConvertToBird?: () => void;
@@ -87,7 +90,18 @@ export function EggCell({
                                 />
                             </div>
                         )}
-                        {outcome === "fledged" && onConvertToBird && (
+                        {outcome === "fledged" && birdId ? (
+                            <div className="mt-2 pt-2 border-t border-border">
+                                <Link href={`/birds/${birdId}`}>
+                                    <a
+                                        onClick={() => setOpen(false)}
+                                        className="w-full text-center text-xs font-semibold bg-blue-100 text-blue-700 py-1.5 rounded-md hover:bg-blue-200 transition-colors block"
+                                    >
+                                        View Bird in Flock
+                                    </a>
+                                </Link>
+                            </div>
+                        ) : outcome === "fledged" && onConvertToBird && (
                             <div className="mt-2 pt-2 border-t border-border">
                                 <button
                                     onClick={() => {
@@ -166,9 +180,11 @@ export function ClutchEggGrid({
 
     const serverMap: Record<number, EggOutcome> = {};
     const serverDateMap: Record<number, string | null> = {};
+    const serverBirdIdMap: Record<number, number | null> = {};
     for (const e of eggs) {
         serverMap[e.eggNumber] = e.outcome as EggOutcome;
         serverDateMap[e.eggNumber] = e.outcomeDate ? String(e.outcomeDate).split("T")[0] : null;
+        serverBirdIdMap[e.eggNumber] = e.birdId ?? null;
     }
 
     function getOutcome(num: number): EggOutcome {
@@ -179,6 +195,10 @@ export function ClutchEggGrid({
     function getOutcomeDate(num: number): string | null {
         if (num in localOutcomeDates) return localOutcomeDates[num];
         return serverDateMap[num] ?? null;
+    }
+
+    function getBirdId(num: number): number | null {
+        return serverBirdIdMap[num] ?? null;
     }
 
     function handleSelect(eggNumber: number, outcome: EggOutcome, outcomeDate?: string | null) {
@@ -216,6 +236,7 @@ export function ClutchEggGrid({
                             num={num}
                             outcome={getOutcome(num)}
                             outcomeDate={getOutcomeDate(num)}
+                            birdId={getBirdId(num)}
                             isPending={pendingEggs.has(num)}
                             onSelect={(o, d) => handleSelect(num, o, d)}
                             onConvertToBird={

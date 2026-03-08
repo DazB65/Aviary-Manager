@@ -166,6 +166,7 @@ export const clutchEggs = pgTable("clutchEggs", {
   outcome: eggOutcomeEnum("outcome").default("unknown").notNull(),
   outcomeDate: date("outcomeDate"), // Optional date specific to the current outcome stat (e.g. hatched date, fledged date)
   notes: text("notes"),
+  birdId: integer("birdId"), // Link to the bird in the flock if 'converted to bird'
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 }, (table) => ({
   broodEggUnique: uniqueIndex("clutchEggs_broodId_eggNumber_unique").on(table.broodId, table.eggNumber),

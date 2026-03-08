@@ -168,6 +168,11 @@ export class BroodService {
                 notes: `Automatically added from Brood #${broodId}, Egg #${eggNumber}`
             }).returning({ id: birds.id });
 
+            // 6. Link the newly created bird to the egg
+            await tx.update(clutchEggs)
+                .set({ birdId: newBird.id, updatedAt: new Date() })
+                .where(eq(clutchEggs.id, egg.id));
+
             return newBird.id;
         });
     }

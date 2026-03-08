@@ -53,6 +53,7 @@ export async function runMigrations() {
       console.log("[DB] Enum brute-force note:", enumErr);
     }
     await db.execute(sql`ALTER TABLE "clutchEggs" ADD COLUMN IF NOT EXISTS "outcomeDate" date;`);
+    await db.execute(sql`ALTER TABLE "clutchEggs" ADD COLUMN IF NOT EXISTS "birdId" integer;`);
 
     // LOG CURRENT REALITY: Ask PostgreSQL exactly what columns exist
     const schemaCheck = await db.execute(sql`

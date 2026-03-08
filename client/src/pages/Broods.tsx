@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/select";
 import { Plus, Egg } from "lucide-react";
 import { useState } from "react";
+import { trpc } from "@/lib/trpc";
 import { useBroods } from "@/hooks/useBroods";
 import { useBirds } from "@/hooks/useBirds";
 import { BroodCard } from "@/components/broods/BroodCard";
@@ -22,6 +23,7 @@ export default function Broods() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingBrood, setEditingBrood] = useState<any>(null);
   const [filterPairId, setFilterPairId] = useState("all");
+  const utils = trpc.useUtils();
 
   const [birdModalOpen, setBirdModalOpen] = useState(false);
   const [birdFromEgg, setBirdFromEgg] = useState<any>(null);
@@ -56,6 +58,8 @@ export default function Broods() {
     const male = birdMap[pair.maleId];
 
     setBirdFromEgg({
+      fromBroodId: broodId,
+      fromEggNumber: eggNumber,
       speciesId: male?.speciesId,
       fatherId: pair.maleId,
       motherId: pair.femaleId,
@@ -135,11 +139,16 @@ export default function Broods() {
       status: data.status,
       fatherId: data.fatherId ? Number(data.fatherId) : undefined,
       motherId: data.motherId ? Number(data.motherId) : undefined,
+      fromBroodId: birdFromEgg?.fromBroodId,
+      fromEggNumber: birdFromEgg?.fromEggNumber,
     };
 
     createBird.mutate(payload, {
       onSuccess: () => {
         setBirdModalOpen(false);
+        if (birdFromEgg?.fromBroodId) {
+          utils.clutchEggs.byBrood.invalidate({ broodId: birdFromEgg.fromBroodId });
+        }
       }
     });
   };

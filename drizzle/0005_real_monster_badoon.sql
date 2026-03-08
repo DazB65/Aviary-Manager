@@ -1,0 +1,1 @@
+ALTER TABLE "clutchEggs" ADD COLUMN "birdId" integer;

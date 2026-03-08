@@ -31,9 +31,23 @@ export class BirdService {
             .limit(10);
     }
 
-    static async createBird(data: InsertBird) {
-        const [result] = await getDb().insert(birds).values(data).returning();
-        return result;
+    static async createBird(data: InsertBird & { fromBroodId?: number, fromEggNumber?: number }) {
+        const { fromBroodId, fromEggNumber, ...insertData } = data;
+        return await getDb().transaction(async (tx) => {
+            const [result] = await tx.insert(birds).values(insertData).returning();
+            if (fromBroodId && fromEggNumber && insertData.userId) {
+                await tx.update(clutchEggs)
+                    .set({ birdId: result.id, updatedAt: new Date() })
+                    .where(
+                        and(
+                            eq(clutchEggs.broodId, fromBroodId),
+                            eq(clutchEggs.eggNumber, fromEggNumber),
+                            eq(clutchEggs.userId, insertData.userId)
+                        )
+                    );
+            }
+            return result;
+        });
     }
 
     static async updateBird(id: number, userId: number, data: Partial<InsertBird>) {

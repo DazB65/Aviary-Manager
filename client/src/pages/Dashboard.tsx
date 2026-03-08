@@ -113,6 +113,14 @@ export default function Dashboard() {
       return eventDate >= today;
     })
     .sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime())
+    .reduce((acc: any[], curr: any) => {
+      // If it's part of a series and we already have an event from that series, skip it.
+      if (curr.seriesId && acc.some(e => e.seriesId === curr.seriesId)) {
+        return acc;
+      }
+      acc.push(curr);
+      return acc;
+    }, [])
     .slice(0, 5);
 
   const recentBirds = (birds ?? []).slice(0, 4);
