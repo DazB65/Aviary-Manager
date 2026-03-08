@@ -60,6 +60,16 @@ export class BroodService {
             .orderBy(asc(clutchEggs.eggNumber));
     }
 
+    static async getEggsByUser(userId: number): Promise<ClutchEgg[]> {
+        const db = getDb();
+        if (!db) return [];
+        return db
+            .select()
+            .from(clutchEggs)
+            .where(eq(clutchEggs.userId, userId))
+            .orderBy(asc(clutchEggs.eggNumber));
+    }
+
     static async upsertClutchEgg(
         broodId: number,
         userId: number,

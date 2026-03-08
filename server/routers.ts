@@ -371,6 +371,7 @@ export const appRouter = router({
   }),
 
   clutchEggs: router({
+    list: protectedProcedure.query(({ ctx }) => BroodService.getEggsByUser(ctx.user.id)),
     byBrood: protectedProcedure
       .input(z.object({ broodId: z.number() }))
       .query(({ ctx, input }) => BroodService.getEggsByBrood(input.broodId, ctx.user.id)),

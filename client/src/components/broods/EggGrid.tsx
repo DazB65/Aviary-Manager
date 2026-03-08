@@ -94,7 +94,8 @@ export function EggCell({
 
 export function ClutchEggGrid({ broodId, eggsLaid }: { broodId: number; eggsLaid: number }) {
     const utils = trpc.useUtils();
-    const { data: eggs = [], isLoading } = trpc.clutchEggs.byBrood.useQuery({ broodId });
+    const { data: allEggs = [], isLoading } = trpc.clutchEggs.list.useQuery();
+    const eggs = allEggs.filter((e) => e.broodId === broodId);
 
     const [localOutcomes, setLocalOutcomes] = useState<Record<number, EggOutcome>>({});
     const [localOutcomeDates, setLocalOutcomeDates] = useState<Record<number, string | null>>({});
@@ -112,7 +113,7 @@ export function ClutchEggGrid({ broodId, eggsLaid }: { broodId: number; eggsLaid
                 s.delete(eggNumber);
                 return s;
             });
-            utils.clutchEggs.byBrood.invalidate({ broodId });
+            utils.clutchEggs.list.invalidate();
         },
         onError: (e, { eggNumber }) => {
             setPendingEggs((prev) => {
