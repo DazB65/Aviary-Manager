@@ -92,9 +92,8 @@ export function EggCell({
     );
 }
 
-export function ClutchEggGrid({ broodId, eggsLaid }: { broodId: number; eggsLaid: number }) {
+export function ClutchEggGrid({ broodId, eggsLaid, allEggs }: { broodId: number; eggsLaid: number, allEggs: any[] }) {
     const utils = trpc.useUtils();
-    const { data: allEggs = [], isLoading } = trpc.clutchEggs.list.useQuery();
     const eggs = allEggs.filter((e) => e.broodId === broodId);
 
     const [localOutcomes, setLocalOutcomes] = useState<Record<number, EggOutcome>>({});
@@ -142,15 +141,6 @@ export function ClutchEggGrid({ broodId, eggsLaid }: { broodId: number; eggsLaid
             </p>
         );
 
-    if (isLoading)
-        return (
-            <div className="flex flex-wrap gap-2">
-                {[...Array(eggsLaid)].map((_, i) => (
-                    <div key={i} className="w-14 h-16 rounded-xl bg-muted animate-pulse" />
-                ))}
-            </div>
-        );
-
     const serverMap: Record<number, EggOutcome> = {};
     const serverDateMap: Record<number, string | null> = {};
     for (const e of eggs) {
@@ -169,7 +159,12 @@ export function ClutchEggGrid({ broodId, eggsLaid }: { broodId: number; eggsLaid
     }
 
     function handleSelect(eggNumber: number, outcome: EggOutcome, outcomeDate?: string | null) {
-        upsertEgg.mutate({ broodId, eggNumber, outcome, outcomeDate: outcomeDate ?? undefined });
+        upsertEgg.mutate({
+            broodId,
+            eggNumber,
+            outcome,
+            outcomeDate: outcomeDate ? outcomeDate : undefined
+        });
     }
 
     const allOutcomes = [...Array(eggsLaid)].map((_, i) => getOutcome(i + 1));

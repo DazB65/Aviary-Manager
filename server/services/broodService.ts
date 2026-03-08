@@ -80,12 +80,16 @@ export class BroodService {
     ): Promise<void> {
         const db = getDb();
         if (!db) return;
+
+        const safeDate = outcomeDate ? outcomeDate : null;
+        const safeNotes = notes ? notes : null;
+
         await db
             .insert(clutchEggs)
-            .values({ broodId, userId, eggNumber, outcome, notes: notes ?? null, outcomeDate: outcomeDate ?? null })
+            .values({ broodId, userId, eggNumber, outcome, notes: safeNotes, outcomeDate: safeDate })
             .onConflictDoUpdate({
                 target: [clutchEggs.broodId, clutchEggs.eggNumber],
-                set: { outcome, notes: notes ?? null, outcomeDate: outcomeDate ?? null },
+                set: { outcome, notes: safeNotes, outcomeDate: safeDate },
             });
     }
 

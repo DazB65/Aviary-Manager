@@ -6,6 +6,7 @@ export function useBroods() {
     const utils = trpc.useUtils();
 
     const { data: broods = [], isLoading: broodsLoading } = trpc.broods.list.useQuery();
+    const { data: allEggs = [], isLoading: eggsLoading } = trpc.clutchEggs.list.useQuery();
     const { data: pairs = [], isLoading: pairsLoading } = trpc.pairs.list.useQuery();
     const { data: birds = [], isLoading: birdsLoading } = trpc.birds.list.useQuery();
     const { data: speciesList = [], isLoading: speciesLoading } = trpc.species.list.useQuery();
@@ -53,12 +54,13 @@ export function useBroods() {
 
     return {
         broods,
+        allEggs,
         pairs,
         birds,
         speciesMap,
         birdMap,
         pairLabel,
-        isLoading: broodsLoading || pairsLoading || birdsLoading || speciesLoading,
+        isLoading: broodsLoading || pairsLoading || birdsLoading || speciesLoading || eggsLoading,
         createBrood,
         updateBrood,
         deleteBrood,
