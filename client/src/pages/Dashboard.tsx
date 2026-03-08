@@ -160,10 +160,10 @@ export default function Dashboard() {
                 <div className="flex flex-col h-full justify-between">
                   <div>
                     <p className="text-white/80 text-sm font-medium mb-1">Total Birds</p>
-                    <div className="flex flex-col">
+                    <div className="flex items-end gap-3 mt-1">
                       <p className="text-white text-3xl font-bold leading-none">{statsLoading ? "—" : (stats?.totalBirds ?? 0)}</p>
                       {!statsLoading && stats && (
-                        <div className="flex gap-2 text-white/90 text-[11px] mt-1.5 font-medium tracking-wide">
+                        <div className="flex gap-2 text-white/90 text-xs font-medium tracking-wide pb-0.5">
                           <span className="flex items-center gap-1"><GenderIcon gender="male" className="w-3 h-3" /> {stats.totalMales}</span>
                           <span>•</span>
                           <span className="flex items-center gap-1"><GenderIcon gender="female" className="w-3 h-3" /> {stats.totalFemales}</span>
