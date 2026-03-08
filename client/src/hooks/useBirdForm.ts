@@ -18,6 +18,8 @@ export const birdSchema = z.object({
     fatherId: z.string().optional(),
     motherId: z.string().optional(),
     status: z.enum(["alive", "breeding", "resting", "deceased", "sold", "unknown"]),
+    fromBroodId: z.number().optional(),
+    fromEggNumber: z.number().optional(),
 });
 
 export type BirdFormData = z.infer<typeof birdSchema>;
@@ -36,6 +38,8 @@ export const defaultBirdForm: BirdFormData = {
     fatherId: "",
     motherId: "",
     status: "alive",
+    fromBroodId: undefined,
+    fromEggNumber: undefined,
 };
 
 export function useBirdForm(bird?: any, userSettings?: any) {
@@ -51,8 +55,8 @@ export function useBirdForm(bird?: any, userSettings?: any) {
                 ringId: bird.ringId ?? "",
                 name: bird.name ?? "",
                 gender: bird.gender as any,
-                dateOfBirth: bird.dateOfBirth ? (bird.dateOfBirth instanceof Date ? format(bird.dateOfBirth, "yyyy-MM-dd") : String(bird.dateOfBirth)) : "",
-                fledgedDate: (bird as any).fledgedDate ? ((bird as any).fledgedDate instanceof Date ? format((bird as any).fledgedDate, "yyyy-MM-dd") : String((bird as any).fledgedDate)) : "",
+                dateOfBirth: bird.dateOfBirth ? String(bird.dateOfBirth).split("T")[0] : "",
+                fledgedDate: (bird as any).fledgedDate ? String((bird as any).fledgedDate).split("T")[0] : "",
                 cageNumber: (bird as any).cageNumber ?? "",
                 colorMutation: bird.colorMutation ?? "",
                 photoUrl: bird.photoUrl ?? "",
@@ -60,6 +64,8 @@ export function useBirdForm(bird?: any, userSettings?: any) {
                 fatherId: bird.fatherId ? String(bird.fatherId) : "",
                 motherId: bird.motherId ? String(bird.motherId) : "",
                 status: bird.status as any,
+                fromBroodId: bird.fromBroodId,
+                fromEggNumber: bird.fromEggNumber,
             });
         } else {
             const favIds = (() => { try { return userSettings?.favouriteSpeciesIds ? JSON.parse(userSettings.favouriteSpeciesIds) : []; } catch { return []; } })();

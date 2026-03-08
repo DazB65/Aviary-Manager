@@ -63,8 +63,8 @@ export default function Broods() {
       speciesId: male?.speciesId,
       fatherId: pair.maleId,
       motherId: pair.femaleId,
-      dateOfBirth: brood.actualHatchDate || brood.expectedHatchDate || undefined,
-      fledgedDate: outcomeDate || undefined,
+      dateOfBirth: brood.actualHatchDate ? String(brood.actualHatchDate).split("T")[0] : brood.expectedHatchDate ? String(brood.expectedHatchDate).split("T")[0] : undefined,
+      fledgedDate: outcomeDate ? String(outcomeDate).split("T")[0] : undefined,
       status: "alive",
       gender: "unknown",
       notes: `Automatically added from Brood #${broodId}, Egg #${eggNumber}`

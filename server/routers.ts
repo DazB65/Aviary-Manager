@@ -80,6 +80,7 @@ export const appRouter = router({
         fromEggNumber: z.number().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
+        console.log("[DEBUG] createBird received from frontend:", input);
         // Free plan: max 20 birds
         if (ctx.user.plan === "free") {
           const existing = await BirdService.getBirdsByUser(ctx.user.id);
