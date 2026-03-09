@@ -34,9 +34,9 @@ const PRO_FEATURES = [
 
 export default function Billing() {
   const { user } = useAuth();
-  const [loadingInterval, setLoadingInterval] = useState<"monthly" | "yearly" | null>(null);
+  const [loadingInterval, setLoadingInterval] = useState<"monthly" | "yearly" | "lifetime" | null>(null);
   const [loadingPortal, setLoadingPortal] = useState(false);
-  const [billingInterval, setBillingInterval] = useState<"monthly" | "yearly">("monthly");
+  const [billingInterval, setBillingInterval] = useState<"monthly" | "yearly" | "lifetime">("yearly");
 
   const isPro = user?.plan === "pro";
 
@@ -45,7 +45,7 @@ export default function Billing() {
   const justUpgraded = params.get("success") === "1";
   const cancelled = params.get("cancelled") === "1";
 
-  async function handleCheckout(interval: "monthly" | "yearly") {
+  async function handleCheckout(interval: "monthly" | "yearly" | "lifetime") {
     setLoadingInterval(interval);
     try {
       const res = await fetch("/api/stripe/checkout", {
@@ -135,17 +135,26 @@ export default function Billing() {
         {/* Pricing toggle */}
         {!isPro && (
           <>
-            <div className="flex items-center justify-center gap-3">
-              <span className={`text-sm font-medium ${billingInterval === "monthly" ? "text-gray-900" : "text-gray-400"}`}>Monthly</span>
+            <div className="flex flex-wrap items-center justify-center gap-2 mb-4 bg-white border border-gray-200 p-1.5 rounded-full shadow-sm max-w-sm mx-auto">
               <button
-                onClick={() => setBillingInterval(v => v === "monthly" ? "yearly" : "monthly")}
-                className={`relative w-12 h-6 rounded-full transition-colors ${billingInterval === "yearly" ? "bg-teal-600" : "bg-gray-300"}`}
+                onClick={() => setBillingInterval("monthly")}
+                className={`flex-1 py-1.5 px-3 rounded-full text-sm font-medium transition-all ${billingInterval === "monthly" ? "bg-teal-600 text-white shadow" : "text-gray-500 hover:text-gray-900"}`}
               >
-                <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${billingInterval === "yearly" ? "translate-x-7" : "translate-x-1"}`} />
+                Monthly
               </button>
-              <span className={`text-sm font-medium ${billingInterval === "yearly" ? "text-gray-900" : "text-gray-400"}`}>
-                Yearly <Badge className="ml-1 bg-rose-100 text-rose-700 text-xs">Save 17%</Badge>
-              </span>
+              <button
+                onClick={() => setBillingInterval("yearly")}
+                className={`flex-1 py-1.5 px-3 rounded-full text-sm font-medium transition-all ${billingInterval === "yearly" ? "bg-teal-600 text-white shadow" : "text-gray-500 hover:text-gray-900"}`}
+              >
+                Yearly
+              </button>
+              <button
+                onClick={() => setBillingInterval("lifetime")}
+                className={`flex-1 py-1.5 px-3 rounded-full text-sm font-medium transition-all flex items-center justify-center gap-1 ${billingInterval === "lifetime" ? "bg-teal-600 text-white shadow" : "text-gray-500 hover:text-gray-900"}`}
+              >
+                Lifetime
+                <Badge className={`px-1 py-0 border-0 ${billingInterval === "lifetime" ? "bg-white/20 text-white" : "bg-teal-100 text-teal-700"} text-[10px]`}>BEST</Badge>
+              </button>
             </div>
 
             {/* Plan cards */}
@@ -183,16 +192,21 @@ export default function Billing() {
                   <CardTitle className="text-lg text-teal-700">Pro</CardTitle>
                   <CardDescription>For serious aviary managers</CardDescription>
                   <div className="mt-2">
-                    {billingInterval === "monthly" ? (
+                    {billingInterval === "lifetime" ? (
                       <>
-                        <span className="text-3xl font-bold text-gray-900">$7.99</span>
-                        <span className="text-gray-500 ml-1">/ month</span>
+                        <span className="text-3xl font-bold text-gray-900">$199</span>
+                        <span className="text-gray-500 ml-1">/ forever</span>
                       </>
-                    ) : (
+                    ) : billingInterval === "yearly" ? (
                       <>
                         <span className="text-3xl font-bold text-gray-900">$79</span>
                         <span className="text-gray-500 ml-1">/ year</span>
                         <span className="ml-2 text-sm text-teal-600 font-medium">($6.58/mo)</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-3xl font-bold text-gray-900">$7.99</span>
+                        <span className="text-gray-500 ml-1">/ month</span>
                       </>
                     )}
                   </div>

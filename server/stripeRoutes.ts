@@ -60,12 +60,16 @@ export function registerStripeRoutes(app: Express) {
             const session = event.data.object as Stripe.Checkout.Session;
             const userId = parseInt(session.metadata?.user_id || "0", 10);
             if (!userId) break;
+
+            // If it's a subscription, we save both. If it's a lifetime payment, subscription is null
             await db.update(users).set({
               plan: "pro",
-              stripeCustomerId: session.customer as string,
-              stripeSubscriptionId: session.subscription as string,
+              stripeCustomerId: (session.customer as string) || null,
+              stripeSubscriptionId: (session.subscription as string) || null,
             }).where(eq(users.id, userId));
-            console.log(`[Stripe] User ${userId} upgraded to Pro`);
+
+            const isLifetime = session.mode === "payment";
+            console.log(`[Stripe] User ${userId} upgraded to Pro${isLifetime ? " (Lifetime)" : ""}`);
             break;
           }
           case "customer.subscription.deleted":
@@ -108,16 +112,22 @@ export function registerStripeRoutes(app: Express) {
       return;
     }
 
-    const { interval = "monthly" } = req.body as { interval?: "monthly" | "yearly" };
+    const { interval = "monthly" } = req.body as { interval?: "monthly" | "yearly" | "lifetime" };
     const stripe = getStripe();
     const origin = req.headers.origin || "http://localhost:3000";
 
-    const priceData = interval === "yearly"
-      ? { unit_amount: PRODUCTS.pro.priceYearlyUsd, recurring: { interval: "year" as const } }
-      : { unit_amount: PRODUCTS.pro.priceMonthlyUsd, recurring: { interval: "month" as const } };
+    let priceData: Stripe.Checkout.SessionCreateParams.LineItem.PriceData;
+
+    if (interval === "lifetime") {
+      priceData = { currency: "usd", unit_amount: PRODUCTS.pro.priceLifetimeUsd };
+    } else if (interval === "yearly") {
+      priceData = { currency: "usd", unit_amount: PRODUCTS.pro.priceYearlyUsd, recurring: { interval: "year" as const } };
+    } else {
+      priceData = { currency: "usd", unit_amount: PRODUCTS.pro.priceMonthlyUsd, recurring: { interval: "month" as const } };
+    }
 
     const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
+      mode: interval === "lifetime" ? "payment" : "subscription",
       payment_method_types: ["card"],
       customer_email: user.email || undefined,
       allow_promotion_codes: true,
@@ -129,12 +139,11 @@ export function registerStripeRoutes(app: Express) {
       },
       line_items: [{
         price_data: {
-          currency: "usd",
+          ...priceData,
           product_data: {
-            name: PRODUCTS.pro.name,
+            name: PRODUCTS.pro.name + (interval === "lifetime" ? " (Lifetime)" : ""),
             description: PRODUCTS.pro.description,
           },
-          ...priceData,
         },
         quantity: 1,
       }],
