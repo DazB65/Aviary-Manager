@@ -48,14 +48,17 @@ export function PairBroodsCard({ pairId, broods, pairLabel, male, female, onEdit
     return (
         <Card className="border border-border shadow-card hover:shadow-elevated transition-all">
             <CardContent className="p-4">
-                {/* Cage number — top left */}
-                {(male?.cageNumber || female?.cageNumber) && (
-                    <div className="mb-3">
+                {/* Top Row: Pair ID & Cage number */}
+                <div className="mb-3 flex gap-2">
+                    <span className="inline-flex items-center gap-1.5 text-sm font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                        🔗 Pair #{pairId}
+                    </span>
+                    {(male?.cageNumber || female?.cageNumber) && (
                         <span className="inline-flex items-center gap-1.5 text-sm font-bold px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
                             🏠 Cage {male?.cageNumber || female?.cageNumber}
                         </span>
-                    </div>
-                )}
+                    )}
+                </div>
                 <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-3 flex-1 min-w-0">
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center text-xl shrink-0">
@@ -70,7 +73,9 @@ export function PairBroodsCard({ pairId, broods, pairLabel, male, female, onEdit
                                             {" × "}
                                             <span className="text-rose-500">{female ? female.name || female.ringId || `#${female.id}` : "?"}</span>
                                         </>
-                                    ) : pairLabel}
+                                    ) : (
+                                        <span className="text-muted-foreground italic">Birds unknown</span>
+                                    )}
                                 </p>
                                 <Badge variant="secondary" className="text-xs">{broods.length} Brood{broods.length !== 1 ? 's' : ''}</Badge>
                                 {activeBrood && (
