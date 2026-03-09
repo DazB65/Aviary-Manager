@@ -12,7 +12,7 @@ import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { useBroods } from "@/hooks/useBroods";
 import { useBirds } from "@/hooks/useBirds";
-import { BroodCard } from "@/components/broods/BroodCard";
+import { PairBroodsCard } from "@/components/broods/PairBroodsCard";
 import { BroodFormModal } from "@/components/broods/BroodFormModal";
 import { BirdFormModal } from "@/components/birds/BirdFormModal";
 import type { BroodFormData } from "@/hooks/useBroodForm";
@@ -191,6 +191,20 @@ export default function Broods() {
 
   const filtered = filterPairId === "all" ? broods : broods.filter((b) => String(b.pairId) === filterPairId);
 
+  const pairGroups = useMemo(() => {
+    const groups: Record<number, typeof broods> = {};
+    filtered.forEach(b => {
+      if (!groups[b.pairId]) groups[b.pairId] = [];
+      groups[b.pairId].push(b);
+    });
+    // Sort the groups by the most recent clutch creation date (or lay date) descending
+    return Object.values(groups).sort((a, b) => {
+      const aLatest = Math.max(...a.map(brood => new Date(brood.layDate || brood.createdAt).getTime()));
+      const bLatest = Math.max(...b.map(brood => new Date(brood.layDate || brood.createdAt).getTime()));
+      return bLatest - aLatest;
+    });
+  }, [filtered]);
+
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-5xl mx-auto">
@@ -227,7 +241,7 @@ export default function Broods() {
               <div key={i} className="h-28 rounded-xl bg-muted animate-pulse" />
             ))}
           </div>
-        ) : filtered.length === 0 ? (
+        ) : pairGroups.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground">
             <Egg className="h-12 w-12 mx-auto mb-3 opacity-30" />
             <p className="font-medium">No broods logged yet</p>
@@ -237,26 +251,28 @@ export default function Broods() {
             </Button>
           </div>
         ) : (
-          <div className="space-y-3">
-            {filtered.map((brood) => {
-              const pair = pairs.find((p) => p.id === brood.pairId);
+          <div className="space-y-4">
+            {pairGroups.map((group) => {
+              const pairId = group[0].pairId;
+              const pair = pairs.find((p) => p.id === pairId);
               const male = pair ? birdMap[pair.maleId] : undefined;
               const female = pair ? birdMap[pair.femaleId] : undefined;
               return (
-                <BroodCard
-                  key={brood.id}
-                  brood={brood}
-                  broodNumber={broodNumbers[brood.id]}
-                  pairLabel={pair ? pairLabel(pair) : `Pair #${brood.pairId}`}
+                <PairBroodsCard
+                  key={pairId}
+                  pairId={pairId}
+                  broods={group}
+                  broodNumbers={broodNumbers}
+                  pairLabel={pair ? pairLabel(pair) : `Pair #${pairId}`}
                   male={male}
                   female={female}
-                  onEdit={() => openEdit(brood)}
-                  onDelete={() => {
-                    if (confirm("Delete this brood record?")) {
-                      deleteBrood.mutate({ id: brood.id });
+                  onEdit={openEdit}
+                  onDelete={(id) => {
+                    if (confirm("Delete this clutch record?")) {
+                      deleteBrood.mutate({ id });
                     }
                   }}
-                  onAddClutch={() => openAddForPair(brood.pairId)}
+                  onAddClutch={() => openAddForPair(pairId)}
                   onConvertToBird={handleConvertToBird}
                 />
               );
