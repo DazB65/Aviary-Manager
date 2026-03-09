@@ -25,12 +25,14 @@ function daysUntil(val: Date | string | null | undefined): string | null {
 interface BroodCardProps {
     brood: any;
     pairLabel: string;
+    male?: any;
+    female?: any;
     onEdit: () => void;
     onDelete: () => void;
     onConvertToBird?: (broodId: number, eggNumber: number, outcomeDate: string | null) => void;
 }
 
-export function BroodCard({ brood, pairLabel, onEdit, onDelete, onConvertToBird }: BroodCardProps) {
+export function BroodCard({ brood, pairLabel, male, female, onEdit, onDelete, onConvertToBird }: BroodCardProps) {
     const [expanded, setExpanded] = useState(false);
     const hatchCountdown = brood.status === "incubating" ? daysUntil(brood.expectedHatchDate) : null;
     const fertilityCountdown = brood.status === "incubating" ? daysUntil(brood.fertilityCheckDate) : null;
@@ -45,7 +47,15 @@ export function BroodCard({ brood, pairLabel, onEdit, onDelete, onConvertToBird 
                         </div>
                         <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 flex-wrap">
-                                <p className="text-sm font-semibold">{pairLabel}</p>
+                                <p className="text-sm font-semibold">
+                                    {male || female ? (
+                                        <>
+                                            <span className="text-blue-600">{male ? male.name || male.ringId || `#${male.id}` : "?"}</span>
+                                            {" × "}
+                                            <span className="text-rose-500">{female ? female.name || female.ringId || `#${female.id}` : "?"}</span>
+                                        </>
+                                    ) : pairLabel}
+                                </p>
                                 <Badge variant="outline" className={`text-xs flex items-center gap-1 ${STATUS_STYLES[brood.status]}`}>
                                     {STATUS_ICONS[brood.status]} {brood.status}
                                 </Badge>

@@ -221,11 +221,15 @@ export default function Broods() {
           <div className="space-y-3">
             {filtered.map((brood) => {
               const pair = pairs.find((p) => p.id === brood.pairId);
+              const male = pair ? birdMap[pair.maleId] : undefined;
+              const female = pair ? birdMap[pair.femaleId] : undefined;
               return (
                 <BroodCard
                   key={brood.id}
                   brood={brood}
                   pairLabel={pair ? pairLabel(pair) : `Pair #${brood.pairId}`}
+                  male={male}
+                  female={female}
                   onEdit={() => openEdit(brood)}
                   onDelete={() => {
                     if (confirm("Delete this brood record?")) {
