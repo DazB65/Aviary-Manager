@@ -199,13 +199,13 @@ export default function Billing() {
                       </>
                     ) : billingInterval === "yearly" ? (
                       <>
-                        <span className="text-3xl font-bold text-gray-900">$79</span>
+                        <span className="text-3xl font-bold text-gray-900">$88</span>
                         <span className="text-gray-500 ml-1">/ year</span>
-                        <span className="ml-2 text-sm text-teal-600 font-medium">($6.58/mo)</span>
+                        <span className="ml-2 text-sm text-teal-600 font-medium">($7.33/mo)</span>
                       </>
                     ) : (
                       <>
-                        <span className="text-3xl font-bold text-gray-900">$7.99</span>
+                        <span className="text-3xl font-bold text-gray-900">$8.80</span>
                         <span className="text-gray-500 ml-1">/ month</span>
                       </>
                     )}
