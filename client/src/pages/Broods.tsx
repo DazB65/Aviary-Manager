@@ -8,7 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Egg } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { useBroods } from "@/hooks/useBroods";
 import { useBirds } from "@/hooks/useBirds";
@@ -75,6 +75,12 @@ export default function Broods() {
   const openAdd = () => {
     setEditingId(null);
     setEditingBrood(null);
+    setDialogOpen(true);
+  };
+
+  const openAddForPair = (pairId: number) => {
+    setEditingId(null);
+    setEditingBrood({ pairId });
     setDialogOpen(true);
   };
 
@@ -170,6 +176,19 @@ export default function Broods() {
     });
   };
 
+  const broodNumbers = useMemo(() => {
+    const counts: Record<number, number> = {};
+    const nums: Record<number, number> = {};
+    const sorted = [...broods].sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+    sorted.forEach((b) => {
+      counts[b.pairId] = (counts[b.pairId] || 0) + 1;
+      nums[b.id] = counts[b.pairId];
+    });
+    return nums;
+  }, [broods]);
+
   const filtered = filterPairId === "all" ? broods : broods.filter((b) => String(b.pairId) === filterPairId);
 
   return (
@@ -227,6 +246,7 @@ export default function Broods() {
                 <BroodCard
                   key={brood.id}
                   brood={brood}
+                  broodNumber={broodNumbers[brood.id]}
                   pairLabel={pair ? pairLabel(pair) : `Pair #${brood.pairId}`}
                   male={male}
                   female={female}
@@ -236,6 +256,7 @@ export default function Broods() {
                       deleteBrood.mutate({ id: brood.id });
                     }
                   }}
+                  onAddClutch={() => openAddForPair(brood.pairId)}
                   onConvertToBird={handleConvertToBird}
                 />
               );

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Pencil, Trash2, Plus } from "lucide-react";
 import { format, parseISO, differenceInDays } from "date-fns";
 import { STATUS_STYLES, STATUS_ICONS } from "./constants";
 import { ClutchEggGrid } from "./EggGrid";
@@ -30,9 +30,11 @@ interface BroodCardProps {
     onEdit: () => void;
     onDelete: () => void;
     onConvertToBird?: (broodId: number, eggNumber: number, outcomeDate: string | null) => void;
+    broodNumber?: number;
+    onAddClutch?: () => void;
 }
 
-export function BroodCard({ brood, pairLabel, male, female, onEdit, onDelete, onConvertToBird }: BroodCardProps) {
+export function BroodCard({ brood, pairLabel, male, female, onEdit, onDelete, onConvertToBird, broodNumber, onAddClutch }: BroodCardProps) {
     const [expanded, setExpanded] = useState(false);
     const hatchCountdown = brood.status === "incubating" ? daysUntil(brood.expectedHatchDate) : null;
     const fertilityCountdown = brood.status === "incubating" ? daysUntil(brood.fertilityCheckDate) : null;
@@ -55,6 +57,7 @@ export function BroodCard({ brood, pairLabel, male, female, onEdit, onDelete, on
                                             <span className="text-rose-500">{female ? female.name || female.ringId || `#${female.id}` : "?"}</span>
                                         </>
                                     ) : pairLabel}
+                                    {broodNumber ? <span className="ml-2 text-xs font-normal text-muted-foreground">(Brood #{broodNumber})</span> : null}
                                 </p>
                                 <Badge variant="outline" className={`text-xs flex items-center gap-1 ${STATUS_STYLES[brood.status]}`}>
                                     {STATUS_ICONS[brood.status]} {brood.status}
@@ -100,7 +103,12 @@ export function BroodCard({ brood, pairLabel, male, female, onEdit, onDelete, on
                             {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                             Eggs {brood.eggsLaid > 0 && <span className="ml-0.5 opacity-60">({brood.eggsLaid})</span>}
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit}>
+                        {onAddClutch && (
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={onAddClutch} title="Log another clutch for this pair">
+                                <Plus className="h-3.5 w-3.5" />
+                            </Button>
+                        )}
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit} title="Edit brood">
                             <Pencil className="h-3.5 w-3.5" />
                         </Button>
                         <Button
