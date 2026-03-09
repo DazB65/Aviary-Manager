@@ -89,13 +89,13 @@ const SECTIONS: Section[] = [
       },
       {
         title: "Tracking Egg Outcomes",
-        summary: "Track individual eggs in a clutch — each one can be marked fertile, infertile, hatched, cracked, or died.",
-        content: "Open a brood to see individual egg records. Update each egg's outcome as it develops. Outcomes: Fertile, Infertile, Hatched, Cracked, Died in Shell. The fertility rate and hatch rate for the clutch are calculated automatically from these outcomes.",
+        summary: "Track individual eggs in a clutch — each one can be marked fertile, infertile, hatched, cracked, died, or fledged.",
+        content: "Open a brood to see individual egg records. Update each egg's outcome as it develops. Outcomes: Fertile, Infertile, Hatched, Cracked, Died in Shell, and Fledged. The fertility rate and hatch rate for the clutch are calculated automatically from these outcomes.",
       },
       {
-        title: "Registering Chicks as Birds",
-        summary: "Once chicks hatch, register them as birds in your registry. Their parents, species and hatch date are pre-filled.",
-        content: "On the brood detail page, click Register Chick next to a hatched egg. A new bird form opens with the species, hatch date (as date of birth), and both parents already filled in. Add the ring ID, gender and any other details, then save to add them to your registry.",
+        title: "Fledging and Converting to Birds",
+        summary: "Once chicks are old enough to leave the nest (fledge), update their outcome and convert them into your bird registry.",
+        content: "When a chick safely leaves the nest, update its egg outcome to 'Fledged'. This tracks how many of your hatched chicks survive to independence. Once fledged, click the Convert to Bird button to instantly move them into your main registry. A new bird form opens with the species, hatch date (as date of birth), fledged date, and both parents already filled in. Add the ring ID, gender and any other details, then save to add them.",
       },
     ],
   },

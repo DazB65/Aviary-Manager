@@ -75,12 +75,27 @@ export function usePairs(editingId?: number | null) {
             if (!grouped[key]) grouped[key] = [];
             grouped[key].push(pair);
         }
+
+        for (const key in grouped) {
+            grouped[key].sort((a, b) => {
+                const maleA = birdMap[a.maleId];
+                const femaleA = birdMap[a.femaleId];
+                const cageA = maleA?.cageNumber || femaleA?.cageNumber || "";
+
+                const maleB = birdMap[b.maleId];
+                const femaleB = birdMap[b.femaleId];
+                const cageB = maleB?.cageNumber || femaleB?.cageNumber || "";
+
+                return cageA.localeCompare(cageB, undefined, { numeric: true });
+            });
+        }
+
         return Object.entries(grouped).sort(([a], [b]) => {
             if (a === "No year") return 1;
             if (b === "No year") return -1;
             return Number(b) - Number(a);
         });
-    }, [pairs]);
+    }, [pairs, birdMap]);
 
     return {
         pairs,
