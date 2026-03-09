@@ -212,8 +212,8 @@ export default function Broods() {
           <div>
             <h1 className="font-display text-3xl font-bold text-foreground">Broods & Eggs</h1>
             <p className="text-muted-foreground mt-1">
-              {broods.filter((b) => b.status === "incubating").length} clutch
-              {broods.filter((b) => b.status === "incubating").length !== 1 ? "es" : ""} currently incubating
+              {broods.filter((b) => b.status === "incubating").length} brood
+              {broods.filter((b) => b.status === "incubating").length !== 1 ? "s" : ""} currently incubating
             </p>
           </div>
           <Button onClick={openAdd} className="bg-primary hover:bg-primary/90 shadow-md gap-2">
@@ -268,7 +268,7 @@ export default function Broods() {
                   female={female}
                   onEdit={openEdit}
                   onDelete={(id) => {
-                    if (confirm("Delete this clutch record?")) {
+                    if (confirm("Delete this brood record?")) {
                       deleteBrood.mutate({ id });
                     }
                   }}
