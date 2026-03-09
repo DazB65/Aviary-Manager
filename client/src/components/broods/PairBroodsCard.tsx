@@ -51,7 +51,13 @@ export function PairBroodsCard({ pairId, broods, pairLabel, male, female, onEdit
                 {/* Top Row: Pair ID & Cage number */}
                 <div className="mb-3 flex gap-2">
                     <span className="inline-flex items-center gap-1.5 text-sm font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
-                        🔗 Pair #{pairId}
+                        🔗 {male || female ? (
+                            <>
+                                <span className="text-blue-600">{male ? male.name || male.ringId || `#${male.id}` : "?"}</span>
+                                <span className="text-slate-500 font-normal mx-0.5">×</span>
+                                <span className="text-rose-500">{female ? female.name || female.ringId || `#${female.id}` : "?"}</span>
+                            </>
+                        ) : pairLabel}
                     </span>
                     {(male?.cageNumber || female?.cageNumber) && (
                         <span className="inline-flex items-center gap-1.5 text-sm font-bold px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
@@ -66,18 +72,7 @@ export function PairBroodsCard({ pairId, broods, pairLabel, male, female, onEdit
                         </div>
                         <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 flex-wrap">
-                                <p className="text-sm font-semibold">
-                                    {male || female ? (
-                                        <>
-                                            <span className="text-blue-600">{male ? male.name || male.ringId || `#${male.id}` : "?"}</span>
-                                            {" × "}
-                                            <span className="text-rose-500">{female ? female.name || female.ringId || `#${female.id}` : "?"}</span>
-                                        </>
-                                    ) : (
-                                        <span className="text-muted-foreground italic">Birds unknown</span>
-                                    )}
-                                </p>
-                                <Badge variant="secondary" className="text-xs">{broods.length} Brood{broods.length !== 1 ? 's' : ''}</Badge>
+                                <Badge variant="secondary" className="text-xs">{broods.length} Clutch{broods.length !== 1 ? 'es' : ''}</Badge>
                                 {activeBrood && (
                                     <Badge variant="outline" className={`text-xs flex items-center gap-1 ${STATUS_STYLES[activeBrood.status]}`}>
                                         {STATUS_ICONS[activeBrood.status]} {activeBrood.status}
@@ -98,10 +93,10 @@ export function PairBroodsCard({ pairId, broods, pairLabel, male, female, onEdit
                             onClick={() => setExpanded((e) => !e)}
                         >
                             {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-                            Broods ({broods.length})
+                            Clutches ({broods.length})
                         </Button>
                         {onAddClutch && (
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={onAddClutch} title="Log another brood for this pair">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={onAddClutch} title="Log another clutch for this pair">
                                 <Plus className="h-3.5 w-3.5" />
                             </Button>
                         )}
@@ -119,7 +114,7 @@ export function PairBroodsCard({ pairId, broods, pairLabel, male, female, onEdit
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <p className="text-sm font-semibold text-foreground">
-                                                Brood #{broodNumbers[brood.id]}
+                                                Clutch #{broodNumbers[brood.id]}
                                             </p>
                                             <Badge variant="outline" className={`text-xs flex items-center gap-1 ${STATUS_STYLES[brood.status]}`}>
                                                 {STATUS_ICONS[brood.status]} {brood.status}
@@ -127,7 +122,7 @@ export function PairBroodsCard({ pairId, broods, pairLabel, male, female, onEdit
                                             {brood.season && <span className="text-xs text-muted-foreground">{brood.season}</span>}
                                         </div>
                                         <div className="flex gap-1">
-                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(brood)} title="Edit brood">
+                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(brood)} title="Edit clutch">
                                                 <Pencil className="h-3.5 w-3.5" />
                                             </Button>
                                             <Button
@@ -135,7 +130,7 @@ export function PairBroodsCard({ pairId, broods, pairLabel, male, female, onEdit
                                                 size="icon"
                                                 className="h-8 w-8 text-destructive hover:text-destructive"
                                                 onClick={() => onDelete(brood.id)}
-                                                title="Delete brood"
+                                                title="Delete clutch"
                                             >
                                                 <Trash2 className="h-3.5 w-3.5" />
                                             </Button>
