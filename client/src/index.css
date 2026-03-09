@@ -42,11 +42,9 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* Enforce 16px (text-base) as the minimum font size app-wide */
-  --font-size-xs: 1rem;
-  --font-size-xs--line-height: 1.5rem;
-  --font-size-sm: 1rem;
-  --font-size-sm--line-height: 1.5rem;
+  /* Enforce 14px (text-sm) as the minimum font size app-wide */
+  --font-size-xs: 0.875rem;
+  --font-size-xs--line-height: 1.25rem;
 }
 
 :root {
