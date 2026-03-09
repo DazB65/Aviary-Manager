@@ -194,7 +194,7 @@ export default function Billing() {
                   <div className="mt-2">
                     {billingInterval === "lifetime" ? (
                       <>
-                        <span className="text-3xl font-bold text-gray-900">$199</span>
+                        <span className="text-3xl font-bold text-gray-900">$220</span>
                         <span className="text-gray-500 ml-1">/ forever</span>
                       </>
                     ) : billingInterval === "yearly" ? (

@@ -10,7 +10,7 @@ export const PRODUCTS = {
     description: "Unlimited birds, breeding pairs, broods, pedigree tracking, and PDF exports.",
     priceMonthlyUsd: 880,   // $8.80 / month in cents
     priceYearlyUsd: 8800,   // $88.00 / year in cents (~2 months free)
-    priceLifetimeUsd: 19900, // $199.00 one-time lifetime payment in cents
+    priceLifetimeUsd: 22000, // $220.00 one-time lifetime payment in cents
   },
 } as const;
 
