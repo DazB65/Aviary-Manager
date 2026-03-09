@@ -205,12 +205,12 @@ function DashboardLayoutContent({
                       isActive={isActive}
                       onClick={() => setLocation(item.path)}
                       tooltip={item.label}
-                      className={`h-10 transition-all font-normal text-sm`}
+                      className={`h-10 transition-all font-normal text-base`}
                     >
                       <item.icon
-                        className={`h-4 w-4 ${isActive ? "text-primary" : ""}`}
+                        className={`h-5 w-5 ${isActive ? "text-primary" : ""}`}
                       />
-                      <span className="text-sm">{item.label}</span>
+                      <span className="text-base">{item.label}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
