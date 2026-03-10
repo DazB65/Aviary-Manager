@@ -183,13 +183,8 @@ function DefaultToolPartRenderer({ toolName, state, output, errorText }: ToolPar
   }
 
   if (isToolComplete(state) && output) {
-    return (
-      <div className="p-3 bg-muted rounded-lg my-2">
-        <pre className="text-xs overflow-auto max-h-40">
-          {JSON.stringify(output, null, 2)}
-        </pre>
-      </div>
-    );
+    // Hide raw JSON output from the UI, rely entirely on the LLM's natural language response.
+    return null;
   }
 
   return null;
