@@ -5,7 +5,7 @@
  * Uses patched fetch to fix OpenAI-compatible proxy issues.
  */
 
-import { streamText, stepCountIs } from "ai";
+import { streamText, stepCountIs, convertToModelMessages } from "ai";
 import { tool } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import type { Express } from "express";
@@ -121,11 +121,13 @@ export function registerChatRoutes(app: Express) {
         return;
       }
 
+      const modelMessages = await convertToModelMessages(messages as any);
+
       const result = streamText({
         model: openai.chat("gpt-4o"),
         system:
           "You are an expert aviculture assistant. You help the user manage their aviary, which is called 'Aviary Manager'. You have access to tools that can fetch their live bird stats, search their bird database, and check their upcoming care events. Use these tools to answer their questions accurately. Do not make up data about their birds.",
-        messages,
+        messages: modelMessages,
         tools: tools(user.id),
         stopWhen: stepCountIs(5),
       });
