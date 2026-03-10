@@ -92,10 +92,14 @@ export default function Dashboard() {
   }
 
   const upcomingBroods = (broods ?? [])
-    .filter(b => b.status === "incubating" && b.expectedHatchDate)
+    .filter(b => b.status === "incubating")
     .sort((a, b) => {
-      const da = typeof a.expectedHatchDate === 'object' && a.expectedHatchDate ? a.expectedHatchDate : new Date(String(a.expectedHatchDate));
-      const db2 = typeof b.expectedHatchDate === 'object' && b.expectedHatchDate ? b.expectedHatchDate : new Date(String(b.expectedHatchDate));
+      if (!a.expectedHatchDate && !b.expectedHatchDate) return 0;
+      if (!a.expectedHatchDate) return 1; // push unknown to bottom
+      if (!b.expectedHatchDate) return -1;
+
+      const da = new Date(String(a.expectedHatchDate));
+      const db2 = new Date(String(b.expectedHatchDate));
       return da.getTime() - db2.getTime();
     })
     .slice(0, 30);
@@ -275,12 +279,18 @@ export default function Dashboard() {
                     <div key={b.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                       <div>
                         <p className="text-sm font-medium">Pair #{b.pairId}</p>
-                        <p className="text-xs text-muted-foreground">{b.eggsLaid} egg{b.eggsLaid !== 1 ? "s" : ""} · Laid {formatDateLabel(b.layDate)}</p>
+                        <p className="text-xs text-muted-foreground">{b.eggsLaid} egg{b.eggsLaid !== 1 ? "s" : ""} {b.layDate ? `· Laid ${formatDateLabel(b.layDate)}` : "· No lay date"}</p>
                       </div>
                       <div className="text-right">
-                        <Badge variant="outline" className="text-xs border-teal-200 text-teal-700 bg-teal-50">
-                          Hatch {formatDateLabel(b.expectedHatchDate)}
-                        </Badge>
+                        {b.expectedHatchDate ? (
+                          <Badge variant="outline" className="text-xs border-teal-200 text-teal-700 bg-teal-50">
+                            Hatch {formatDateLabel(b.expectedHatchDate)}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs border-slate-200 text-slate-700 bg-slate-50">
+                            Unknown Hatch
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   ))}
