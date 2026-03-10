@@ -98,7 +98,7 @@ export default function Dashboard() {
       const db2 = typeof b.expectedHatchDate === 'object' && b.expectedHatchDate ? b.expectedHatchDate : new Date(String(b.expectedHatchDate));
       return da.getTime() - db2.getTime();
     })
-    .slice(0, 5);
+    .slice(0, 30);
 
   const upcomingEvents = (events ?? [])
     .filter(e => {
@@ -270,7 +270,7 @@ export default function Dashboard() {
                   No eggs currently incubating
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-3 max-h-[320px] overflow-y-auto pr-2">
                   {upcomingBroods.map(b => (
                     <div key={b.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                       <div>
