@@ -358,7 +358,7 @@ export function AIChatBox({
         // Server should load full history from DB using chatId
         return {
           body: {
-            message: messages[messages.length - 1],
+            messages,
             chatId: chatId || id,
             userId,
           },
