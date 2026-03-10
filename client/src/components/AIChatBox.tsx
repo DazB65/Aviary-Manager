@@ -54,7 +54,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Markdown } from "@/components/Markdown";
 import { cn } from "@/lib/utils";
-import { Loader2, Send, Sparkles } from "lucide-react";
+import { Loader2, Send, Sparkles, Trash2 } from "lucide-react";
 import { useState, useRef, useEffect, ReactNode } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
@@ -499,6 +499,18 @@ export function AIChatBox({
       <form onSubmit={handleSubmit} className="border-t bg-background/50 p-4">
         <div className="mx-auto max-w-3xl">
           <div className="flex gap-2">
+            {messages.length > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                title="Clear Chat"
+                onClick={() => setMessages([])}
+                className="shrink-0 h-[44px] w-[44px] text-muted-foreground hover:text-destructive hover:border-destructive/30 hover:bg-destructive/10"
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            )}
             <Textarea
               ref={textareaRef}
               value={input}
