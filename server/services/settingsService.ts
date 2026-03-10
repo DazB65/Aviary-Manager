@@ -10,7 +10,7 @@ export class SettingsService {
         return rows[0] ?? null;
     }
 
-    static async updateUserSettings(userId: number, data: { favouriteSpeciesIds?: number[]; defaultSpeciesId?: number | null; breedingYear?: number | null }) {
+    static async updateUserSettings(userId: number, data: { favouriteSpeciesIds?: number[]; defaultSpeciesId?: number | null; breedingYear?: number | null; }) {
         const db = getDb();
         if (!db) return;
         const favouriteSpeciesIds = data.favouriteSpeciesIds !== undefined

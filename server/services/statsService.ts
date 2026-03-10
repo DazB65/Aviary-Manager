@@ -1,71 +1,99 @@
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, gte, lte, count, sum, sql, isNotNull } from "drizzle-orm";
 import { getDb } from "../db";
 import { birds, breedingPairs, broods, events } from "../../drizzle/schema";
 
 export class StatsService {
     static async getDashboardStatsByUser(userId: number) {
         const db = getDb();
-        if (!db) return { totalBirds: 0, activePairs: 0, eggsIncubating: 0, upcomingHatches: 0, upcomingEvents: 0 };
-
-        const [allBirds, allPairs, allBroods, allEvents] = await Promise.all([
-            db.select().from(birds).where(and(eq(birds.userId, userId), inArray(birds.status, ["alive", "breeding", "resting"]))),
-            db.select().from(breedingPairs).where(and(eq(breedingPairs.userId, userId), eq(breedingPairs.status, "active"))),
-            db.select().from(broods).where(and(eq(broods.userId, userId), eq(broods.status, "incubating"))),
-            db.select().from(events).where(and(eq(events.userId, userId), eq(events.completed, false))),
-        ]);
+        if (!db) return { totalBirds: 0, totalMales: 0, totalFemales: 0, activePairs: 0, eggsIncubating: 0, upcomingHatches: 0, upcomingEvents: 0 };
 
         const today = new Date();
         const in14Days = new Date(today);
         in14Days.setDate(today.getDate() + 14);
 
-        const formatDate = (date: Date) => {
-            const y = date.getFullYear();
-            const m = String(date.getMonth() + 1).padStart(2, '0');
-            const d = String(date.getDate()).padStart(2, '0');
-            return `${y}-${m}-${d}`;
-        };
+        const pad = (n: number) => String(n).padStart(2, "0");
+        const fmtDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+        const todayStr = fmtDate(today);
+        const futureStr = fmtDate(in14Days);
 
-        const todayStr = formatDate(today);
-        const futureStr = formatDate(in14Days);
+        // Run all aggregation queries in parallel — no full-table fetches
+        const [
+            birdCounts,
+            activePairsResult,
+            eggsIncubatingResult,
+            upcomingHatchesResult,
+            upcomingEventsRaw,
+        ] = await Promise.all([
+            // Bird counts grouped by gender (active statuses only)
+            db
+                .select({ gender: birds.gender, count: count() })
+                .from(birds)
+                .where(and(eq(birds.userId, userId), inArray(birds.status, ["alive", "breeding", "resting"])))
+                .groupBy(birds.gender),
 
-        const upcomingHatches = allBroods.filter(b => {
-            if (!b.expectedHatchDate) return false;
+            // Active pairs count
+            db
+                .select({ count: count() })
+                .from(breedingPairs)
+                .where(and(eq(breedingPairs.userId, userId), eq(breedingPairs.status, "active"))),
 
-            // Extract just the YYYY-MM-DD part from the database value
-            const d = String(b.expectedHatchDate).split("T")[0];
-            return d >= todayStr && d <= futureStr;
-        }).length;
+            // Sum of eggs across all incubating broods
+            db
+                .select({ total: sum(broods.eggsLaid) })
+                .from(broods)
+                .where(and(eq(broods.userId, userId), eq(broods.status, "incubating"))),
 
-        const upcomingEvents = allEvents
-            .filter(e => {
-                if (!e.eventDate) return false;
+            // Incubating broods with a hatch date in the next 14 days
+            db
+                .select({ count: count() })
+                .from(broods)
+                .where(and(
+                    eq(broods.userId, userId),
+                    eq(broods.status, "incubating"),
+                    isNotNull(broods.expectedHatchDate),
+                    gte(broods.expectedHatchDate, todayStr),
+                    lte(broods.expectedHatchDate, futureStr),
+                )),
 
-                // Extract just the YYYY-MM-DD part from the database value
-                const d = String(e.eventDate).split("T")[0];
-                return d >= todayStr;
-            })
-            // Sort chronologically just in case we need to pick the earliest of a series
-            .sort((a, b) => {
-                const da = String(a.eventDate).split("T")[0];
-                const dbStr = String(b.eventDate).split("T")[0];
-                return da.localeCompare(dbStr);
-            })
-            // Filter out multiple instances of the same recurring series so the count matches the list
-            .reduce((acc: typeof allEvents, curr) => {
-                if (curr.seriesId && acc.some(e => e.seriesId === curr.seriesId)) {
-                    return acc;
-                }
-                acc.push(curr);
-                return acc;
-            }, []).length;
+            // Upcoming incomplete events — fetch only id, eventDate, seriesId to deduplicate series
+            db
+                .select({ id: events.id, eventDate: events.eventDate, seriesId: events.seriesId })
+                .from(events)
+                .where(and(
+                    eq(events.userId, userId),
+                    eq(events.completed, false),
+                    gte(events.eventDate, todayStr),
+                ))
+                .orderBy(events.eventDate, events.id),
+        ]);
+
+        // Tally bird counts by gender
+        let totalBirds = 0, totalMales = 0, totalFemales = 0;
+        for (const row of birdCounts) {
+            const n = Number(row.count);
+            totalBirds += n;
+            if (row.gender === "male") totalMales = n;
+            else if (row.gender === "female") totalFemales = n;
+        }
+
+        // Deduplicate recurring series — only count the earliest event per series
+        const seenSeries = new Set<string>();
+        let upcomingEvents = 0;
+        for (const e of upcomingEventsRaw) {
+            if (e.seriesId) {
+                if (seenSeries.has(e.seriesId)) continue;
+                seenSeries.add(e.seriesId);
+            }
+            upcomingEvents++;
+        }
 
         return {
-            totalBirds: allBirds.length,
-            totalMales: allBirds.filter(b => b.gender === "male").length,
-            totalFemales: allBirds.filter(b => b.gender === "female").length,
-            activePairs: allPairs.length,
-            eggsIncubating: allBroods.reduce((sum, b) => sum + (b.eggsLaid ?? 0), 0),
-            upcomingHatches,
+            totalBirds,
+            totalMales,
+            totalFemales,
+            activePairs: Number(activePairsResult[0]?.count ?? 0),
+            eggsIncubating: Number(eggsIncubatingResult[0]?.total ?? 0),
+            upcomingHatches: Number(upcomingHatchesResult[0]?.count ?? 0),
             upcomingEvents,
         };
     }

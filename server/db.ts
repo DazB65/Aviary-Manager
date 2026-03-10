@@ -1,16 +1,13 @@
-import { and, eq, ne, gte, lte, or, desc, asc, sql, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import postgres from "postgres";
+import * as schema from "../drizzle/schema";
 
 // works whether the server is run via tsx (dev) or as a compiled bundle (prod).
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const MIGRATIONS_FOLDER = join(__dirname, "..", "drizzle");
-
-import * as schema from "../drizzle/schema";
-import { species, type InsertSpecies } from "../drizzle/schema";
 
 if (!process.env.DATABASE_URL) {
   throw new Error(
@@ -44,28 +41,10 @@ export async function runMigrations() {
   console.log("[DB] Running migrations...");
   try {
     const db = getDb();
-
-    // SAFETY CATCH: Force the exact missing enum value and column if Railway DB caching swallowed the drizzle migration file.
-    console.log("[DB] Executing fallback DDL brute-force...");
-    try {
-      await db.execute(sql`ALTER TYPE egg_outcome ADD VALUE IF NOT EXISTS 'fledged';`);
-    } catch (enumErr) {
-      console.log("[DB] Enum brute-force note:", enumErr);
-    }
-    await db.execute(sql`ALTER TABLE "clutchEggs" ADD COLUMN IF NOT EXISTS "outcomeDate" date;`);
-    await db.execute(sql`ALTER TABLE "clutchEggs" ADD COLUMN IF NOT EXISTS "birdId" integer;`);
-
-    // LOG CURRENT REALITY: Ask PostgreSQL exactly what columns exist
-    const schemaCheck = await db.execute(sql`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'clutchEggs';
-    `);
-    console.log("[DB] EXACT schema for clutchEggs on Railway:", schemaCheck.map(r => r.column_name));
-
     await migrate(db, { migrationsFolder: MIGRATIONS_FOLDER });
     console.log("[DB] Migrations complete.");
   } catch (err) {
-    console.error("[DB] Migration failed (this may be harmless if brute force succeeded):", err);
+    console.error("[DB] Migration failed:", err);
+    throw err;
   }
 }

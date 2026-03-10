@@ -1,4 +1,4 @@
-import { eq, and, desc, asc, sql } from "drizzle-orm";
+import { eq, and, desc, asc, sql, inArray } from "drizzle-orm";
 import { getDb } from "../db";
 import {
     broods,
@@ -110,6 +110,16 @@ export class BroodService {
         const safeNotes = notes?.trim() ? notes : null;
         const safeDate = outcomeDate?.trim() ? outcomeDate : null;
 
+        // Check whether this egg already has a linked bird (created via convertToBird).
+        // If it does, always preserve the birdId regardless of outcome change —
+        // clearing it would silently orphan the bird record.
+        const existing = await db
+            .select({ birdId: clutchEggs.birdId })
+            .from(clutchEggs)
+            .where(and(eq(clutchEggs.broodId, broodId), eq(clutchEggs.eggNumber, eggNumber), eq(clutchEggs.userId, userId)))
+            .limit(1);
+        const existingBirdId = existing[0]?.birdId ?? null;
+
         await db
             .insert(clutchEggs)
             .values({
@@ -126,7 +136,8 @@ export class BroodService {
                     outcome,
                     outcomeDate: safeDate,
                     notes: safeNotes,
-                    birdId: outcome === "fledged" ? sql`${clutchEggs.birdId}` : null
+                    // Preserve an existing bird link; only clear if no bird has been linked yet
+                    birdId: existingBirdId ? sql`${clutchEggs.birdId}` : null,
                 },
             });
     }
@@ -146,16 +157,21 @@ export class BroodService {
             .where(and(eq(clutchEggs.broodId, broodId), eq(clutchEggs.userId, userId)));
         const existingNums = new Set(existing.map((e) => e.eggNumber));
 
+        // Batch-insert all missing eggs in a single query instead of one INSERT per egg
+        const toInsert: { broodId: number; userId: number; eggNumber: number; outcome: "unknown" }[] = [];
         for (let i = 1; i <= eggsLaid; i++) {
             if (!existingNums.has(i)) {
-                await db.insert(clutchEggs).values({ broodId, userId, eggNumber: i, outcome: "unknown" });
+                toInsert.push({ broodId, userId, eggNumber: i, outcome: "unknown" });
             }
         }
+        if (toInsert.length > 0) {
+            await db.insert(clutchEggs).values(toInsert);
+        }
 
-        for (const egg of existing) {
-            if (egg.eggNumber > eggsLaid) {
-                await db.delete(clutchEggs).where(eq(clutchEggs.id, egg.id));
-            }
+        // Delete eggs whose number now exceeds eggsLaid
+        const toDelete = existing.filter(egg => egg.eggNumber > eggsLaid).map(egg => egg.id);
+        if (toDelete.length > 0) {
+            await db.delete(clutchEggs).where(inArray(clutchEggs.id, toDelete));
         }
     }
 

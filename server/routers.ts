@@ -180,18 +180,16 @@ export const appRouter = router({
         notes: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        // Free plan: max 5 breeding pairs
-        if (ctx.user.plan === "free") {
-          const existing = await PairService.getPairsByUser(ctx.user.id);
-          if (existing.length >= 5) {
-            throw new TRPCError({
-              code: "FORBIDDEN",
-              message: "FREE_LIMIT_REACHED: Free plan is limited to 5 breeding pairs. Upgrade to Pro for unlimited pairs.",
-            });
-          }
-        }
-        // Check for duplicate pair in same season
+        // Fetch all pairs once — used for both the free-plan limit check and duplicate detection
         const existing = await PairService.getPairsByUser(ctx.user.id);
+
+        // Free plan: max 5 breeding pairs
+        if (ctx.user.plan === "free" && existing.length >= 5) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "FREE_LIMIT_REACHED: Free plan is limited to 5 breeding pairs. Upgrade to Pro for unlimited pairs.",
+          });
+        }
         const duplicate = existing.find(
           (p: any) => p.maleId === input.maleId && p.femaleId === input.femaleId &&
             (p.season ?? null) === (input.season ?? null)
@@ -468,8 +466,8 @@ export const appRouter = router({
         SettingsService.updateUserSettings(ctx.user.id, {
           favouriteSpeciesIds: input.favouriteSpeciesIds,
           defaultSpeciesId: input.defaultSpeciesId ?? null,
-          breedingYear: input.breedingYear ? input.breedingYear.toString() : null,
-        } as any)
+          breedingYear: input.breedingYear ?? null,
+        })
       ),
   }),
 });

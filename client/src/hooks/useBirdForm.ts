@@ -17,7 +17,7 @@ export const birdSchema = z.object({
     notes: z.string().optional(),
     fatherId: z.string().optional(),
     motherId: z.string().optional(),
-    status: z.enum(["alive", "breeding", "resting", "deceased", "sold", "unknown"]),
+    status: z.enum(["alive", "breeding", "resting", "fledged", "deceased", "sold", "unknown"]),
     fromBroodId: z.number().optional(),
     fromEggNumber: z.number().optional(),
 });
