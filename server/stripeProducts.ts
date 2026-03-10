@@ -15,7 +15,7 @@ export const PRODUCTS = {
 } as const;
 
 export const FREE_PLAN_LIMITS = {
-  birds: 20,
-  pairs: 5,
-  broods: 10,
+  birds: 10,
+  pairs: 0,
+  broods: 0,
 } as const;

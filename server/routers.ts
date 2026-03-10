@@ -120,7 +120,12 @@ export const appRouter = router({
       .mutation(({ ctx, input }) => BirdService.deleteBird(input.id, ctx.user.id)),
     pedigree: protectedProcedure
       .input(z.object({ id: z.number(), generations: z.number().min(1).max(5).default(5) }))
-      .query(({ ctx, input }) => PedigreeService.getPedigree(input.id, ctx.user.id, input.generations)),
+      .query(({ ctx, input }) => {
+        const isFree = ctx.user.plan === "free";
+        const maxGenForPlan = isFree ? 1 : 5;
+        const requestedGen = Math.min(input.generations, maxGenForPlan);
+        return PedigreeService.getPedigree(input.id, ctx.user.id, requestedGen);
+      }),
     descendants: protectedProcedure
       .input(z.object({ id: z.number() }))
       .query(({ ctx, input }) => PedigreeService.getDescendants(input.id, ctx.user.id)),

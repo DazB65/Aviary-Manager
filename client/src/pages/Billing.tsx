@@ -11,10 +11,8 @@ import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 
 const FREE_FEATURES = [
-  "Up to 20 birds",
-  "Up to 5 breeding pairs",
-  "Up to 10 broods",
-  "3-generation pedigree view",
+  "Up to 10 birds total",
+  "1-generation pedigree view",
   "Event reminders",
   "Species database (36 species)",
 ];
