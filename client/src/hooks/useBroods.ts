@@ -59,8 +59,10 @@ export function useBroods() {
         if (!pair) return "Unknown";
         const male = birdMap[pair.maleId];
         const female = birdMap[pair.femaleId];
-        const mLabel = male ? male.name || male.ringId || `#${male.id}` : "?";
-        const fLabel = female ? female.name || female.ringId || `#${female.id}` : "?";
+        const mName = male ? male.name || male.ringId || `#${male.id}` : "?";
+        const fName = female ? female.name || female.ringId || `#${female.id}` : "?";
+        const mLabel = male?.cageNumber ? `${mName} (Cage ${male.cageNumber})` : mName;
+        const fLabel = female?.cageNumber ? `${fName} (Cage ${female.cageNumber})` : fName;
         return `${mLabel} × ${fLabel}`;
     }
 
