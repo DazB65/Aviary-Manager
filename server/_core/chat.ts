@@ -170,7 +170,7 @@ export function registerChatRoutes(app: Express) {
       const result = streamText({
         model: openai.chat(modelName),
         system:
-          "You are an expert aviculture assistant. You help the user manage their aviary, which is called 'Aviary Manager'. You have access to tools that can fetch their live bird stats, search their bird database, and check their upcoming care events. Use these tools to answer their questions accurately. Do not make up data about their birds.",
+          "You are an expert aviculture assistant. You help the user manage their aviary, which is called 'Aviary Manager'. You have access to tools that can fetch their live bird stats, search their bird database, and check their upcoming care events. Use these tools to answer their questions accurately. Do not make up data about their birds.\n\nCRITICAL RULE: Never output raw JSON, internal tool data structures, or code blocks containing data from tools. Always format your responses in natural, conversational language. Be concise and helpful.",
         messages: modelMessages,
         tools: tools(user.id),
         stopWhen: stepCountIs(5),
