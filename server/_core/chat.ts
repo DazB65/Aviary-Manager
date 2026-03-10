@@ -12,6 +12,8 @@ import type { Express } from "express";
 import { z } from "zod/v4";
 import { createPatchedFetch } from "./patchedFetch";
 import { BirdService } from "../services/birdService";
+import { PairService } from "../services/pairService";
+import { BroodService } from "../services/broodService";
 import { StatsService } from "../services/statsService";
 import { SpeciesService } from "../services/speciesService";
 import { EventService } from "../services/eventService";
@@ -88,6 +90,46 @@ const tools = (userId: number) => ({
         const d = String(e.eventDate).includes("T") ? String(e.eventDate).split("T")[0] : String(e.eventDate);
         return !e.completed && d >= today;
       }).sort((a, b) => a.eventDate < b.eventDate ? -1 : 1).slice(0, 5);
+    },
+  }),
+
+  getPairEggStats: tool({
+    description: "Get egg and brood statistics for specific breeding pairs or all pairs.",
+    inputSchema: z.object({
+      pairId: z.number().describe("Optional pair ID to get stats for a specific pair").optional(),
+    }),
+    execute: async ({ pairId }) => {
+      let pairs = await PairService.getPairsByUser(userId);
+      if (pairId) {
+        pairs = pairs.filter(p => p.id === pairId);
+      }
+
+      const allBroods = await BroodService.getBroodsByUser(userId);
+      const allBirds = await BirdService.getBirdsByUser(userId);
+      const birdMap = Object.fromEntries(allBirds.map(b => [b.id, b]));
+
+      return pairs.map(pair => {
+        const pairBroods = allBroods.filter(b => b.pairId === pair.id);
+        const male = birdMap[pair.maleId];
+        const female = birdMap[pair.femaleId];
+
+        const mName = male ? male.name || male.ringId || `#${male.id}` : "?";
+        const fName = female ? female.name || female.ringId || `#${female.id}` : "?";
+
+        const totalClutches = pairBroods.length;
+        const totalEggsLaid = pairBroods.reduce((sum, b) => sum + (b.eggsLaid || 0), 0);
+        const totalChicksSurvived = pairBroods.reduce((sum, b) => sum + (b.chicksSurvived || 0), 0);
+
+        return {
+          pairId: pair.id,
+          pairLabel: `${mName} × ${fName}`,
+          cageNumber: male?.cageNumber || female?.cageNumber || "Unknown",
+          totalClutches,
+          totalEggsLaid,
+          totalChicksSurvived,
+          hatchRate: totalEggsLaid > 0 ? Math.round((totalChicksSurvived / totalEggsLaid) * 100) : 0
+        };
+      });
     },
   }),
 });
