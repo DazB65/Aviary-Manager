@@ -1,5 +1,11 @@
+if (!process.env.JWT_SECRET) {
+  throw new Error(
+    "JWT_SECRET environment variable must be set. Generate one with: node -e \"console.log(require('crypto').randomBytes(64).toString('hex'))\""
+  );
+}
+
 export const ENV = {
-  cookieSecret: process.env.JWT_SECRET ?? "",
+  cookieSecret: process.env.JWT_SECRET,
   databaseUrl: process.env.DATABASE_URL ?? "",
   isProduction: process.env.NODE_ENV === "production",
   // S3-compatible object storage (set via Railway environment variables)

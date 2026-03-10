@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { SpeciesService } from "./services/speciesService";
 import { BirdService } from "./services/birdService";
 import { PairService } from "./services/pairService";
@@ -80,7 +80,6 @@ export const appRouter = router({
         fromEggNumber: z.number().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        console.log("[DEBUG] createBird received from frontend:", input);
         // Free plan: max 20 birds
         if (ctx.user.plan === "free") {
           const existing = await BirdService.getBirdsByUser(ctx.user.id);
@@ -136,7 +135,8 @@ export const appRouter = router({
       .input(z.object({
         filename: z.string(),
         contentType: z.string(),
-        dataBase64: z.string(),
+        // 5 MB limit: base64 expands ~33%, so 5 * 1024 * 1024 * (4/3) ≈ 7,000,000 chars
+        dataBase64: z.string().max(7_000_000, "Image must be 5 MB or smaller"),
       }))
       .mutation(async ({ ctx, input }) => {
         const MIME_TO_EXT: Record<string, string> = {
@@ -299,7 +299,10 @@ export const appRouter = router({
         const fertilityCheckDate = rest.layDate ? addDays(rest.layDate, 7) : undefined;
         let expectedHatchDate = undefined;
         if (rest.layDate) expectedHatchDate = addDays(rest.layDate, incubationDays);
-        return BroodService.createBrood({ ...rest, fertilityCheckDate, expectedHatchDate, userId: ctx.user.id } as any);
+
+        const brood = await BroodService.createBrood({ ...rest, fertilityCheckDate, expectedHatchDate, userId: ctx.user.id } as any);
+        await EventService.syncBroodEvents(ctx.user.id, rest.pairId, brood.id, fertilityCheckDate, expectedHatchDate);
+        return brood;
       }),
 
     update: protectedProcedure
@@ -315,18 +318,42 @@ export const appRouter = router({
         status: z.enum(["incubating", "hatched", "failed", "abandoned"]).optional(),
         notes: z.string().optional(),
       }))
-      .mutation(({ ctx, input }) => {
+      .mutation(async ({ ctx, input }) => {
         const { id, incubationDays, ...data } = input;
-        if (data.layDate && incubationDays) {
-          data.fertilityCheckDate = addDays(data.layDate, 7);
-          data.expectedHatchDate = addDays(data.layDate, incubationDays);
+
+        const allBroods = await BroodService.getBroodsByUser(ctx.user.id);
+        const existingBrood = allBroods.find(b => b.id === id);
+        if (!existingBrood) throw new TRPCError({ code: "NOT_FOUND" });
+
+        let fDate = existingBrood.fertilityCheckDate ? String(existingBrood.fertilityCheckDate).split("T")[0] : undefined;
+        let hDate = existingBrood.expectedHatchDate ? String(existingBrood.expectedHatchDate).split("T")[0] : undefined;
+
+        if (data.layDate !== undefined) {
+          if (data.layDate !== "") {
+            fDate = addDays(data.layDate, 7);
+            hDate = addDays(data.layDate, incubationDays || 14);
+            data.fertilityCheckDate = fDate;
+            data.expectedHatchDate = hDate;
+          } else {
+            fDate = undefined;
+            hDate = undefined;
+            data.fertilityCheckDate = null as any;
+            data.expectedHatchDate = null as any;
+            data.layDate = null as any;
+          }
         }
-        return BroodService.updateBrood(id, ctx.user.id, data as any);
+
+        const result = await BroodService.updateBrood(id, ctx.user.id, data as any);
+        await EventService.syncBroodEvents(ctx.user.id, existingBrood.pairId, id, fDate, hDate);
+        return result;
       }),
 
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(({ ctx, input }) => BroodService.deleteBrood(input.id, ctx.user.id)),
+      .mutation(async ({ ctx, input }) => {
+        await EventService.syncBroodEvents(ctx.user.id, 0, input.id);
+        return BroodService.deleteBrood(input.id, ctx.user.id);
+      }),
   }),
 
   // ─── Events ────────────────────────────────────────────────────────────────
@@ -365,7 +392,7 @@ export const appRouter = router({
       }))
       .mutation(({ ctx, input }) => {
         const { id, ...data } = input;
-        return EventService.updateEvent(id, data as any);
+        return EventService.updateEvent(id, ctx.user.id, data as any);
       }),
 
     delete: protectedProcedure
@@ -415,26 +442,13 @@ export const appRouter = router({
   }),
   // ─── Admin ──────────────────────────────────────────────────────────
   admin: router({
-    users: protectedProcedure.query(({ ctx }) => {
-      if (ctx.user.role !== "admin") {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
-      }
-      return UserService.getAllUsers();
-    }),
-    setPlan: protectedProcedure
+    users: adminProcedure.query(() => UserService.getAllUsers()),
+    setPlan: adminProcedure
       .input(z.object({ userId: z.number(), plan: z.enum(["free", "pro"]) }))
-      .mutation(({ ctx, input }) => {
-        if (ctx.user.role !== "admin") {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
-        }
-        return UserService.setUserPlan(input.userId, input.plan);
-      }),
-    deleteUser: protectedProcedure
+      .mutation(({ input }) => UserService.setUserPlan(input.userId, input.plan)),
+    deleteUser: adminProcedure
       .input(z.object({ userId: z.number() }))
       .mutation(({ ctx, input }) => {
-        if (ctx.user.role !== "admin") {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
-        }
         if (input.userId === ctx.user.id) {
           throw new TRPCError({ code: "BAD_REQUEST", message: "You cannot delete your own account" });
         }

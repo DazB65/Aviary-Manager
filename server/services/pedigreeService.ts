@@ -19,38 +19,42 @@ export class PedigreeService {
         const db = getDb();
         if (!db) return {};
 
+        // Fetch all birds for this user once, then walk the tree entirely in memory.
+        // This replaces the previous approach that issued one full-table query per
+        // generation (up to 5 round-trips, each discarding most rows).
+        const allRows = await db
+            .select({
+                id: birds.id,
+                name: birds.name,
+                ringId: birds.ringId,
+                gender: birds.gender,
+                colorMutation: birds.colorMutation,
+                photoUrl: birds.photoUrl,
+                speciesId: birds.speciesId,
+                fatherId: birds.fatherId,
+                motherId: birds.motherId,
+            })
+            .from(birds)
+            .where(eq(birds.userId, userId));
+
+        const birdMap = new Map(allRows.map(r => [r.id, r]));
+
         const result: Record<number, PedigreeBird> = {};
-        const toFetch = new Set<number>([birdId]);
-        const fetched = new Set<number>();
+        const toVisit = new Set<number>([birdId]);
+        const visited = new Set<number>();
 
-        for (let gen = 0; gen < maxGenerations && toFetch.size > 0; gen++) {
-            const ids = Array.from(toFetch);
-            toFetch.clear();
+        for (let gen = 0; gen < maxGenerations && toVisit.size > 0; gen++) {
+            const ids = Array.from(toVisit);
+            toVisit.clear();
 
-            const rows = await db
-                .select({
-                    id: birds.id,
-                    name: birds.name,
-                    ringId: birds.ringId,
-                    gender: birds.gender,
-                    colorMutation: birds.colorMutation,
-                    photoUrl: birds.photoUrl,
-                    speciesId: birds.speciesId,
-                    fatherId: birds.fatherId,
-                    motherId: birds.motherId,
-                })
-                .from(birds)
-                .where(and(eq(birds.userId, userId)));
-
-            const filtered = rows.filter(r => ids.includes(r.id));
-
-            for (const row of filtered) {
-                if (!fetched.has(row.id)) {
-                    result[row.id] = row;
-                    fetched.add(row.id);
-                    if (row.fatherId && !fetched.has(row.fatherId)) toFetch.add(row.fatherId);
-                    if (row.motherId && !fetched.has(row.motherId)) toFetch.add(row.motherId);
-                }
+            for (const id of ids) {
+                if (visited.has(id)) continue;
+                const row = birdMap.get(id);
+                if (!row) continue;
+                result[id] = row;
+                visited.add(id);
+                if (row.fatherId && !visited.has(row.fatherId)) toVisit.add(row.fatherId);
+                if (row.motherId && !visited.has(row.motherId)) toVisit.add(row.motherId);
             }
         }
 

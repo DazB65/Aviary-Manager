@@ -1,4 +1,4 @@
-import { and, eq, asc, desc, sql } from "drizzle-orm";
+import { and, eq, asc, desc, sql, inArray } from "drizzle-orm";
 import { getDb } from "../db";
 import { events, type InsertEvent } from "../../drizzle/schema";
 
@@ -19,11 +19,11 @@ export class EventService {
         return newEv;
     }
 
-    static async updateEvent(id: number, data: Partial<InsertEvent>) {
+    static async updateEvent(id: number, userId: number, data: Partial<InsertEvent>) {
         const [updated] = await getDb()
             .update(events)
             .set({ ...data, updatedAt: new Date() })
-            .where(eq(events.id, id))
+            .where(and(eq(events.id, id), eq(events.userId, userId)))
             .returning();
         return updated;
     }
@@ -51,5 +51,41 @@ export class EventService {
             .returning();
 
         return updated;
+    }
+
+    static async syncBroodEvents(userId: number, pairId: number, broodId: number, fertilityDate?: string, hatchDate?: string) {
+        const db = getDb();
+        if (!db) return;
+
+        const fSeries = `brood-${broodId}-fertility`;
+        const hSeries = `brood-${broodId}-hatch`;
+
+        // Clear previous auto-events for this specific brood
+        await db.delete(events).where(and(eq(events.userId, userId), inArray(events.seriesId, [fSeries, hSeries])));
+
+        // Insert new ones if dates exist
+        if (fertilityDate) {
+            await db.insert(events).values({
+                userId,
+                title: `Fertility Check - Brood #${broodId}`,
+                notes: `Auto-generated fertility check for pair #${pairId}, brood #${broodId}.`,
+                eventDate: fertilityDate,
+                eventType: "other",
+                pairId,
+                seriesId: fSeries,
+            });
+        }
+
+        if (hatchDate) {
+            await db.insert(events).values({
+                userId,
+                title: `Expected Hatch - Brood #${broodId}`,
+                notes: `Auto-generated expected hatch for pair #${pairId}, brood #${broodId}.`,
+                eventDate: hatchDate,
+                eventType: "other",
+                pairId,
+                seriesId: hSeries,
+            });
+        }
     }
 }
