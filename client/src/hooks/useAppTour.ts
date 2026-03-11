@@ -3,9 +3,9 @@ import "driver.js/dist/driver.css";
 
 // Bump this key whenever the tour content changes significantly so existing
 // users who completed the old tour are offered the new one automatically.
-const TOUR_KEY = "app-tour-v2";
+const TOUR_KEY = "app-tour-v3";
 // Separate key so we can distinguish "user deliberately skipped" vs "completed"
-const TOUR_SKIPPED_KEY = "app-tour-v2-skipped";
+const TOUR_SKIPPED_KEY = "app-tour-v3-skipped";
 
 /**
  * Waits until a CSS selector resolves to a DOM element, then calls `cb`.
@@ -241,7 +241,65 @@ const TOUR_PHASES: TourPhase[] = [
 
 export function useAppTour() {
   function startTour() {
-    const driverObj = driver({
+    // driverObj is declared here so the buildSteps closures can reference it
+    // via the moveNext callback after it has been assigned below.
+    let driverObj: ReturnType<typeof driver>;
+
+    const introSteps = [
+      // ── 1. Welcome ──────────────────────────────────────────────────────
+      {
+        popover: {
+          title: "👋 Welcome to Aviary Manager!",
+          description:
+            "Your complete bird-breeding companion. Let's take a 2-minute tour of your first setup — so you can hit the ground running. Press <kbd>Esc</kbd> at any time to skip.",
+          side: "over",
+          align: "center",
+        },
+      },
+      // ── 2. Dashboard stats ───────────────────────────────────────────────
+      {
+        element: "#tour-dashboard-stats",
+        popover: {
+          title: "📊 Your flock at a glance",
+          description:
+            "These four cards update live — total birds, active pairs, eggs incubating, and upcoming events. This is your home base every time you open the app.",
+          side: "bottom",
+          align: "center",
+        },
+      },
+    ];
+
+    const outroSteps = [
+      // ── AI assistant ─────────────────────────────────────────────────────
+      {
+        element: "#tour-ai-fab",
+        popover: {
+          title: "🤖 AI Assistant — always here",
+          description:
+            "Tap this any time to chat with your Aviary AI. It has live access to your data — ask about flock stats, upcoming events, or get breeding advice.",
+          side: "left",
+          align: "center",
+        },
+      },
+      // ── Done ─────────────────────────────────────────────────────────────
+      {
+        popover: {
+          title: "You're all set! 🎉",
+          description:
+            "You now know the core workflow. Your next step: head to <strong>Settings</strong> to pin your species and set the year, then go to <strong>My Birds</strong> to add your first bird. You can replay this tour any time from the Help page.",
+          side: "over",
+          align: "center",
+        },
+      },
+    ];
+
+    const allSteps = [
+      ...introSteps,
+      ...buildSteps(TOUR_PHASES, () => driverObj.moveNext()),
+      ...outroSteps,
+    ];
+
+    driverObj = driver({
       showProgress: true,
       progressText: "{{current}} of {{total}}",
       animate: true,
@@ -251,146 +309,14 @@ export function useAppTour() {
       doneBtnText: "Start exploring 🚀",
       nextBtnText: "Next →",
       prevBtnText: "← Back",
-      steps: [
-        // ── 1. Welcome ────────────────────────────────────────────────────────
-        {
-          popover: {
-            title: "👋 Welcome to Aviary Manager!",
-            description:
-              "Your complete bird-breeding companion. Let's take a 60-second tour so you know exactly where everything lives. Press <kbd>Esc</kbd> at any time to skip.",
-            side: "over",
-            align: "center",
-          },
-        },
-
-        // ── 2. Dashboard ──────────────────────────────────────────────────────
-        {
-          element: "#tour-nav-dashboard",
-          popover: {
-            title: "🏠 Dashboard — your flock at a glance",
-            description:
-              "Every time you open the app you'll land here. Live counts of your birds, active pairs, eggs incubating, and upcoming events are always one click away.",
-            side: "right",
-            align: "start",
-          },
-        },
-
-        // ── 3. My Birds ───────────────────────────────────────────────────────
-        {
-          element: "#tour-nav-birds",
-          popover: {
-            title: "🐦 My Birds — your full registry",
-            description:
-              "Add every bird you own and track their species, ring ID, gender, cage, colour mutation, photo, and full pedigree. You can filter, sort, and search across your entire flock instantly.",
-            side: "right",
-            align: "start",
-          },
-        },
-
-        // ── 4. Breeding Pairs ─────────────────────────────────────────────────
-        {
-          element: "#tour-nav-pairs",
-          popover: {
-            title: "❤️ Breeding Pairs — manage your pairings",
-            description:
-              "Pair a male and female for a season. The app automatically checks for inbreeding, warns you about sibling pairings, and tracks every season's history so you can rotate pairs confidently.",
-            side: "right",
-            align: "start",
-          },
-        },
-
-        // ── 5. Broods & Eggs ──────────────────────────────────────────────────
-        {
-          element: "#tour-nav-broods",
-          popover: {
-            title: "🥚 Broods & Eggs — clutch by clutch",
-            description:
-              "Log each clutch under a pair. Enter the lay date and the app calculates the fertility check date and expected hatch date automatically. Track the outcome of every individual egg and convert fledglings straight into your bird registry.",
-            side: "right",
-            align: "start",
-          },
-        },
-
-        // ── 6. Events & Reminders ─────────────────────────────────────────────
-        {
-          element: "#tour-nav-events",
-          popover: {
-            title: "📅 Events & Reminders — never miss a thing",
-            description:
-              "Schedule vet visits, banding days, medication rounds, weaning dates, and more. Recurring reminders auto-advance when you mark them done. Overdue and upcoming events bubble straight up to your Dashboard.",
-            side: "right",
-            align: "start",
-          },
-        },
-
-        // ── 7. Cages ─────────────────────────────────────────────────────────
-        {
-          element: "#tour-nav-cages",
-          popover: {
-            title: "🔲 Cages — see who's where",
-            description:
-              "A bird's-eye view of your aviary layout. All active birds are grouped by their cage number so you can spot overcrowding or empty cages at a glance. Assign cage numbers from the My Birds page.",
-            side: "right",
-            align: "start",
-          },
-        },
-
-        // ── 8. Statistics ─────────────────────────────────────────────────────
-        {
-          element: "#tour-nav-statistics",
-          popover: {
-            title: "📊 Statistics — understand your results",
-            description:
-              "Season-by-season hatch rates, species breakdown, cage occupancy, and egg outcome summaries. Use these to identify your most productive pairs and make better decisions every breeding season.",
-            side: "right",
-            align: "start",
-          },
-        },
-
-        // ── 9. Settings ───────────────────────────────────────────────────────
-        {
-          element: "#tour-nav-settings",
-          popover: {
-            title: "⚙️ Settings — make it yours",
-            description:
-              "Pin the species you keep so they appear first in every dropdown. Set the current breeding year once and it pre-fills across pairs, broods, and your dashboard summary automatically.",
-            side: "right",
-            align: "start",
-          },
-        },
-
-        // ── 10. AI Assistant ──────────────────────────────────────────────────
-        {
-          element: "#tour-ai-fab",
-          popover: {
-            title: "🤖 AI Assistant — your aviary expert",
-            description:
-              "Tap this button any time to chat with your AI Aviary Assistant. Ask about your flock stats, search for specific birds, check upcoming events, or get advice on breeding — it has live access to your data.",
-            side: "left",
-            align: "center",
-          },
-        },
-
-        // ── 11. Done ──────────────────────────────────────────────────────────
-        {
-          popover: {
-            title: "You're all set! 🎉",
-            description:
-              "That's the full tour. Your next step: go to <strong>Settings</strong> to pin your species, then head to <strong>My Birds</strong> to add your first bird. You can replay this tour any time from the bottom of the sidebar.",
-            side: "over",
-            align: "center",
-          },
-        },
-      ],
+      steps: allSteps,
 
       onDestroyed() {
-        // Mark as fully completed (not just skipped)
         localStorage.setItem(TOUR_KEY, "completed");
         localStorage.removeItem(TOUR_SKIPPED_KEY);
       },
 
       onCloseClick() {
-        // User hit the X — record as skipped so we can show a subtle reminder
         if (localStorage.getItem(TOUR_KEY) !== "completed") {
           localStorage.setItem(TOUR_SKIPPED_KEY, "true");
         }
