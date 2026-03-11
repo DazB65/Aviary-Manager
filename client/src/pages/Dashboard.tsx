@@ -129,6 +129,19 @@ export default function Dashboard() {
 
   const recentBirds = (birds ?? []).slice(0, 4);
 
+  const birdMap = Object.fromEntries((birds ?? []).map(b => [b.id, b]));
+
+  function getPairLabel(pairId: number) {
+    const pair = pairs?.find(p => p.id === pairId);
+    if (!pair) return `Pair #${pairId}`;
+    const male = birdMap[pair.maleId];
+    const female = birdMap[pair.femaleId];
+    const mName = male?.name || male?.ringId || `#${pair.maleId}`;
+    const fName = female?.name || female?.ringId || `#${pair.femaleId}`;
+    const cageInfo = male?.cageNumber || female?.cageNumber ? ` (Cage ${male?.cageNumber || female?.cageNumber})` : "";
+    return `${mName} × ${fName}${cageInfo}`;
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-8 max-w-6xl mx-auto">
@@ -148,7 +161,7 @@ export default function Dashboard() {
 
         {/* Getting Started */}
         {showGettingStarted && (
-          <Card className="border border-orange-200 shadow-card">
+          <Card id="tour-getting-started" className="border border-orange-200 shadow-card">
             <CardHeader className="flex flex-row items-center justify-between pb-3 bg-orange-50 rounded-t-lg">
               <CardTitle className="text-base font-semibold text-orange-800">🚀 Getting Started</CardTitle>
               <Button variant="ghost" size="sm" onClick={dismissGettingStarted} className="h-6 w-6 p-0 text-orange-600 hover:text-orange-800">
@@ -177,7 +190,7 @@ export default function Dashboard() {
         )}
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div id="tour-dashboard-stats" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <Card
             className={`cursor-pointer hover:shadow-elevated transition-all duration-200 border-0 overflow-hidden hover:-translate-y-0.5`}
             onClick={() => setLocation("/birds")}
@@ -278,7 +291,7 @@ export default function Dashboard() {
                   {upcomingBroods.map(b => (
                     <div key={b.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                       <div>
-                        <p className="text-sm font-medium">Pair #{b.pairId}</p>
+                        <p className="text-sm font-medium">{getPairLabel(b.pairId)}</p>
                         <p className="text-xs text-muted-foreground">{b.eggsLaid} egg{b.eggsLaid !== 1 ? "s" : ""} {b.layDate ? `· Laid ${formatDateLabel(b.layDate)}` : "· No lay date"}</p>
                       </div>
                       <div className="text-right">
