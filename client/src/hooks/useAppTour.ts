@@ -27,6 +27,59 @@ function whenReady(selector: string, cb: () => void, maxWaitMs = 3000) {
   requestAnimationFrame(check);
 }
 
+// ── Types ─────────────────────────────────────────────────────────────────
+
+type StepDef = {
+  element?: string;
+  popover: {
+    title: string;
+    description: string;
+    side?: "top" | "bottom" | "left" | "right" | "over";
+    align?: "start" | "center" | "end";
+  };
+};
+
+export type TourPhase = {
+  /** Step that points at the sidebar nav item */
+  navStep: StepDef & { element: string };
+  /** CSS selector to wait for once the user has navigated to the target page */
+  readySelector: string;
+  /** Steps shown on the target page after navigation */
+  steps: StepDef[];
+};
+
+// ── buildSteps ────────────────────────────────────────────────────────────
+
+/**
+ * Assembles a flat driver.js steps array from a TOUR_PHASES config.
+ * Each phase emits:
+ *   1. A nav step (points at the sidebar item) with an auto-injected
+ *      onNextClick that waits for `readySelector` before advancing.
+ *   2. The phase's page-level steps, unchanged.
+ */
+export function buildSteps(
+  phases: TourPhase[],
+  moveNext: () => void
+): Array<StepDef & { onNextClick?: () => false | void }> {
+  const result: Array<StepDef & { onNextClick?: () => false | void }> = [];
+
+  for (const phase of phases) {
+    result.push({
+      ...phase.navStep,
+      onNextClick: () => {
+        whenReady(phase.readySelector, moveNext);
+        return false;
+      },
+    });
+
+    for (const step of phase.steps) {
+      result.push(step);
+    }
+  }
+
+  return result;
+}
+
 export function useAppTour() {
   function startTour() {
     const driverObj = driver({
