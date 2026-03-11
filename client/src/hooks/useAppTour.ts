@@ -80,6 +80,165 @@ export function buildSteps(
   return result;
 }
 
+// ── Tour phase data ───────────────────────────────────────────────────────
+
+const TOUR_PHASES: TourPhase[] = [
+  // ── Phase 1: Settings ──────────────────────────────────────────────────
+  {
+    navStep: {
+      element: "#tour-nav-settings",
+      popover: {
+        title: "⚙️ Step 1 of 4: Settings",
+        description:
+          "Let's do a quick setup first. Click <strong>Settings</strong> in the sidebar, then press <strong>Next →</strong>",
+        side: "right",
+        align: "start",
+      },
+    },
+    readySelector: "#tour-breeding-year",
+    steps: [
+      {
+        element: "#tour-breeding-year",
+        popover: {
+          title: "📅 Set your breeding year",
+          description:
+            "Set this once and it pre-fills across pairs, broods, and your dashboard summary — no need to re-enter each season.",
+          side: "bottom",
+          align: "start",
+        },
+      },
+      {
+        element: "#tour-species-selector",
+        popover: {
+          title: "🐦 Pin your favourite species",
+          description:
+            "Tick the species you keep and they float to the top of every dropdown — no more scrolling through a long list.",
+          side: "top",
+          align: "start",
+        },
+      },
+    ],
+  },
+
+  // ── Phase 2: My Birds ──────────────────────────────────────────────────
+  {
+    navStep: {
+      element: "#tour-nav-birds",
+      popover: {
+        title: "🐦 Step 2 of 4: My Birds",
+        description:
+          "Time to add your flock. Click <strong>My Birds</strong> in the sidebar, then press <strong>Next →</strong>",
+        side: "right",
+        align: "start",
+      },
+    },
+    readySelector: "#tour-add-bird-btn",
+    steps: [
+      {
+        element: "#tour-add-bird-btn",
+        popover: {
+          title: "➕ Register a bird",
+          description:
+            "Click here to add a bird — ring ID, species, gender, cage, colour mutation, photo, and full pedigree all live in one place.",
+          side: "bottom",
+          align: "start",
+        },
+      },
+      {
+        element: "#tour-birds-filters",
+        popover: {
+          title: "🔍 Find any bird instantly",
+          description:
+            "Filter by species, gender, or cage number — or search by name and ring ID. Works across your entire flock in real time.",
+          side: "bottom",
+          align: "start",
+        },
+      },
+    ],
+  },
+
+  // ── Phase 3: Breeding Pairs ────────────────────────────────────────────
+  {
+    navStep: {
+      element: "#tour-nav-pairs",
+      popover: {
+        title: "❤️ Step 3 of 4: Breeding Pairs",
+        description:
+          "Ready to set up your pairings? Click <strong>Breeding Pairs</strong> in the sidebar, then press <strong>Next →</strong>",
+        side: "right",
+        align: "start",
+      },
+    },
+    readySelector: "#tour-add-pair-btn",
+    steps: [
+      {
+        element: "#tour-add-pair-btn",
+        popover: {
+          title: "➕ Create a pairing",
+          description:
+            "Select a male and female and the app automatically checks for inbreeding — warning you about sibling pairings before you confirm.",
+          side: "bottom",
+          align: "start",
+        },
+      },
+    ],
+  },
+
+  // ── Phase 4: Broods & Eggs ─────────────────────────────────────────────
+  {
+    navStep: {
+      element: "#tour-nav-broods",
+      popover: {
+        title: "🥚 Broods & Eggs",
+        description:
+          "When your pair lays a clutch, log it here. Click <strong>Broods & Eggs</strong> in the sidebar, then press <strong>Next →</strong>",
+        side: "right",
+        align: "start",
+      },
+    },
+    readySelector: "#tour-log-brood-btn",
+    steps: [
+      {
+        element: "#tour-log-brood-btn",
+        popover: {
+          title: "➕ Log a clutch",
+          description:
+            "Enter the lay date and the app calculates the fertility check date and expected hatch date automatically — with per-egg outcome tracking.",
+          side: "bottom",
+          align: "start",
+        },
+      },
+    ],
+  },
+
+  // ── Phase 5: Events & Reminders ───────────────────────────────────────
+  {
+    navStep: {
+      element: "#tour-nav-events",
+      popover: {
+        title: "📅 Step 4 of 4: Events & Reminders",
+        description:
+          "Never miss a vet visit or banding day. Click <strong>Events & Reminders</strong> in the sidebar, then press <strong>Next →</strong>",
+        side: "right",
+        align: "start",
+      },
+    },
+    readySelector: "#tour-add-event-btn",
+    steps: [
+      {
+        element: "#tour-add-event-btn",
+        popover: {
+          title: "➕ Schedule a reminder",
+          description:
+            "Vet visits, banding days, medication rounds, weaning dates — recurring reminders auto-advance when you mark them done.",
+          side: "bottom",
+          align: "start",
+        },
+      },
+    ],
+  },
+];
+
 export function useAppTour() {
   function startTour() {
     const driverObj = driver({
