@@ -67,6 +67,10 @@ export function buildSteps(
     result.push({
       ...phase.navStep,
       onNextClick: () => {
+        // Programmatically click the nav item to trigger routing, then wait
+        // for the target page to render before advancing the tour.
+        const navEl = document.querySelector(phase.navStep.element) as HTMLElement | null;
+        navEl?.click();
         whenReady(phase.readySelector, moveNext);
         return false;
       },
