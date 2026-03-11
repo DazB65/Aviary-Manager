@@ -88,7 +88,7 @@ const TOUR_PHASES: TourPhase[] = [
     navStep: {
       element: "#tour-nav-settings",
       popover: {
-        title: "⚙️ Step 1 of 4: Settings",
+        title: "⚙️ Step 1 of 5: Settings",
         description:
           "Let's do a quick setup first. Click <strong>Settings</strong> in the sidebar, then press <strong>Next →</strong>",
         side: "right",
@@ -125,7 +125,7 @@ const TOUR_PHASES: TourPhase[] = [
     navStep: {
       element: "#tour-nav-birds",
       popover: {
-        title: "🐦 Step 2 of 4: My Birds",
+        title: "🐦 Step 2 of 5: My Birds",
         description:
           "Time to add your flock. Click <strong>My Birds</strong> in the sidebar, then press <strong>Next →</strong>",
         side: "right",
@@ -162,7 +162,7 @@ const TOUR_PHASES: TourPhase[] = [
     navStep: {
       element: "#tour-nav-pairs",
       popover: {
-        title: "❤️ Step 3 of 4: Breeding Pairs",
+        title: "❤️ Step 3 of 5: Breeding Pairs",
         description:
           "Ready to set up your pairings? Click <strong>Breeding Pairs</strong> in the sidebar, then press <strong>Next →</strong>",
         side: "right",
@@ -189,7 +189,7 @@ const TOUR_PHASES: TourPhase[] = [
     navStep: {
       element: "#tour-nav-broods",
       popover: {
-        title: "🥚 Broods & Eggs",
+        title: "🥚 Step 4 of 5: Broods & Eggs",
         description:
           "When your pair lays a clutch, log it here. Click <strong>Broods & Eggs</strong> in the sidebar, then press <strong>Next →</strong>",
         side: "right",
@@ -216,7 +216,7 @@ const TOUR_PHASES: TourPhase[] = [
     navStep: {
       element: "#tour-nav-events",
       popover: {
-        title: "📅 Step 4 of 4: Events & Reminders",
+        title: "📅 Step 5 of 5: Events & Reminders",
         description:
           "Never miss a vet visit or banding day. Click <strong>Events & Reminders</strong> in the sidebar, then press <strong>Next →</strong>",
         side: "right",
