@@ -173,8 +173,9 @@ function DashboardLayoutContent({
               </button>
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0">
+                  <img src="/logo.svg" alt="Aviary Manager" className="h-8 w-8 shrink-0" />
                   <span className="font-semibold tracking-tight truncate text-sidebar-foreground">
-                    🦜 Aviary Manager
+                    Aviary Manager
                   </span>
                 </div>
               ) : null}

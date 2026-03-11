@@ -88,9 +88,7 @@ export default function Landing() {
       <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-gray-100 px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center shadow-sm">
-              <Bird className="w-5 h-5 text-white" />
-            </div>
+            <img src="/logo.svg" alt="Aviary Manager" className="h-9 w-9" />
             <span className="text-lg font-bold text-gray-900">Aviary Manager</span>
           </div>
           <div className="flex items-center gap-3">
@@ -108,7 +106,7 @@ export default function Landing() {
       <section className="relative overflow-hidden bg-gradient-to-br from-teal-50 via-amber-50 to-rose-50 px-6 py-24">
         <div className="max-w-4xl mx-auto text-center">
           <Badge className="mb-6 bg-teal-100 text-teal-700 border-teal-200 text-sm px-4 py-1">
-            🦜 Built for aviary owners, by aviary owners
+            Built for aviary owners, by aviary owners
           </Badge>
           <h1 className="text-5xl md:text-6xl font-extrabold text-gray-900 leading-tight mb-6">
             The smarter way to manage your{" "}
@@ -141,9 +139,8 @@ export default function Landing() {
         </div>
 
         {/* Decorative birds */}
-        <div className="absolute top-10 left-10 text-6xl opacity-10 rotate-[-15deg]">🦜</div>
-        <div className="absolute bottom-10 right-10 text-5xl opacity-10 rotate-[10deg]">🐦</div>
-        <div className="absolute top-1/2 left-4 text-4xl opacity-5">🥚</div>
+        <img src="/logo.svg" alt="" className="absolute top-10 left-10 w-24 h-24 opacity-10 rotate-[-15deg]" />
+        <img src="/logo.svg" alt="" className="absolute bottom-10 right-10 w-20 h-20 opacity-10 rotate-[10deg]" />
       </section>
 
       {/* Features */}
@@ -278,9 +275,7 @@ export default function Landing() {
       {/* Footer */}
       <footer className="bg-gray-900 text-gray-400 px-6 py-10 text-center text-sm">
         <div className="flex items-center justify-center gap-2 mb-4">
-          <div className="w-7 h-7 rounded-lg bg-teal-600 flex items-center justify-center">
-            <Bird className="w-4 h-4 text-white" />
-          </div>
+          <img src="/logo.svg" alt="Aviary Manager" className="h-7 w-7" />
           <span className="text-white font-semibold">Aviary Manager</span>
         </div>
         <p>© {new Date().getFullYear()} Aviary Manager. All rights reserved.</p>
