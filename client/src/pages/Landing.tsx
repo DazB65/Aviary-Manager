@@ -85,11 +85,10 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-white font-sans">
       {/* Nav */}
-      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-gray-100 px-6 py-4">
+      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-gray-100 px-6 py-2">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <img src="/logo.svg" alt="Aviary Manager" className="h-9 w-9" />
-            <span className="text-lg font-bold text-gray-900">Aviary Manager</span>
+          <div className="flex items-center">
+            <img src="/logo-color.svg" alt="Aviary Manager" className="h-16 w-auto" />
           </div>
           <div className="flex items-center gap-3">
             <Button variant="ghost" onClick={() => setLocation("/login")} className="text-gray-600">
