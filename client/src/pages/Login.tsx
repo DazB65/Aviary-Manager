@@ -18,7 +18,7 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-teal-50">
       <div className="w-full max-w-md px-8 py-12 bg-white rounded-2xl shadow-elevated text-center space-y-8">
         <div>
-          <img src="/logo.svg" alt="Aviary Manager" className="w-full h-auto mx-auto" />
+          <img src="/logo-color.svg" alt="Aviary Manager" className="w-full h-auto mx-auto" />
         </div>
         <Button
           size="lg"
