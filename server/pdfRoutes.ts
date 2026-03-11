@@ -31,8 +31,8 @@ export function registerPdfRoutes(app: Express) {
         return;
       }
 
-      // Build species map
-      const speciesList = await SpeciesService.getAllSpecies();
+      // Build species map — pass userId so custom species are included
+      const speciesList = await SpeciesService.getAllSpecies(userId);
       const speciesMap: Record<number, { commonName: string }> = {};
       for (const s of speciesList) speciesMap[s.id] = { commonName: s.commonName };
 

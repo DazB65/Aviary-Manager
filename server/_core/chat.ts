@@ -55,7 +55,7 @@ const tools = (userId: number) => ({
     }),
     execute: async ({ query, status, gender }) => {
       const birds = await BirdService.getBirdsByUser(userId);
-      const speciesList = await SpeciesService.getAllSpecies();
+      const speciesList = await SpeciesService.getAllSpecies(userId);
 
       const speciesMap = Object.fromEntries(speciesList.map(s => [s.id, s.commonName.toLowerCase()]));
 

@@ -39,6 +39,14 @@ const forgotPasswordLimiter = rateLimit({
   message: { error: "Too many password reset requests. Please try again in an hour." },
 });
 
+const resendVerificationLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many verification emails requested. Please try again in an hour." },
+});
+
 export function registerAuthRoutes(app: Express) {
 
   // ── POST /api/auth/register ───────────────────────────────────────────────
@@ -262,7 +270,7 @@ export function registerAuthRoutes(app: Express) {
   });
 
   // ── POST /api/auth/resend-verification ───────────────────────────────────
-  app.post("/api/auth/resend-verification", async (req: Request, res: Response) => {
+  app.post("/api/auth/resend-verification", resendVerificationLimiter, async (req: Request, res: Response) => {
     try {
       const { email } = req.body as { email?: string };
       if (!email) { res.status(400).json({ error: "Email is required" }); return; }

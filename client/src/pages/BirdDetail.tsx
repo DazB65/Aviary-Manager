@@ -1,3 +1,4 @@
+import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -135,10 +136,12 @@ export default function BirdDetail() {
   const params = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const birdId = Number(params.id);
+  const { user } = useAuth();
+  const maxGenerations = user?.plan === "pro" ? 5 : 1;
 
   const { data: bird, isLoading } = trpc.birds.get.useQuery({ id: birdId });
   const { data: speciesList = [] } = trpc.species.list.useQuery();
-  const { data: pedigreeMap = {} } = trpc.birds.pedigree.useQuery({ id: birdId, generations: 5 });
+  const { data: pedigreeMap = {} } = trpc.birds.pedigree.useQuery({ id: birdId, generations: maxGenerations });
   const { data: descendants = [] } = trpc.birds.descendants.useQuery({ id: birdId });
   const { data: siblings = [] } = trpc.birds.siblings.useQuery({ id: birdId });
   const { data: allEvents = [] } = trpc.events.list.useQuery();

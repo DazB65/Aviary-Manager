@@ -38,7 +38,7 @@ export const appRouter = router({
 
   // ─── Species ───────────────────────────────────────────────────────────────
   species: router({
-    list: publicProcedure.query(() => SpeciesService.getAllSpecies()),
+    list: protectedProcedure.query(({ ctx }) => SpeciesService.getAllSpecies(ctx.user.id)),
     create: protectedProcedure
       .input(z.object({
         commonName: z.string().min(1),
