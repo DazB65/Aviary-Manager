@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/useMobile";
 import { trpc } from "@/lib/trpc";
-import { BarChart2, Bird, CalendarDays, CreditCard, Egg, Heart, HelpCircle, Home, LayoutDashboard, LogOut, PanelLeft, Settings, Users, MapPin, Bot } from "lucide-react";
+import { BarChart2, Bird, CalendarDays, CreditCard, Egg, Heart, HelpCircle, Home, LayoutDashboard, LogOut, Settings, Users, MapPin, Bot } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { useAppTour } from "@/hooks/useAppTour";
@@ -162,24 +162,18 @@ function DashboardLayoutContent({
           className="border-r-0"
           disableTransition={isResizing}
         >
-          <SidebarHeader className="h-16 justify-center">
-            <div className="flex items-center gap-3 px-2 transition-all w-full">
-              <button
-                onClick={toggleSidebar}
-                className="h-8 w-8 flex items-center justify-center hover:bg-accent rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring shrink-0"
-                aria-label="Toggle navigation"
-              >
-                <PanelLeft className="h-4 w-4 text-muted-foreground" />
-              </button>
-              {!isCollapsed ? (
-                <div className="flex items-center gap-2 min-w-0">
-                  <img src="/logo.svg" alt="Aviary Manager" className="h-8 w-8 shrink-0" />
-                  <span className="font-semibold tracking-tight truncate text-sidebar-foreground">
-                    Aviary Manager
-                  </span>
-                </div>
-              ) : null}
-            </div>
+          <SidebarHeader className="p-0 overflow-hidden">
+            <button
+              onClick={toggleSidebar}
+              className="w-full flex items-center justify-center hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Toggle navigation"
+            >
+              <img
+                src="/logo.svg"
+                alt="Aviary Manager"
+                className="w-full h-auto object-contain"
+              />
+            </button>
           </SidebarHeader>
 
           <SidebarContent className="gap-0">
