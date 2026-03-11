@@ -134,14 +134,14 @@ export default function Birds() {
                 <List className="h-4 w-4" />
               </button>
             </div>
-            <Button onClick={openAdd} className="bg-primary hover:bg-primary/90 shadow-md gap-2">
+            <Button id="tour-add-bird-btn" onClick={openAdd} className="bg-primary hover:bg-primary/90 shadow-md gap-2">
               <Plus className="h-4 w-4" /> Add Bird
             </Button>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap gap-3">
+        <div id="tour-birds-filters" className="flex flex-wrap gap-3">
           <div className="relative flex-1 min-w-48">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input

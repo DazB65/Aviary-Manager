@@ -308,7 +308,7 @@ export default function BirdDetail() {
         </Card>
 
         {/* Tabs: Pedigree + Descendants */}
-        <Tabs defaultValue="pedigree">
+        <Tabs id="tour-bird-tabs" defaultValue="pedigree">
           <TabsList className="mb-4">
             <TabsTrigger value="pedigree" className="gap-2">
               <GitBranch className="h-4 w-4" /> Pedigree

@@ -103,7 +103,7 @@ export default function Settings() {
         </div>
 
         {/* ── Breeding Season Year ── */}
-        <Card className="border-2 border-teal-200 shadow-card bg-gradient-to-br from-teal-50 to-white">
+        <Card id="tour-breeding-year" className="border-2 border-teal-200 shadow-card bg-gradient-to-br from-teal-50 to-white">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
               <CalendarDays className="h-5 w-5 text-teal-600" />
@@ -136,7 +136,7 @@ export default function Settings() {
         </Card>
 
         {/* ── Favourite Species ── */}
-        <Card className="border border-border shadow-card">
+        <Card id="tour-species-selector" className="border border-border shadow-card">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
               <Star className="h-5 w-5 text-amber-500" />

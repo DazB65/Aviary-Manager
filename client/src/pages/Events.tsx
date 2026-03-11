@@ -162,6 +162,7 @@ export default function Events() {
               </Button>
             )}
             <Button
+              id="tour-add-event-btn"
               onClick={openAdd}
               className="bg-primary hover:bg-primary/90 shadow-md gap-2"
             >
@@ -170,7 +171,7 @@ export default function Events() {
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div id="tour-events-filters" className="flex gap-2">
           <Button
             variant={!showCompleted ? "default" : "outline"}
             size="sm"

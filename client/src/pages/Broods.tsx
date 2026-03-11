@@ -216,13 +216,13 @@ export default function Broods() {
               {broods.filter((b) => b.status === "incubating").length !== 1 ? "es" : ""} currently incubating
             </p>
           </div>
-          <Button onClick={openAdd} className="bg-primary hover:bg-primary/90 shadow-md gap-2">
+          <Button id="tour-log-brood-btn" onClick={openAdd} className="bg-primary hover:bg-primary/90 shadow-md gap-2">
             <Plus className="h-4 w-4" /> Log Brood
           </Button>
         </div>
 
         <Select value={filterPairId} onValueChange={setFilterPairId}>
-          <SelectTrigger className="w-64">
+          <SelectTrigger id="tour-broods-filter" className="w-64">
             <SelectValue placeholder="All pairs" />
           </SelectTrigger>
           <SelectContent>

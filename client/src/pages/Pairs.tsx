@@ -88,7 +88,7 @@ export default function Pairs() {
               )}
             </p>
           </div>
-          <Button onClick={openAdd} className="bg-primary hover:bg-primary/90 shadow-md gap-2">
+          <Button id="tour-add-pair-btn" onClick={openAdd} className="bg-primary hover:bg-primary/90 shadow-md gap-2">
             <Plus className="h-4 w-4" /> Add Pair
           </Button>
         </div>
