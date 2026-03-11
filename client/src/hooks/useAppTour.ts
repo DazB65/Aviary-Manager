@@ -1,121 +1,187 @@
 import { driver } from "driver.js";
 import "driver.js/dist/driver.css";
 
-const TOUR_KEY = "app-tour-completed";
+// Bump this key whenever the tour content changes significantly so existing
+// users who completed the old tour are offered the new one automatically.
+const TOUR_KEY = "app-tour-v2";
+// Separate key so we can distinguish "user deliberately skipped" vs "completed"
+const TOUR_SKIPPED_KEY = "app-tour-v2-skipped";
+
+/**
+ * Waits until a CSS selector resolves to a DOM element, then calls `cb`.
+ * Falls back to calling `cb` immediately after `maxWaitMs` if it never appears.
+ * This replaces the fragile fixed `setTimeout` delay.
+ */
+function whenReady(selector: string, cb: () => void, maxWaitMs = 3000) {
+  const start = Date.now();
+  function check() {
+    if (document.querySelector(selector)) {
+      cb();
+    } else if (Date.now() - start < maxWaitMs) {
+      requestAnimationFrame(check);
+    } else {
+      // Element never appeared — start anyway so the tour isn't silently skipped
+      cb();
+    }
+  }
+  requestAnimationFrame(check);
+}
 
 export function useAppTour() {
   function startTour() {
     const driverObj = driver({
       showProgress: true,
+      progressText: "{{current}} of {{total}}",
       animate: true,
-      overlayColor: "rgba(0,0,0,0.5)",
+      overlayColor: "rgba(0,0,0,0.55)",
       smoothScroll: true,
       allowClose: true,
-      doneBtnText: "Let's go! 🎉",
+      doneBtnText: "Start exploring 🚀",
       nextBtnText: "Next →",
       prevBtnText: "← Back",
       steps: [
+        // ── 1. Welcome ────────────────────────────────────────────────────────
         {
           popover: {
             title: "👋 Welcome to Aviary Manager!",
             description:
-              "Let us show you around in just 30 seconds. You can press Escape at any time to skip.",
+              "Your complete bird-breeding companion. Let's take a 60-second tour so you know exactly where everything lives. Press <kbd>Esc</kbd> at any time to skip.",
             side: "over",
             align: "center",
           },
         },
+
+        // ── 2. Dashboard ──────────────────────────────────────────────────────
         {
           element: "#tour-nav-dashboard",
           popover: {
-            title: "🏠 Dashboard",
+            title: "🏠 Dashboard — your flock at a glance",
             description:
-              "Your home base — see a snapshot of your flock at a glance: bird counts, active pairs, eggs incubating, and upcoming events.",
+              "Every time you open the app you'll land here. Live counts of your birds, active pairs, eggs incubating, and upcoming events are always one click away.",
             side: "right",
             align: "start",
           },
         },
+
+        // ── 3. My Birds ───────────────────────────────────────────────────────
         {
           element: "#tour-nav-birds",
           popover: {
-            title: "🐦 My Birds",
+            title: "🐦 My Birds — your full registry",
             description:
-              "Add, edit and manage every bird in your collection. Track species, gender, ring ID, cage, colour mutations, photos and pedigree.",
+              "Add every bird you own and track their species, ring ID, gender, cage, colour mutation, photo, and full pedigree. You can filter, sort, and search across your entire flock instantly.",
             side: "right",
             align: "start",
           },
         },
+
+        // ── 4. Breeding Pairs ─────────────────────────────────────────────────
         {
           element: "#tour-nav-pairs",
           popover: {
-            title: "❤️ Breeding Pairs",
+            title: "❤️ Breeding Pairs — manage your pairings",
             description:
-              "Set up and monitor breeding pairs. The app tracks compatibility and season history so you know which birds have bred together.",
+              "Pair a male and female for a season. The app automatically checks for inbreeding, warns you about sibling pairings, and tracks every season's history so you can rotate pairs confidently.",
             side: "right",
             align: "start",
           },
         },
+
+        // ── 5. Broods & Eggs ──────────────────────────────────────────────────
         {
           element: "#tour-nav-broods",
           popover: {
-            title: "🥚 Broods & Eggs",
+            title: "🥚 Broods & Eggs — clutch by clutch",
             description:
-              "Log clutches, track individual egg outcomes, and see expected hatch dates automatically calculated from lay date and species incubation period.",
+              "Log each clutch under a pair. Enter the lay date and the app calculates the fertility check date and expected hatch date automatically. Track the outcome of every individual egg and convert fledglings straight into your bird registry.",
             side: "right",
             align: "start",
           },
         },
+
+        // ── 6. Events & Reminders ─────────────────────────────────────────────
         {
           element: "#tour-nav-events",
           popover: {
-            title: "📅 Events & Reminders",
+            title: "📅 Events & Reminders — never miss a thing",
             description:
-              "Schedule vet visits, banding, medication rounds, and any other reminders. Upcoming events surface straight to your dashboard.",
+              "Schedule vet visits, banding days, medication rounds, weaning dates, and more. Recurring reminders auto-advance when you mark them done. Overdue and upcoming events bubble straight up to your Dashboard.",
             side: "right",
             align: "start",
           },
         },
+
+        // ── 7. Cages ─────────────────────────────────────────────────────────
         {
           element: "#tour-nav-cages",
           popover: {
-            title: "🏠 Cages",
+            title: "🔲 Cages — see who's where",
             description:
-              "See which birds are in each cage at a glance. Assign cage numbers to birds from the My Birds page.",
+              "A bird's-eye view of your aviary layout. All active birds are grouped by their cage number so you can spot overcrowding or empty cages at a glance. Assign cage numbers from the My Birds page.",
             side: "right",
             align: "start",
           },
         },
+
+        // ── 8. Statistics ─────────────────────────────────────────────────────
         {
           element: "#tour-nav-statistics",
           popover: {
-            title: "📊 Statistics",
+            title: "📊 Statistics — understand your results",
             description:
-              "Dive into breeding season stats — hatch rates, clutch sizes, success rates by pair — so you can make informed decisions each season.",
+              "Season-by-season hatch rates, species breakdown, cage occupancy, and egg outcome summaries. Use these to identify your most productive pairs and make better decisions every breeding season.",
             side: "right",
             align: "start",
           },
         },
+
+        // ── 9. Settings ───────────────────────────────────────────────────────
         {
           element: "#tour-nav-settings",
           popover: {
-            title: "⚙️ Settings",
+            title: "⚙️ Settings — make it yours",
             description:
-              "Set your favourite species for quick-add, adjust your breeding year, and personalise the app to your aviary.",
+              "Pin the species you keep so they appear first in every dropdown. Set the current breeding year once and it pre-fills across pairs, broods, and your dashboard summary automatically.",
             side: "right",
             align: "start",
           },
         },
+
+        // ── 10. AI Assistant ──────────────────────────────────────────────────
+        {
+          element: "#tour-ai-fab",
+          popover: {
+            title: "🤖 AI Assistant — your aviary expert",
+            description:
+              "Tap this button any time to chat with your AI Aviary Assistant. Ask about your flock stats, search for specific birds, check upcoming events, or get advice on breeding — it has live access to your data.",
+            side: "left",
+            align: "center",
+          },
+        },
+
+        // ── 11. Done ──────────────────────────────────────────────────────────
         {
           popover: {
             title: "You're all set! 🎉",
             description:
-              "That's everything. Start by adding your first bird — click <strong>My Birds</strong> in the sidebar. Enjoy managing your aviary!",
+              "That's the full tour. Your next step: go to <strong>Settings</strong> to pin your species, then head to <strong>My Birds</strong> to add your first bird. You can replay this tour any time from the bottom of the sidebar.",
             side: "over",
             align: "center",
           },
         },
       ],
+
       onDestroyed() {
-        localStorage.setItem(TOUR_KEY, "true");
+        // Mark as fully completed (not just skipped)
+        localStorage.setItem(TOUR_KEY, "completed");
+        localStorage.removeItem(TOUR_SKIPPED_KEY);
+      },
+
+      onCloseClick() {
+        // User hit the X — record as skipped so we can show a subtle reminder
+        if (localStorage.getItem(TOUR_KEY) !== "completed") {
+          localStorage.setItem(TOUR_SKIPPED_KEY, "true");
+        }
       },
     });
 
@@ -123,11 +189,25 @@ export function useAppTour() {
   }
 
   function maybeStartTour() {
-    if (localStorage.getItem(TOUR_KEY) === "true") return;
-    // Small delay so the sidebar/layout renders first
-    setTimeout(startTour, 800);
+    // Don't auto-start if the user has already completed or explicitly skipped it
+    if (
+      localStorage.getItem(TOUR_KEY) === "completed" ||
+      localStorage.getItem(TOUR_SKIPPED_KEY) === "true"
+    ) return;
+
+    // Wait until the first nav element is in the DOM before firing,
+    // instead of using a fixed setTimeout delay.
+    whenReady("#tour-nav-dashboard", startTour);
   }
 
-  return { startTour, maybeStartTour };
+  function hasTourBeenCompleted() {
+    return localStorage.getItem(TOUR_KEY) === "completed";
+  }
+
+  function hasTourBeenSkipped() {
+    return localStorage.getItem(TOUR_SKIPPED_KEY) === "true";
+  }
+
+  return { startTour, maybeStartTour, hasTourBeenCompleted, hasTourBeenSkipped };
 }
 

@@ -111,7 +111,7 @@ function DashboardLayoutContent({
   const breedingYear = settings?.breedingYear ?? new Date().getFullYear();
   const isAdmin = user?.role === "admin";
   const isPro = user?.plan === "pro";
-  const { startTour, maybeStartTour } = useAppTour();
+  const { startTour, maybeStartTour, hasTourBeenSkipped } = useAppTour();
 
   useEffect(() => {
     maybeStartTour();
@@ -247,6 +247,9 @@ function DashboardLayoutContent({
               >
                 <MapPin className="h-3.5 w-3.5 shrink-0" />
                 <span>Take the tour</span>
+                {hasTourBeenSkipped() && (
+                  <span className="ml-auto h-2 w-2 rounded-full bg-primary shrink-0" title="You skipped the tour — click to restart" />
+                )}
               </button>
             )}
             <DropdownMenu>
@@ -316,6 +319,7 @@ function DashboardLayoutContent({
       <Sheet>
         <SheetTrigger asChild>
           <Button
+            id="tour-ai-fab"
             size="icon"
             className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-2xl bg-primary hover:bg-primary/90 text-primary-foreground z-50 transition-transform hover:scale-105"
             aria-label="Open AI Assistant"
