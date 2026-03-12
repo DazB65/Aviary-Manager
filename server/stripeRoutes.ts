@@ -1,4 +1,4 @@
-import type { Express, Request, Response } from "express";
+import express, { type Express, type Request, type Response } from "express";
 import Stripe from "stripe";
 import { getDb } from "./db";
 import { users } from "../drizzle/schema";
@@ -8,8 +8,9 @@ import { COOKIE_NAME } from "@shared/const";
 import { PRODUCTS } from "./stripeProducts";
 
 function getStripe() {
-  const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) throw new Error("STRIPE_SECRET_KEY not configured");
+  // Support both STRIPE_SECRET_KEY and STRIPE_PRIVATE_KEY env var names
+  const key = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_PRIVATE_KEY;
+  if (!key) throw new Error("Stripe secret key not configured (set STRIPE_SECRET_KEY or STRIPE_PRIVATE_KEY)");
   return new Stripe(key, { apiVersion: "2026-01-28.clover" });
 }
 
@@ -102,12 +103,16 @@ export function registerStripeRoutes(app: Express) {
   );
 
   // ── POST /api/stripe/checkout ─────────────────────────────────────────────
-  app.post("/api/stripe/checkout", async (req: Request, res: Response) => {
+  // express.json() is added inline because this route is registered BEFORE the
+  // global express.json() middleware (webhook must come first for raw body access)
+  app.post("/api/stripe/checkout", express.json(), async (req: Request, res: Response) => {
+    console.log("[Stripe] /checkout hit — body:", req.body, "| user cookie present:", !!req.headers.cookie);
     // Authenticate user
     let user: Awaited<ReturnType<typeof sdk.authenticateRequest>>;
     try {
       user = await sdk.authenticateRequest(req);
-    } catch {
+    } catch (err) {
+      console.error("[Stripe] Auth failed:", err);
       res.status(401).json({ error: "Unauthorised" });
       return;
     }
@@ -170,7 +175,7 @@ export function registerStripeRoutes(app: Express) {
   });
 
   // ── POST /api/stripe/portal ───────────────────────────────────────────────
-  app.post("/api/stripe/portal", async (req: Request, res: Response) => {
+  app.post("/api/stripe/portal", express.json(), async (req: Request, res: Response) => {
     let user: Awaited<ReturnType<typeof sdk.authenticateRequest>>;
     try {
       user = await sdk.authenticateRequest(req);
