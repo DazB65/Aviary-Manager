@@ -316,8 +316,9 @@ function DashboardLayoutContent({
           <button
             id="tour-ai-fab"
             aria-label="Open AI Assistant"
-            className="fixed bottom-6 right-6 z-50 transition-transform hover:scale-110 drop-shadow-xl"
+            className="fixed bottom-6 right-6 z-50 flex flex-col items-center gap-1 transition-transform hover:scale-110 drop-shadow-xl"
           >
+            <span className="text-xs font-semibold text-primary bg-white/80 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-sm">Aviary Assistant</span>
             <img src="/aviary-assistant.svg" alt="Aviary Assistant" className="h-20 w-20 object-contain" />
           </button>
         </SheetTrigger>
