@@ -88,7 +88,7 @@ export default function Landing() {
       <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-gray-100 px-6 py-2">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center">
-            <img src="/logo-color.svg" alt="Aviary Manager" className="h-16 w-auto" />
+            <img src="/logo.svg" alt="Aviary Manager" className="h-16 w-auto" />
           </div>
           <div className="flex items-center gap-3">
             <Button variant="ghost" onClick={() => setLocation("/login")} className="text-gray-600">
@@ -138,8 +138,8 @@ export default function Landing() {
         </div>
 
         {/* Decorative birds */}
-        <img src="/logo-color.svg" alt="" className="absolute top-10 left-10 w-28 h-28 opacity-40 rotate-[-15deg]" />
-        <img src="/logo-color.svg" alt="" className="absolute bottom-10 right-10 w-24 h-24 opacity-40 rotate-[10deg]" />
+        <img src="/logo.svg" alt="" className="absolute top-10 left-10 w-28 h-28 opacity-40 rotate-[-15deg]" />
+        <img src="/logo.svg" alt="" className="absolute bottom-10 right-10 w-24 h-24 opacity-40 rotate-[10deg]" />
       </section>
 
       {/* Features */}
