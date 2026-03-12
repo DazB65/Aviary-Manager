@@ -119,11 +119,11 @@ export function registerStripeRoutes(app: Express) {
     let priceData: Stripe.Checkout.SessionCreateParams.LineItem.PriceData;
 
     if (interval === "lifetime") {
-      priceData = { currency: "usd", unit_amount: PRODUCTS.pro.priceLifetimeUsd };
+      priceData = { currency: "aud", unit_amount: PRODUCTS.pro.priceLifetimeUsd };
     } else if (interval === "yearly") {
-      priceData = { currency: "usd", unit_amount: PRODUCTS.pro.priceYearlyUsd, recurring: { interval: "year" as const } };
+      priceData = { currency: "aud", unit_amount: PRODUCTS.pro.priceYearlyUsd, recurring: { interval: "year" as const } };
     } else {
-      priceData = { currency: "usd", unit_amount: PRODUCTS.pro.priceMonthlyUsd, recurring: { interval: "month" as const } };
+      priceData = { currency: "aud", unit_amount: PRODUCTS.pro.priceMonthlyUsd, recurring: { interval: "month" as const } };
     }
 
     let session;
