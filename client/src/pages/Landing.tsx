@@ -138,8 +138,8 @@ export default function Landing() {
         </div>
 
         {/* Decorative birds */}
-        <img src="/logo.svg" alt="" className="absolute top-10 left-10 w-24 h-24 opacity-10 rotate-[-15deg]" />
-        <img src="/logo.svg" alt="" className="absolute bottom-10 right-10 w-20 h-20 opacity-10 rotate-[10deg]" />
+        <img src="/logo-color.svg" alt="" className="absolute top-10 left-10 w-28 h-28 opacity-40 rotate-[-15deg]" />
+        <img src="/logo-color.svg" alt="" className="absolute bottom-10 right-10 w-24 h-24 opacity-40 rotate-[10deg]" />
       </section>
 
       {/* Features */}
