@@ -85,11 +85,9 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-white font-sans">
       {/* Nav */}
-      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-gray-100 px-6 py-2">
+      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-gray-100 px-6 py-3">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center">
-            <img src="/logo.svg" alt="Aviary Manager" className="h-16 w-auto" />
-          </div>
+          <span className="text-lg font-bold text-gray-800 tracking-tight">Aviary Manager</span>
           <div className="flex items-center gap-3">
             <Button variant="ghost" onClick={() => setLocation("/login")} className="text-gray-600">
               Sign in
@@ -102,44 +100,52 @@ export default function Landing() {
       </nav>
 
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-teal-50 via-amber-50 to-rose-50 px-6 py-24">
-        <div className="max-w-4xl mx-auto text-center">
-          <Badge className="mb-6 bg-teal-100 text-teal-700 border-teal-200 text-sm px-4 py-1">
-            Built for aviary owners, by aviary owners
-          </Badge>
-          <h1 className="text-5xl md:text-6xl font-extrabold text-gray-900 leading-tight mb-6">
-            The smarter way to manage your{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-amber-500">
-              Aviary
-            </span>
-          </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-10">
-            Track birds, breeding pairs, eggs, and pedigrees — all in one place.
-            Auto-calculate hatch dates, detect inbreeding, and export pedigree certificates.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              size="lg"
-              onClick={() => setLocation("/register")}
-              className="bg-teal-600 hover:bg-teal-700 text-white text-base px-8 py-6 rounded-xl shadow-lg hover:shadow-xl transition-all"
-            >
-              Start for free <ChevronRight className="ml-2 w-5 h-5" />
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => setLocation("/login")}
-              className="text-base px-8 py-6 rounded-xl border-2"
-            >
-              Sign in
-            </Button>
+      <section className="relative overflow-hidden bg-gradient-to-br from-teal-50 via-amber-50 to-rose-50 px-6 py-20">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12">
+          {/* Big logo — left */}
+          <div className="flex-shrink-0 flex justify-center md:justify-start">
+            <img
+              src="/logo-color.svg"
+              alt="Aviary Manager"
+              className="w-72 md:w-96 h-auto drop-shadow-xl"
+            />
           </div>
-          <p className="mt-4 text-sm text-gray-400">Free plan available. No credit card required.</p>
-        </div>
 
-        {/* Decorative birds */}
-        <img src="/logo.svg" alt="" className="absolute top-10 left-10 w-28 h-28 rotate-[-15deg]" />
-        <img src="/logo.svg" alt="" className="absolute bottom-10 right-10 w-24 h-24 rotate-[10deg]" />
+          {/* Content — right */}
+          <div className="flex-1 text-center md:text-left">
+            <Badge className="mb-6 bg-teal-100 text-teal-700 border-teal-200 text-sm px-4 py-1">
+              Built for aviary owners, by aviary owners
+            </Badge>
+            <h1 className="text-5xl md:text-6xl font-extrabold text-gray-900 leading-tight mb-6">
+              The smarter way to manage your{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-amber-500">
+                Aviary
+              </span>
+            </h1>
+            <p className="text-xl text-gray-600 max-w-2xl mb-10">
+              Track birds, breeding pairs, eggs, and pedigrees — all in one place.
+              Auto-calculate hatch dates, detect inbreeding, and export pedigree certificates.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+              <Button
+                size="lg"
+                onClick={() => setLocation("/register")}
+                className="bg-teal-600 hover:bg-teal-700 text-white text-base px-8 py-6 rounded-xl shadow-lg hover:shadow-xl transition-all"
+              >
+                Start for free <ChevronRight className="ml-2 w-5 h-5" />
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => setLocation("/login")}
+                className="text-base px-8 py-6 rounded-xl border-2"
+              >
+                Sign in
+              </Button>
+            </div>
+            <p className="mt-4 text-sm text-gray-400">Free plan available. No credit card required.</p>
+          </div>
+        </div>
       </section>
 
       {/* Features */}
@@ -284,7 +290,6 @@ export default function Landing() {
       {/* CTA */}
       <section className="px-6 py-24 bg-gradient-to-br from-teal-600 to-teal-800 text-white text-center">
         <div className="max-w-2xl mx-auto">
-          <img src="/logo.svg" alt="" className="w-16 h-16 mx-auto mb-6 opacity-80" />
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to take control of your aviary?</h2>
           <p className="text-teal-100 text-lg mb-8">Join breeders who are already saving time and keeping better records.</p>
           <Button
@@ -300,7 +305,6 @@ export default function Landing() {
       {/* Footer */}
       <footer className="bg-gray-900 text-gray-400 px-6 py-10 text-center text-sm">
         <div className="flex items-center justify-center gap-2 mb-4">
-          <img src="/logo.svg" alt="Aviary Manager" className="h-7 w-7" />
           <span className="text-white font-semibold">Aviary Manager</span>
         </div>
         <p>© {new Date().getFullYear()} Aviary Manager. All rights reserved.</p>

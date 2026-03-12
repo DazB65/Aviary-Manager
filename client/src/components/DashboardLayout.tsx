@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/useMobile";
 import { trpc } from "@/lib/trpc";
-import { BarChart2, Bird, CalendarDays, CreditCard, Egg, Heart, HelpCircle, Home, LayoutDashboard, LogOut, Settings, Users, MapPin, Bot } from "lucide-react";
+import { BarChart2, Bird, CalendarDays, CreditCard, Egg, Heart, HelpCircle, Home, LayoutDashboard, LogOut, Settings, Users, MapPin } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { useAppTour } from "@/hooks/useAppTour";
@@ -313,20 +313,22 @@ function DashboardLayoutContent({
       {/* AI Assistant FAB & Sheet */}
       <Sheet>
         <SheetTrigger asChild>
-          <Button
+          <button
             id="tour-ai-fab"
-            size="icon"
-            className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-2xl bg-primary hover:bg-primary/90 text-primary-foreground z-50 transition-transform hover:scale-105"
             aria-label="Open AI Assistant"
+            className="fixed bottom-6 right-6 z-50 group"
           >
-            <Bot className="h-6 w-6" />
-          </Button>
+            {/* Pulse ring */}
+            <span className="absolute inset-0 rounded-full animate-ping bg-primary/30 group-hover:opacity-0 transition-opacity" />
+            {/* Button itself */}
+            <span className="relative flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-2xl border-2 border-primary/20 transition-transform hover:scale-110 group-hover:shadow-primary/30">
+              <img src="/logo-color.svg" alt="Aviary Assistant" className="h-11 w-11 object-contain" />
+            </span>
+          </button>
         </SheetTrigger>
         <SheetContent side="right" className="w-[400px] sm:w-[540px] p-0 flex flex-col border-l">
           <div className="flex bg-primary/10 p-4 items-center gap-3 border-b">
-            <div className="bg-primary p-2 rounded-xl text-primary-foreground shadow-sm">
-              <Bot className="h-5 w-5" />
-            </div>
+            <img src="/logo-color.svg" alt="Aviary Manager" className="h-10 w-10 object-contain shrink-0" />
             <div>
               <SheetTitle className="text-lg">Aviary Assistant</SheetTitle>
               <SheetDescription className="text-xs">
