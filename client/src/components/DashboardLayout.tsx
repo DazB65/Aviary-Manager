@@ -316,14 +316,9 @@ function DashboardLayoutContent({
           <button
             id="tour-ai-fab"
             aria-label="Open AI Assistant"
-            className="fixed bottom-6 right-6 z-50 group"
+            className="fixed bottom-6 right-6 z-50 group flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-2xl border-2 border-primary/20 transition-transform hover:scale-110"
           >
-            {/* Pulse ring */}
-            <span className="absolute inset-0 rounded-full animate-ping bg-primary/30 group-hover:opacity-0 transition-opacity" />
-            {/* Button itself */}
-            <span className="relative flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-2xl border-2 border-primary/20 transition-transform hover:scale-110 group-hover:shadow-primary/30">
-              <img src="/logo-color.svg" alt="Aviary Assistant" className="h-11 w-11 object-contain" />
-            </span>
+            <img src="/logo-color.svg" alt="Aviary Assistant" className="h-16 w-16 object-contain" />
           </button>
         </SheetTrigger>
         <SheetContent side="right" className="w-[400px] sm:w-[540px] p-0 flex flex-col border-l">
