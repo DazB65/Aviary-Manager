@@ -103,9 +103,9 @@ export default function Landing() {
       <section className="relative overflow-hidden bg-gradient-to-br from-teal-50 via-amber-50 to-rose-50 px-6 py-20">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12">
           {/* Big logo — left */}
-          <div className="flex-shrink-0 flex justify-center md:justify-start">
+          <div className="flex-shrink-0 flex justify-center md:justify-start md:-ml-8">
             <img
-              src="/logo-color.svg"
+              src="/logo.svg"
               alt="Aviary Manager"
               className="w-72 md:w-96 h-auto drop-shadow-xl"
             />
