@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Users, Trash2, MessageSquare, Cpu, AlertTriangle, Activity } from "lucide-react";
+import { Users, Trash2, MessageSquare, Cpu, AlertTriangle, Activity, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -12,7 +12,7 @@ export default function AdminUsers() {
   const { user: me } = useAuth();
   const utils = trpc.useUtils();
   const { data: users, isLoading, error } = trpc.admin.users.useQuery();
-  const { data: chatStats } = trpc.admin.chatStats.useQuery(undefined, { refetchInterval: 30_000 });
+  const { data: chatStats, isFetching: chatFetching, refetch: refetchChat } = trpc.admin.chatStats.useQuery(undefined, { refetchInterval: 60 * 60 * 1000 });
   const setPlan = trpc.admin.setPlan.useMutation({
     onSuccess: () => { utils.admin.users.invalidate(); toast.success("Plan updated!"); },
     onError: (e) => toast.error(e.message),
@@ -94,8 +94,18 @@ export default function AdminUsers() {
         </div>
 
         <Card className="border border-border shadow-card">
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-3 flex flex-row items-center justify-between">
             <CardTitle className="text-base font-semibold">All Users</CardTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs h-7 gap-1.5"
+              onClick={() => refetchChat()}
+              disabled={chatFetching}
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${chatFetching ? "animate-spin" : ""}`} />
+              {chatFetching ? "Refreshing…" : "Refresh Chat Stats"}
+            </Button>
           </CardHeader>
           <CardContent className="p-0">
             {isLoading ? (
