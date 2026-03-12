@@ -93,6 +93,28 @@ const tools = (userId: number) => ({
     },
   }),
 
+  getMutationSummary: tool({
+    description: "Get a full list of all birds in the aviary with their colour mutations and species, for use in pairing recommendations or mutation analysis. Returns all birds, not just a subset.",
+    inputSchema: z.object({}),
+    execute: async () => {
+      const birds = await BirdService.getBirdsByUser(userId);
+      const speciesList = await SpeciesService.getAllSpecies(userId);
+      const speciesMap = Object.fromEntries(speciesList.map(s => [s.id, s.commonName]));
+
+      return birds
+        .filter(b => b.status !== "deceased" && b.status !== "sold")
+        .map(b => ({
+          id: b.id,
+          name: b.name || b.ringId || `#${b.id}`,
+          ringId: b.ringId,
+          gender: b.gender,
+          species: speciesMap[b.speciesId] || "Unknown",
+          colorMutation: b.colorMutation || "Normal/Wild-type",
+          status: b.status,
+        }));
+    },
+  }),
+
   getPairEggStats: tool({
     description: "Get egg and brood statistics for specific breeding pairs or all pairs.",
     inputSchema: z.object({
@@ -203,7 +225,7 @@ export function registerChatRoutes(app: Express) {
       const result = streamText({
         model: openai.chat(modelName),
         system:
-          "You are an expert aviculture assistant. You help the user manage their aviary, which is called 'Aviary Manager'. You have access to tools that can fetch their live bird stats, search their bird database, and check their upcoming care events. Use these tools to answer their questions accurately. Do not make up data about their birds.\n\nCRITICAL RULE: Never output raw JSON, internal tool data structures, or code blocks containing data from tools. Always format your responses in natural, conversational language. Be concise and helpful.",
+          "You are an expert aviculture assistant. You help the user manage their aviary, which is called 'Aviary Manager'. You have access to tools that can fetch their live bird stats, search their bird database, check upcoming care events, and retrieve a full mutation summary of all their birds.\n\nWhen recommending pairings or discussing colour mutations, use the getMutationSummary tool to see all birds and their mutations, then apply your expert knowledge of avian genetics (dominant, recessive, sex-linked mutations, split carriers, expected offspring ratios) to make accurate recommendations. Clearly state the expected offspring mutation probabilities.\n\nDo not make up data about their specific birds — always use the tools. But do use your own genetics knowledge to reason about mutation outcomes.\n\nCRITICAL RULE: Never output raw JSON, internal tool data structures, or code blocks containing data from tools. Always format your responses in natural, conversational language. Be concise and helpful.",
         messages: modelMessages,
         tools: tools(user.id),
         stopWhen: stepCountIs(5),
