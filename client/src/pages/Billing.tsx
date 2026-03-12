@@ -5,17 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import {
-  Bird, Check, CreditCard, Loader2, Sparkles, Star, Zap
+  AlertTriangle, Bird, Check, CreditCard, Loader2, Sparkles, Star, Zap
 } from "lucide-react";
 import { useState } from "react";
+import { useLocation } from "wouter";
 import DashboardLayout from "@/components/DashboardLayout";
-
-const FREE_FEATURES = [
-  "Up to 10 birds total",
-  "1-generation pedigree view",
-  "Event reminders",
-  "Species database (36 species)",
-];
 
 const PRO_FEATURES = [
   "Unlimited birds",
@@ -31,10 +25,13 @@ const PRO_FEATURES = [
 ];
 
 export default function Billing() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const [, navigate] = useLocation();
   const [loadingInterval, setLoadingInterval] = useState<"monthly" | "yearly" | "lifetime" | null>(null);
   const [loadingPortal, setLoadingPortal] = useState(false);
   const [billingInterval, setBillingInterval] = useState<"monthly" | "yearly" | "lifetime">("yearly");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [loadingDelete, setLoadingDelete] = useState(false);
 
   const isPro = user?.plan === "pro";
   // Lifetime users have Pro but no stripeSubscriptionId (one-time payment, not a subscription)
@@ -82,6 +79,26 @@ export default function Billing() {
     }
   }
 
+  async function handleDeleteAccount() {
+    setLoadingDelete(true);
+    try {
+      const res = await fetch("/api/auth/account", {
+        method: "DELETE",
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (!res.ok) { toast.error(data.error || "Could not delete account"); return; }
+      toast.success("Account deleted. Sorry to see you go.");
+      // Give toast time to show, then redirect to landing
+      setTimeout(() => { logout?.(); navigate("/"); }, 1500);
+    } catch {
+      toast.error("Network error. Please try again.");
+    } finally {
+      setLoadingDelete(false);
+      setShowDeleteConfirm(false);
+    }
+  }
+
   return (
     <DashboardLayout>
       <div className="max-w-4xl mx-auto py-8 px-4 space-y-8">
@@ -104,7 +121,7 @@ export default function Billing() {
         {cancelled && (
           <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 flex items-center gap-3">
             <Zap className="w-5 h-5 text-amber-600 shrink-0" />
-            <p className="text-amber-800">Checkout was cancelled. You're still on the Free plan.</p>
+            <p className="text-amber-800">Checkout was cancelled. Start your 7-day free trial anytime.</p>
           </div>
         )}
 
@@ -163,80 +180,57 @@ export default function Billing() {
               </button>
             </div>
 
-            {/* Plan cards */}
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Free card */}
-              <Card className="border-2 border-gray-200">
-                <CardHeader>
-                  <CardTitle className="text-lg">Free</CardTitle>
-                  <CardDescription>Perfect for getting started</CardDescription>
-                  <div className="mt-2">
-                    <span className="text-3xl font-bold text-gray-900">$0</span>
-                    <span className="text-gray-500 ml-1">/ forever</span>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {FREE_FEATURES.map(f => (
-                    <div key={f} className="flex items-center gap-2 text-sm text-gray-700">
-                      <Check className="w-4 h-4 text-gray-400 shrink-0" />
-                      {f}
-                    </div>
-                  ))}
-                  <Separator className="my-2" />
-                  <Button variant="outline" className="w-full" disabled>
-                    Current Plan
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* Pro card */}
-              <Card className="border-2 border-teal-500 relative overflow-hidden shadow-lg">
-                <div className="absolute top-0 right-0 bg-teal-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg flex items-center gap-1">
-                  <Star className="w-3 h-3" /> Most Popular
+            {/* Plan card — single Pro */}
+            <Card className="border-2 border-teal-500 relative overflow-hidden shadow-lg max-w-lg mx-auto w-full">
+              <div className="absolute top-0 right-0 bg-teal-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg flex items-center gap-1">
+                <Star className="w-3 h-3" /> 7-day free trial
+              </div>
+              <CardHeader>
+                <CardTitle className="text-lg text-teal-700">Pro</CardTitle>
+                <CardDescription>For serious aviary managers</CardDescription>
+                <div className="mt-2">
+                  {billingInterval === "lifetime" ? (
+                    <>
+                      <span className="text-3xl font-bold text-gray-900">$220</span>
+                      <span className="text-gray-500 ml-1">AUD / forever</span>
+                    </>
+                  ) : billingInterval === "yearly" ? (
+                    <>
+                      <span className="text-3xl font-bold text-gray-900">$88</span>
+                      <span className="text-gray-500 ml-1">AUD / year</span>
+                      <span className="ml-2 text-sm text-teal-600 font-medium">($7.33/mo)</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-3xl font-bold text-gray-900">$8.80</span>
+                      <span className="text-gray-500 ml-1">AUD / month</span>
+                    </>
+                  )}
                 </div>
-                <CardHeader>
-                  <CardTitle className="text-lg text-teal-700">Pro</CardTitle>
-                  <CardDescription>For serious aviary managers</CardDescription>
-                  <div className="mt-2">
-                    {billingInterval === "lifetime" ? (
-                      <>
-                        <span className="text-3xl font-bold text-gray-900">$220</span>
-                        <span className="text-gray-500 ml-1">/ forever</span>
-                      </>
-                    ) : billingInterval === "yearly" ? (
-                      <>
-                        <span className="text-3xl font-bold text-gray-900">$88</span>
-                        <span className="text-gray-500 ml-1">/ year</span>
-                        <span className="ml-2 text-sm text-teal-600 font-medium">($7.33/mo)</span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-3xl font-bold text-gray-900">$8.80</span>
-                        <span className="text-gray-500 ml-1">/ month</span>
-                      </>
-                    )}
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {PRO_FEATURES.map(f => (
+                  <div key={f} className="flex items-center gap-2 text-sm text-gray-700">
+                    <Check className="w-4 h-4 text-teal-500 shrink-0" />
+                    {f}
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {PRO_FEATURES.map(f => (
-                    <div key={f} className="flex items-center gap-2 text-sm text-gray-700">
-                      <Check className="w-4 h-4 text-teal-500 shrink-0" />
-                      {f}
-                    </div>
-                  ))}
-                  <Separator className="my-2" />
-                  <Button
-                    className="w-full bg-teal-600 hover:bg-teal-700 text-white"
-                    onClick={() => handleCheckout(billingInterval)}
-                    disabled={loadingInterval !== null}
-                  >
-                    {loadingInterval === billingInterval && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                    Upgrade to Pro
-                  </Button>
-                  <p className="text-xs text-center text-gray-400">Cancel anytime. No lock-in.</p>
-                </CardContent>
-              </Card>
-            </div>
+                ))}
+                <Separator className="my-2" />
+                <Button
+                  className="w-full bg-teal-600 hover:bg-teal-700 text-white"
+                  onClick={() => handleCheckout(billingInterval)}
+                  disabled={loadingInterval !== null || billingInterval === "lifetime"}
+                >
+                  {loadingInterval === billingInterval && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  {billingInterval === "lifetime" ? "Get Lifetime Access" : "Start 7-day free trial"}
+                </Button>
+                <p className="text-xs text-center text-gray-400">
+                  {billingInterval === "lifetime"
+                    ? "One-time payment. No recurring fees."
+                    : "No charge for 7 days. Cancel anytime. Have a coupon? Apply it at checkout."}
+                </p>
+              </CardContent>
+            </Card>
           </>
         )}
 
@@ -262,8 +256,48 @@ export default function Billing() {
 
         <p className="text-xs text-center text-gray-400">
           Questions about your plan? Email us at{" "}
-          <a href="mailto:aviarymanager@icloud.com" className="underline hover:text-gray-200 transition-colors">aviarymanager@icloud.com</a>
+          <a href="mailto:aviarymanager@icloud.com" className="underline hover:text-gray-600 transition-colors">aviarymanager@icloud.com</a>
         </p>
+
+        {/* Danger Zone */}
+        <div className="border border-red-200 rounded-xl p-6 space-y-4">
+          <h2 className="text-base font-semibold text-red-700 flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 shrink-0" /> Danger Zone
+          </h2>
+          <p className="text-sm text-gray-600">
+            Permanently delete your account and all data — birds, pairs, broods, events, and settings.
+            {user?.stripeSubscriptionId && " Your active subscription will be cancelled immediately."}
+            {" "}This cannot be undone.
+          </p>
+          {!showDeleteConfirm ? (
+            <Button
+              variant="outline"
+              className="border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400"
+              onClick={() => setShowDeleteConfirm(true)}
+            >
+              Delete my account
+            </Button>
+          ) : (
+            <div className="rounded-lg bg-red-50 border border-red-200 p-4 space-y-3">
+              <p className="text-sm font-medium text-red-800">
+                Are you absolutely sure? All your data will be wiped and cannot be recovered.
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                  onClick={handleDeleteAccount}
+                  disabled={loadingDelete}
+                >
+                  {loadingDelete && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Yes, delete everything
+                </Button>
+                <Button variant="outline" onClick={() => setShowDeleteConfirm(false)} disabled={loadingDelete}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </DashboardLayout>
   );

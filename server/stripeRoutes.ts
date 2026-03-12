@@ -132,15 +132,19 @@ export function registerStripeRoutes(app: Express) {
       priceData = { currency: "aud", unit_amount: PRODUCTS.pro.priceMonthlyUsd, recurring: { interval: "month" as const } };
     }
 
+    const isSubscription = interval !== "lifetime";
+
     let session;
     try {
       session = await stripe.checkout.sessions.create({
-        mode: interval === "lifetime" ? "payment" : "subscription",
+        mode: isSubscription ? "subscription" : "payment",
         payment_method_types: ["card"],
         customer_email: user.email || undefined,
         // Always create a customer record so we can find them later via the billing portal fallback
-        ...(interval === "lifetime" ? { customer_creation: "always" } : {}),
+        ...(!isSubscription ? { customer_creation: "always" } : {}),
         allow_promotion_codes: true,
+        // 7-day free trial for new subscriptions only
+        ...(isSubscription ? { subscription_data: { trial_period_days: 7 } } : {}),
         client_reference_id: String(user.id),
         metadata: {
           user_id: String(user.id),
@@ -151,7 +155,7 @@ export function registerStripeRoutes(app: Express) {
           price_data: {
             ...priceData,
             product_data: {
-              name: PRODUCTS.pro.name + (interval === "lifetime" ? " (Lifetime)" : ""),
+              name: PRODUCTS.pro.name + (!isSubscription ? " (Lifetime)" : ""),
               description: PRODUCTS.pro.description,
             },
           },

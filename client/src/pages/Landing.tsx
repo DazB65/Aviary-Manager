@@ -93,7 +93,7 @@ export default function Landing() {
               Sign in
             </Button>
             <Button onClick={() => setLocation("/register")} className="bg-teal-600 hover:bg-teal-700 text-white">
-              Get started free
+              Start free trial
             </Button>
           </div>
         </div>
@@ -132,7 +132,7 @@ export default function Landing() {
                 onClick={() => setLocation("/register")}
                 className="bg-teal-600 hover:bg-teal-700 text-white text-base px-8 py-6 rounded-xl shadow-lg hover:shadow-xl transition-all"
               >
-                Start for free <ChevronRight className="ml-2 w-5 h-5" />
+                Start free trial <ChevronRight className="ml-2 w-5 h-5" />
               </Button>
               <Button
                 size="lg"
@@ -143,7 +143,7 @@ export default function Landing() {
                 Sign in
               </Button>
             </div>
-            <p className="mt-4 text-sm text-gray-400">Free plan available. No credit card required.</p>
+            <p className="mt-4 text-sm text-gray-400">7-day free trial. No credit card required to start.</p>
           </div>
         </div>
       </section>
@@ -180,31 +180,9 @@ export default function Landing() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Simple, honest pricing</h2>
-            <p className="text-lg text-gray-500">Start free. Upgrade when you're ready.</p>
+            <p className="text-lg text-gray-500">Try free for 7 days. No credit card required.</p>
           </div>
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {/* Free */}
-            <Card className="border-2 border-gray-200 rounded-2xl">
-              <CardContent className="pt-8 pb-8 px-8">
-                <h3 className="text-xl font-bold text-gray-900 mb-1">Free</h3>
-                <p className="text-gray-500 text-sm mb-6">Great for getting started</p>
-                <div className="mb-6">
-                  <span className="text-4xl font-extrabold text-gray-900">$0</span>
-                  <span className="text-gray-400 ml-1">AUD / forever</span>
-                </div>
-                <ul className="space-y-3 mb-8">
-                  {["Up to 20 birds", "Up to 5 breeding pairs", "Up to 10 broods", "3-gen pedigree view", "Event reminders"].map(f => (
-                    <li key={f} className="flex items-center gap-2 text-sm text-gray-700">
-                      <Check className="w-4 h-4 text-gray-400" /> {f}
-                    </li>
-                  ))}
-                </ul>
-                <Button variant="outline" className="w-full" onClick={() => setLocation("/register")}>
-                  Get started free
-                </Button>
-              </CardContent>
-            </Card>
-
+          <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
             {/* Pro */}
             <Card className="border-2 border-teal-500 rounded-2xl shadow-xl relative overflow-hidden">
               <div className="absolute top-0 right-0 bg-teal-500 text-white text-xs font-bold px-4 py-1.5 rounded-bl-xl">
@@ -212,7 +190,8 @@ export default function Landing() {
               </div>
               <CardContent className="pt-8 pb-8 px-8">
                 <h3 className="text-xl font-bold text-teal-700 mb-1">Pro</h3>
-                <p className="text-gray-500 text-sm mb-6">For serious breeders</p>
+                <p className="text-gray-500 text-sm mb-1">For serious breeders</p>
+                <p className="text-teal-600 text-sm font-medium mb-6">7-day free trial included</p>
                 <div className="mb-6">
                   <span className="text-4xl font-extrabold text-gray-900">$8.80</span>
                   <span className="text-gray-400 ml-1">AUD / month</span>
@@ -226,8 +205,9 @@ export default function Landing() {
                   ))}
                 </ul>
                 <Button className="w-full bg-teal-600 hover:bg-teal-700 text-white" onClick={() => setLocation("/register")}>
-                  Start free, upgrade anytime
+                  Start 7-day free trial
                 </Button>
+                <p className="text-xs text-center text-gray-400 mt-3">Have a coupon? Apply it at checkout for a forever discount.</p>
               </CardContent>
             </Card>
 
@@ -297,7 +277,7 @@ export default function Landing() {
             onClick={() => setLocation("/register")}
             className="bg-white text-teal-700 hover:bg-teal-50 text-base px-10 py-6 rounded-xl font-semibold shadow-lg"
           >
-            Create your free account <ChevronRight className="ml-2 w-5 h-5" />
+            Start your 7-day free trial <ChevronRight className="ml-2 w-5 h-5" />
           </Button>
         </div>
       </section>

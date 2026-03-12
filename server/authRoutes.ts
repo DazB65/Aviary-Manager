@@ -2,8 +2,9 @@ import type { Express, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import bcrypt from "bcryptjs";
 import { nanoid } from "nanoid";
+import Stripe from "stripe";
 import { getDb } from "./db";
-import { users } from "../drizzle/schema";
+import { users, birds, breedingPairs, broods, clutchEggs, events, userSettings, species } from "../drizzle/schema";
 import { eq, or } from "drizzle-orm";
 import { sendVerificationEmail, sendPasswordResetEmail } from "./email";
 import { sdk } from "./_core/sdk";
@@ -297,6 +298,55 @@ export function registerAuthRoutes(app: Express) {
       res.json({ success: true, message: "Verification email resent." });
     } catch (err) {
       console.error("[ResendVerification] Unexpected error:", err);
+      res.status(500).json({ error: "Something went wrong. Please try again." });
+    }
+  });
+
+  // ── DELETE /api/auth/account ──────────────────────────────────────────────
+  app.delete("/api/auth/account", async (req: Request, res: Response) => {
+    let user: Awaited<ReturnType<typeof sdk.authenticateRequest>>;
+    try {
+      user = await sdk.authenticateRequest(req);
+    } catch {
+      res.status(401).json({ error: "Unauthorised" }); return;
+    }
+
+    const db = await getDb();
+    if (!db) { res.status(500).json({ error: "Database unavailable" }); return; }
+
+    try {
+      // 1. Cancel active Stripe subscription so user isn't billed again
+      if (user.stripeSubscriptionId) {
+        try {
+          const stripeKey = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_PRIVATE_KEY;
+          if (stripeKey) {
+            const stripe = new Stripe(stripeKey, { apiVersion: "2026-01-28.clover" });
+            await stripe.subscriptions.cancel(user.stripeSubscriptionId);
+            console.log(`[DeleteAccount] Cancelled Stripe sub ${user.stripeSubscriptionId} for user ${user.id}`);
+          }
+        } catch (stripeErr) {
+          // Log but don't abort — continue deleting local data regardless
+          console.error("[DeleteAccount] Failed to cancel Stripe subscription:", stripeErr);
+        }
+      }
+
+      // 2. Delete all user data (FK-safe order: children before parents)
+      await db.delete(clutchEggs).where(eq(clutchEggs.userId, user.id));
+      await db.delete(events).where(eq(events.userId, user.id));
+      await db.delete(broods).where(eq(broods.userId, user.id));
+      await db.delete(breedingPairs).where(eq(breedingPairs.userId, user.id));
+      await db.delete(birds).where(eq(birds.userId, user.id));
+      await db.delete(species).where(eq(species.userId, user.id));   // custom species only
+      await db.delete(userSettings).where(eq(userSettings.userId, user.id));
+      await db.delete(users).where(eq(users.id, user.id));
+
+      console.log(`[DeleteAccount] All data deleted for user ${user.id}`);
+
+      // 3. Clear session cookie
+      res.clearCookie(COOKIE_NAME, getSessionCookieOptions());
+      res.json({ success: true });
+    } catch (err) {
+      console.error("[DeleteAccount] Unexpected error:", err);
       res.status(500).json({ error: "Something went wrong. Please try again." });
     }
   });
