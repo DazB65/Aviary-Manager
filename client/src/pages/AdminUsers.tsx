@@ -93,44 +93,6 @@ export default function AdminUsers() {
           </Card>
         </div>
 
-        {/* Top chat users today */}
-        {chatStats && chatStats.topUsers.length > 0 && (
-          <Card className="border border-border shadow-card">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-semibold">Top Chat Users Today</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border bg-muted/40">
-                      <th className="text-left font-medium text-muted-foreground px-4 py-2">User ID</th>
-                      <th className="text-left font-medium text-muted-foreground px-4 py-2">Messages Used</th>
-                      <th className="text-left font-medium text-muted-foreground px-4 py-2">Remaining</th>
-                      <th className="text-left font-medium text-muted-foreground px-4 py-2">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {chatStats.topUsers.map(u => (
-                      <tr key={u.userId} className="border-b border-border last:border-0">
-                        <td className="px-4 py-2 font-mono text-xs">{u.userId}</td>
-                        <td className="px-4 py-2">{u.count} / {chatStats.maxPerDay}</td>
-                        <td className="px-4 py-2">{u.remaining}</td>
-                        <td className="px-4 py-2">
-                          {u.remaining === 0
-                            ? <Badge className="text-xs bg-orange-100 text-orange-700 border-orange-200">Rate limited</Badge>
-                            : <Badge variant="outline" className="text-xs">Active</Badge>
-                          }
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         <Card className="border border-border shadow-card">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-semibold">All Users</CardTitle>
@@ -151,60 +113,81 @@ export default function AdminUsers() {
                       <th className="text-left font-medium text-muted-foreground px-4 py-3">Role</th>
                       <th className="text-left font-medium text-muted-foreground px-4 py-3">Joined</th>
                       <th className="text-left font-medium text-muted-foreground px-4 py-3">Last Seen</th>
+                      <th className="text-left font-medium text-muted-foreground px-4 py-3">Chat Today</th>
+                      <th className="text-left font-medium text-muted-foreground px-4 py-3">Model</th>
                       <th className="text-left font-medium text-muted-foreground px-4 py-3">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {users.map(u => (
-                      <tr key={u.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
-                        <td className="px-4 py-3 font-medium">{u.name || "—"}</td>
-                        <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
-                        <td className="px-4 py-3">
-                          {u.plan === "pro" ? (
-                            <Badge className="text-xs bg-yellow-400 text-yellow-900 hover:bg-yellow-400">Pro</Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-xs">Free</Badge>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          {u.role === "admin" ? (
-                            <Badge className="text-xs bg-primary text-primary-foreground">Admin</Badge>
-                          ) : (
-                            <Badge variant="secondary" className="text-xs">User</Badge>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground">
-                          {u.createdAt ? format(new Date(u.createdAt), "dd MMM yyyy") : "—"}
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground">
-                          {u.lastSignedIn ? format(new Date(u.lastSignedIn), "dd MMM yyyy") : "Never"}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-xs h-7"
-                              disabled={setPlan.isPending || deleteUser.isPending}
-                              onClick={() => setPlan.mutate({ userId: u.id, plan: u.plan === "pro" ? "free" : "pro" })}
-                            >
-                              {u.plan === "pro" ? "Downgrade to Free" : "Upgrade to Pro"}
-                            </Button>
-                            {u.id !== me?.id && (
+                    {users.map(u => {
+                      const chatEntry = chatStats?.topUsers.find(c => c.userId === u.id);
+                      return (
+                        <tr key={u.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                          <td className="px-4 py-3 font-medium">{u.name || "—"}</td>
+                          <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
+                          <td className="px-4 py-3">
+                            {u.plan === "pro" ? (
+                              <Badge className="text-xs bg-yellow-400 text-yellow-900 hover:bg-yellow-400">Pro</Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-xs">Free</Badge>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {u.role === "admin" ? (
+                              <Badge className="text-xs bg-primary text-primary-foreground">Admin</Badge>
+                            ) : (
+                              <Badge variant="secondary" className="text-xs">User</Badge>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground">
+                            {u.createdAt ? format(new Date(u.createdAt), "dd MMM yyyy") : "—"}
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground">
+                            {u.lastSignedIn ? format(new Date(u.lastSignedIn), "dd MMM yyyy") : "Never"}
+                          </td>
+                          <td className="px-4 py-3">
+                            {chatEntry ? (
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-medium">{chatEntry.count}</span>
+                                <span className="text-muted-foreground">/ {chatStats?.maxPerDay}</span>
+                                {chatEntry.remaining === 0 && (
+                                  <Badge className="text-xs bg-orange-100 text-orange-700 border-orange-200 ml-1">Maxed</Badge>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground font-mono text-xs">
+                            {chatEntry ? chatStats?.model : "—"}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
                               <Button
                                 size="sm"
-                                variant="ghost"
-                                className="text-xs h-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                disabled={deleteUser.isPending}
-                                onClick={() => handleDelete(u.id, u.email ?? "")}
+                                variant="outline"
+                                className="text-xs h-7"
+                                disabled={setPlan.isPending || deleteUser.isPending}
+                                onClick={() => setPlan.mutate({ userId: u.id, plan: u.plan === "pro" ? "free" : "pro" })}
                               >
-                                <Trash2 className="h-3.5 w-3.5" />
+                                {u.plan === "pro" ? "Downgrade to Free" : "Upgrade to Pro"}
                               </Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                              {u.id !== me?.id && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="text-xs h-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  disabled={deleteUser.isPending}
+                                  onClick={() => handleDelete(u.id, u.email ?? "")}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
