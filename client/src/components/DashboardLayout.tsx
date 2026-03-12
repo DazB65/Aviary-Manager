@@ -240,10 +240,10 @@ function DashboardLayoutContent({
             <button
               id="tour-ai-fab"
               onClick={() => setAiOpen(true)}
-              className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors mb-1"
+              className="w-full flex items-center justify-center hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-ring mb-1"
+              aria-label="Open Aviary Assistant"
             >
-              <img src="/aviary-assistant.svg" alt="Aviary Assistant" className="h-20 w-20 object-contain shrink-0" />
-              {!isCollapsed && <span>Aviary Assistant</span>}
+              <img src="/aviary-assistant.svg" alt="Aviary Assistant" className="w-full h-auto object-contain" />
             </button>
             {!isCollapsed && (
               <button
