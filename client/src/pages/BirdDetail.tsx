@@ -137,7 +137,7 @@ export default function BirdDetail() {
   const [, setLocation] = useLocation();
   const birdId = Number(params.id);
   const { user } = useAuth();
-  const maxGenerations = user?.plan === "pro" ? 5 : 1;
+  const maxGenerations = 5;
 
   const { data: bird, isLoading } = trpc.birds.get.useQuery({ id: birdId });
   const { data: speciesList = [] } = trpc.species.list.useQuery();

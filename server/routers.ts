@@ -80,16 +80,6 @@ export const appRouter = router({
         fromEggNumber: z.number().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        // Free plan: max 20 birds
-        if (ctx.user.plan === "free") {
-          const existing = await BirdService.getBirdsByUser(ctx.user.id);
-          if (existing.length >= 20) {
-            throw new TRPCError({
-              code: "FORBIDDEN",
-              message: "FREE_LIMIT_REACHED: Free plan is limited to 20 birds. Upgrade to Pro for unlimited birds.",
-            });
-          }
-        }
         return BirdService.createBird({ ...input, userId: ctx.user.id } as any);
       }),
     update: protectedProcedure
@@ -120,10 +110,7 @@ export const appRouter = router({
     pedigree: protectedProcedure
       .input(z.object({ id: z.number(), generations: z.number().min(1).max(5).default(5) }))
       .query(({ ctx, input }) => {
-        const isFree = ctx.user.plan === "free";
-        const maxGenForPlan = isFree ? 1 : 5;
-        const requestedGen = Math.min(input.generations, maxGenForPlan);
-        return PedigreeService.getPedigree(input.id, ctx.user.id, requestedGen);
+        return PedigreeService.getPedigree(input.id, ctx.user.id, input.generations);
       }),
     descendants: protectedProcedure
       .input(z.object({ id: z.number() }))
@@ -180,16 +167,9 @@ export const appRouter = router({
         notes: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        // Fetch all pairs once — used for both the free-plan limit check and duplicate detection
+        // Fetch all pairs once — used for duplicate detection
         const existing = await PairService.getPairsByUser(ctx.user.id);
 
-        // Free plan: max 5 breeding pairs
-        if (ctx.user.plan === "free" && existing.length >= 5) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "FREE_LIMIT_REACHED: Free plan is limited to 5 breeding pairs. Upgrade to Pro for unlimited pairs.",
-          });
-        }
         const duplicate = existing.find(
           (p: any) => p.maleId === input.maleId && p.femaleId === input.femaleId &&
             (p.season ?? null) === (input.season ?? null)
