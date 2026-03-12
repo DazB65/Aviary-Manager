@@ -113,8 +113,16 @@ export function registerStripeRoutes(app: Express) {
     }
 
     const { interval = "monthly" } = req.body as { interval?: "monthly" | "yearly" | "lifetime" };
-    const stripe = getStripe();
     const origin = req.headers.origin || "http://localhost:3000";
+
+    let stripe: Stripe;
+    try {
+      stripe = getStripe();
+    } catch (err: any) {
+      console.error("[Stripe] Init failed:", err);
+      res.status(500).json({ error: err?.message || "Stripe not configured" });
+      return;
+    }
 
     let priceData: Stripe.Checkout.SessionCreateParams.LineItem.PriceData;
 
