@@ -196,7 +196,7 @@ export function registerChatRoutes(app: Express) {
 
       const modelMessages = await convertToModelMessages(messages as any);
 
-      const modelName = process.env.OPENAI_MODEL || "gpt-4o";
+      const modelName = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
       const result = streamText({
         model: openai.chat(modelName),
