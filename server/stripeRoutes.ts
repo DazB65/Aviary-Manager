@@ -43,13 +43,6 @@ export function registerStripeRoutes(app: Express) {
         return;
       }
 
-      // Test event passthrough
-      if (event.id.startsWith("evt_test_")) {
-        console.log("[Webhook] Test event detected, returning verification response");
-        res.json({ verified: true });
-        return;
-      }
-
       console.log(`[Stripe Webhook] Event: ${event.type} (${event.id})`);
 
       const db = await getDb();
