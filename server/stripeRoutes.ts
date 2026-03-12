@@ -126,30 +126,37 @@ export function registerStripeRoutes(app: Express) {
       priceData = { currency: "usd", unit_amount: PRODUCTS.pro.priceMonthlyUsd, recurring: { interval: "month" as const } };
     }
 
-    const session = await stripe.checkout.sessions.create({
-      mode: interval === "lifetime" ? "payment" : "subscription",
-      payment_method_types: ["card"],
-      customer_email: user.email || undefined,
-      allow_promotion_codes: true,
-      client_reference_id: String(user.id),
-      metadata: {
-        user_id: String(user.id),
-        customer_email: user.email || "",
-        customer_name: user.name || "",
-      },
-      line_items: [{
-        price_data: {
-          ...priceData,
-          product_data: {
-            name: PRODUCTS.pro.name + (interval === "lifetime" ? " (Lifetime)" : ""),
-            description: PRODUCTS.pro.description,
-          },
+    let session;
+    try {
+      session = await stripe.checkout.sessions.create({
+        mode: interval === "lifetime" ? "payment" : "subscription",
+        payment_method_types: ["card"],
+        customer_email: user.email || undefined,
+        allow_promotion_codes: true,
+        client_reference_id: String(user.id),
+        metadata: {
+          user_id: String(user.id),
+          customer_email: user.email || "",
+          customer_name: user.name || "",
         },
-        quantity: 1,
-      }],
-      success_url: `${origin}/billing?success=1`,
-      cancel_url: `${origin}/billing?cancelled=1`,
-    });
+        line_items: [{
+          price_data: {
+            ...priceData,
+            product_data: {
+              name: PRODUCTS.pro.name + (interval === "lifetime" ? " (Lifetime)" : ""),
+              description: PRODUCTS.pro.description,
+            },
+          },
+          quantity: 1,
+        }],
+        success_url: `${origin}/billing?success=1`,
+        cancel_url: `${origin}/billing?cancelled=1`,
+      });
+    } catch (err: any) {
+      console.error("[Stripe] Checkout session creation failed:", err);
+      res.status(500).json({ error: err?.message || "Failed to create checkout session" });
+      return;
+    }
 
     res.json({ url: session.url });
   });
