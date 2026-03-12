@@ -184,7 +184,7 @@ export default function Landing() {
                 <p className="text-gray-500 text-sm mb-6">Great for getting started</p>
                 <div className="mb-6">
                   <span className="text-4xl font-extrabold text-gray-900">$0</span>
-                  <span className="text-gray-400 ml-1">/ forever</span>
+                  <span className="text-gray-400 ml-1">AUD / forever</span>
                 </div>
                 <ul className="space-y-3 mb-8">
                   {["Up to 20 birds", "Up to 5 breeding pairs", "Up to 10 broods", "3-gen pedigree view", "Event reminders"].map(f => (
@@ -209,8 +209,8 @@ export default function Landing() {
                 <p className="text-gray-500 text-sm mb-6">For serious breeders</p>
                 <div className="mb-6">
                   <span className="text-4xl font-extrabold text-gray-900">$7.99</span>
-                  <span className="text-gray-400 ml-1">/ month</span>
-                  <div className="text-sm text-teal-600 font-medium mt-1">or $79/year (save 17%)</div>
+                  <span className="text-gray-400 ml-1">AUD / month</span>
+                  <div className="text-sm text-teal-600 font-medium mt-1">or $79 AUD/year (save 17%)</div>
                 </div>
                 <ul className="space-y-3 mb-8">
                   {["Unlimited birds & pairs", "5-gen pedigree tree", "Inbreeding coefficient", "Sibling detection", "PDF pedigree export", "Photo uploads", "Priority support"].map(f => (
