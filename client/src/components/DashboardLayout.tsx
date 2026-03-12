@@ -242,7 +242,7 @@ function DashboardLayoutContent({
               onClick={() => setAiOpen(true)}
               className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors mb-1"
             >
-              <img src="/aviary-assistant.svg" alt="Aviary Assistant" className="h-5 w-5 object-contain shrink-0" />
+              <img src="/aviary-assistant.svg" alt="Aviary Assistant" className="h-20 w-20 object-contain shrink-0" />
               {!isCollapsed && <span>Aviary Assistant</span>}
             </button>
             {!isCollapsed && (
