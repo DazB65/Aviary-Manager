@@ -121,7 +121,7 @@ export default function Billing() {
                 </div>
               </div>
             </div>
-            {isPro && user?.stripeCustomerId && (
+            {isPro && (
               <Button variant="outline" onClick={handlePortal} disabled={loadingPortal}>
                 {loadingPortal && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Manage Subscription

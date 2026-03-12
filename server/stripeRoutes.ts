@@ -164,16 +164,27 @@ export function registerStripeRoutes(app: Express) {
       return;
     }
 
-    if (!user.stripeCustomerId) {
-      res.status(400).json({ error: "No active subscription found" });
-      return;
-    }
-
     const stripe = getStripe();
     const origin = req.headers.origin || "http://localhost:3000";
+    const db = await getDb();
+    if (!db) { res.status(500).json({ error: "DB unavailable" }); return; }
+
+    let customerId = user.stripeCustomerId;
+
+    // If user has no Stripe customer yet (e.g. manually upgraded via admin),
+    // create one now so the billing portal always works.
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: user.email || undefined,
+        name: user.name || undefined,
+        metadata: { user_id: String(user.id) },
+      });
+      customerId = customer.id;
+      await db.update(users).set({ stripeCustomerId: customerId }).where(eq(users.id, user.id));
+    }
 
     const session = await stripe.billingPortal.sessions.create({
-      customer: user.stripeCustomerId,
+      customer: customerId,
       return_url: `${origin}/billing`,
     });
 
