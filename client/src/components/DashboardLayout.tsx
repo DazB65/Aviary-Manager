@@ -318,7 +318,7 @@ function DashboardLayoutContent({
             aria-label="Open AI Assistant"
             className="fixed bottom-6 right-6 z-50 transition-transform hover:scale-110 drop-shadow-xl"
           >
-            <img src="/logo-color.svg" alt="Aviary Assistant" className="h-20 w-20 object-contain" />
+            <img src="/aviary-assistant.svg" alt="Aviary Assistant" className="h-20 w-20 object-contain" />
           </button>
         </SheetTrigger>
         <SheetContent side="right" className="w-[400px] sm:w-[540px] p-0 flex flex-col border-l">
