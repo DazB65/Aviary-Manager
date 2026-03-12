@@ -15,11 +15,9 @@ export default function Login() {
   }, [user, loading, setLocation]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-teal-50">
-      <div className="w-full max-w-md px-8 py-12 bg-white rounded-2xl shadow-elevated text-center space-y-8">
-        <div>
-          <img src="/logo-color.svg" alt="Aviary Manager" className="w-full h-auto mx-auto" />
-        </div>
+    <div className="min-h-screen flex flex-col items-center justify-center gap-8 bg-gradient-to-br from-amber-50 via-orange-50 to-teal-50 px-4">
+      <img src="/logo-color.svg" alt="Aviary Manager" className="w-72 h-auto" />
+      <div className="w-full max-w-sm px-8 py-10 bg-white rounded-2xl shadow-elevated text-center space-y-6">
         <Button
           size="lg"
           className="w-full bg-primary hover:bg-primary/90 text-white font-semibold shadow-md"
