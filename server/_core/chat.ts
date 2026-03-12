@@ -181,6 +181,7 @@ export function registerChatRoutes(app: Express) {
       const limit = checkChatRateLimit(user.id);
       if (!limit.allowed) {
         const resetsIn = Math.ceil((limit.resetAt - Date.now()) / 1000 / 60 / 60);
+        console.warn(`[chat:ratelimit] userId=${user.id} hit daily limit (${CHAT_MAX_PER_DAY}/day), resets in ~${resetsIn}h`);
         res.status(429).json({
           error: `Daily message limit reached (${CHAT_MAX_PER_DAY}/day). Resets in ~${resetsIn}h.`,
         });
@@ -197,6 +198,7 @@ export function registerChatRoutes(app: Express) {
       const modelMessages = await convertToModelMessages(messages as any);
 
       const modelName = process.env.OPENAI_MODEL || "gpt-4o-mini";
+      console.log(`[chat] userId=${user.id} model=${modelName} remaining=${limit.remaining}/${CHAT_MAX_PER_DAY}`);
 
       const result = streamText({
         model: openai.chat(modelName),
@@ -209,7 +211,7 @@ export function registerChatRoutes(app: Express) {
 
       result.pipeUIMessageStreamToResponse(res);
     } catch (error) {
-      console.error("[/api/chat] Error:", error);
+      console.error(`[chat:error] userId=${(await sdk.authenticateRequest(req).catch(() => null))?.id ?? "unknown"} error:`, error);
       if (!res.headersSent) {
         res.status(500).json({ error: "Internal server error" });
       }
@@ -218,3 +220,31 @@ export function registerChatRoutes(app: Express) {
 }
 
 export { tools };
+
+// ── Admin: expose live chat usage stats ──────────────────────────────────────
+export function getChatStats() {
+  const now = Date.now();
+  const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
+
+  let totalMessages = 0;
+  let rateLimitedUsers = 0;
+  const topUsers: Array<{ userId: number; count: number; remaining: number }> = [];
+
+  for (const [userId, entry] of chatUsage.entries()) {
+    if (now > entry.resetAt) continue; // window expired, skip
+    totalMessages += entry.count;
+    if (entry.count >= CHAT_MAX_PER_DAY) rateLimitedUsers++;
+    topUsers.push({ userId, count: entry.count, remaining: Math.max(0, CHAT_MAX_PER_DAY - entry.count) });
+  }
+
+  topUsers.sort((a, b) => b.count - a.count);
+
+  return {
+    model,
+    maxPerDay: CHAT_MAX_PER_DAY,
+    activeUsersToday: topUsers.length,
+    totalMessagesToday: totalMessages,
+    rateLimitedUsers,
+    topUsers: topUsers.slice(0, 10),
+  };
+}

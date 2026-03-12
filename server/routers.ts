@@ -13,6 +13,7 @@ import { SettingsService } from "./services/settingsService";
 import { StatsService } from "./services/statsService";
 import { UserService } from "./services/userService";
 import { PedigreeService } from "./services/pedigreeService";
+import { getChatStats } from "./_core/chat";
 
 import { storagePut } from "./storage";
 import { nanoid } from "nanoid";
@@ -421,6 +422,7 @@ export const appRouter = router({
   // ─── Admin ──────────────────────────────────────────────────────────
   admin: router({
     users: adminProcedure.query(() => UserService.getAllUsers()),
+    chatStats: adminProcedure.query(() => getChatStats()),
     setPlan: adminProcedure
       .input(z.object({ userId: z.number(), plan: z.enum(["free", "pro"]) }))
       .mutation(({ input }) => UserService.setUserPlan(input.userId, input.plan)),

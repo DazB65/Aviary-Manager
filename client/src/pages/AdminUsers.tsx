@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Users, Trash2 } from "lucide-react";
+import { Users, Trash2, MessageSquare, Cpu, AlertTriangle, Activity } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -12,6 +12,7 @@ export default function AdminUsers() {
   const { user: me } = useAuth();
   const utils = trpc.useUtils();
   const { data: users, isLoading, error } = trpc.admin.users.useQuery();
+  const { data: chatStats } = trpc.admin.chatStats.useQuery(undefined, { refetchInterval: 30_000 });
   const setPlan = trpc.admin.setPlan.useMutation({
     onSuccess: () => { utils.admin.users.invalidate(); toast.success("Plan updated!"); },
     onError: (e) => toast.error(e.message),
@@ -51,6 +52,84 @@ export default function AdminUsers() {
             {isLoading ? "Loading..." : `${users?.length ?? 0} registered user${(users?.length ?? 0) !== 1 ? "s" : ""}`}
           </p>
         </div>
+
+        {/* AI Chat Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Card className="border border-border shadow-sm">
+            <CardContent className="p-4 flex items-center gap-3">
+              <Cpu className="h-5 w-5 text-teal-600 shrink-0" />
+              <div>
+                <p className="text-xs text-muted-foreground">AI Model</p>
+                <p className="text-sm font-semibold">{chatStats?.model ?? "—"}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border border-border shadow-sm">
+            <CardContent className="p-4 flex items-center gap-3">
+              <MessageSquare className="h-5 w-5 text-blue-500 shrink-0" />
+              <div>
+                <p className="text-xs text-muted-foreground">Messages Today</p>
+                <p className="text-sm font-semibold">{chatStats?.totalMessagesToday ?? 0}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border border-border shadow-sm">
+            <CardContent className="p-4 flex items-center gap-3">
+              <Activity className="h-5 w-5 text-green-500 shrink-0" />
+              <div>
+                <p className="text-xs text-muted-foreground">Active Chat Users</p>
+                <p className="text-sm font-semibold">{chatStats?.activeUsersToday ?? 0}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border border-border shadow-sm">
+            <CardContent className="p-4 flex items-center gap-3">
+              <AlertTriangle className={`h-5 w-5 shrink-0 ${(chatStats?.rateLimitedUsers ?? 0) > 0 ? "text-orange-500" : "text-muted-foreground"}`} />
+              <div>
+                <p className="text-xs text-muted-foreground">Rate Limited</p>
+                <p className="text-sm font-semibold">{chatStats?.rateLimitedUsers ?? 0} users</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Top chat users today */}
+        {chatStats && chatStats.topUsers.length > 0 && (
+          <Card className="border border-border shadow-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-semibold">Top Chat Users Today</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/40">
+                      <th className="text-left font-medium text-muted-foreground px-4 py-2">User ID</th>
+                      <th className="text-left font-medium text-muted-foreground px-4 py-2">Messages Used</th>
+                      <th className="text-left font-medium text-muted-foreground px-4 py-2">Remaining</th>
+                      <th className="text-left font-medium text-muted-foreground px-4 py-2">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {chatStats.topUsers.map(u => (
+                      <tr key={u.userId} className="border-b border-border last:border-0">
+                        <td className="px-4 py-2 font-mono text-xs">{u.userId}</td>
+                        <td className="px-4 py-2">{u.count} / {chatStats.maxPerDay}</td>
+                        <td className="px-4 py-2">{u.remaining}</td>
+                        <td className="px-4 py-2">
+                          {u.remaining === 0
+                            ? <Badge className="text-xs bg-orange-100 text-orange-700 border-orange-200">Rate limited</Badge>
+                            : <Badge variant="outline" className="text-xs">Active</Badge>
+                          }
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="border border-border shadow-card">
           <CardHeader className="pb-3">
