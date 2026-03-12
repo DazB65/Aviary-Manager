@@ -144,7 +144,7 @@ export default function AuthPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex justify-center mb-8">
-          <img src="/logo-color.svg" alt="Aviary Manager" className="w-64 h-auto" />
+          <img src="/logo.svg" alt="Aviary Manager" className="w-64 h-auto" />
         </div>
 
         {/* Verified success banner */}
