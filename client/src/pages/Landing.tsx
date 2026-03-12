@@ -258,7 +258,7 @@ export default function Landing() {
       {/* CTA */}
       <section className="px-6 py-24 bg-gradient-to-br from-teal-600 to-teal-800 text-white text-center">
         <div className="max-w-2xl mx-auto">
-          <Bird className="w-12 h-12 mx-auto mb-6 opacity-80" />
+          <img src="/logo.svg" alt="" className="w-16 h-16 mx-auto mb-6 opacity-80" />
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to take control of your aviary?</h2>
           <p className="text-teal-100 text-lg mb-8">Join breeders who are already saving time and keeping better records.</p>
           <Button
