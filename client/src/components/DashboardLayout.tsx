@@ -28,7 +28,7 @@ import { useLocation } from "wouter";
 import { useAppTour } from "@/hooks/useAppTour";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
-import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "./ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from "./ui/sheet";
 import { AIChatBox } from "./AIChatBox";
 
 const mainMenuItems = [
@@ -112,6 +112,7 @@ function DashboardLayoutContent({
   const isAdmin = user?.role === "admin";
   const isPro = user?.plan === "pro";
   const { startTour, maybeStartTour, hasTourBeenSkipped } = useAppTour();
+  const [aiOpen, setAiOpen] = useState(false);
 
   useEffect(() => {
     maybeStartTour();
@@ -235,6 +236,15 @@ function DashboardLayoutContent({
           </SidebarContent>
 
           <SidebarFooter className="p-3">
+            {/* AI Assistant button */}
+            <button
+              id="tour-ai-fab"
+              onClick={() => setAiOpen(true)}
+              className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors mb-1"
+            >
+              <img src="/aviary-assistant.svg" alt="Aviary Assistant" className="h-5 w-5 object-contain shrink-0" />
+              {!isCollapsed && <span>Aviary Assistant</span>}
+            </button>
             {!isCollapsed && (
               <button
                 onClick={startTour}
@@ -310,18 +320,8 @@ function DashboardLayoutContent({
         <main className="flex-1 p-4">{children}</main>
       </SidebarInset>
 
-      {/* AI Assistant FAB & Sheet */}
-      <Sheet>
-        <SheetTrigger asChild>
-          <button
-            id="tour-ai-fab"
-            aria-label="Open AI Assistant"
-            className="fixed bottom-6 right-6 z-50 flex flex-col items-center gap-1 transition-transform hover:scale-110 drop-shadow-xl"
-          >
-            <span className="text-xs font-semibold text-primary bg-white/80 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-sm">Aviary Assistant</span>
-            <img src="/aviary-assistant.svg" alt="Aviary Assistant" className="h-20 w-20 object-contain" />
-          </button>
-        </SheetTrigger>
+      {/* AI Assistant Sheet */}
+      <Sheet open={aiOpen} onOpenChange={setAiOpen}>
         <SheetContent side="right" className="w-[400px] sm:w-[540px] p-0 flex flex-col border-l">
           <div className="flex bg-primary/10 p-4 items-center gap-3 border-b">
             <img src="/logo-color.svg" alt="Aviary Manager" className="h-10 w-10 object-contain shrink-0" />
