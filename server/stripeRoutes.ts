@@ -177,19 +177,41 @@ export function registerStripeRoutes(app: Express) {
       return;
     }
 
-    if (!user.stripeCustomerId) {
+    const stripe = getStripe();
+    const origin = req.headers.origin || "http://localhost:3000";
+
+    let customerId = user.stripeCustomerId;
+
+    // Fallback: if we don't have a stored customerId (e.g. webhook failed on an earlier purchase),
+    // look the customer up in Stripe by email and save it for next time.
+    if (!customerId && user.email) {
+      console.log(`[Stripe] No stripeCustomerId for user ${user.id}, searching Stripe by email: ${user.email}`);
+      const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+      if (customers.data.length > 0) {
+        customerId = customers.data[0].id;
+        console.log(`[Stripe] Found customer ${customerId} by email, saving to DB`);
+        const db = await getDb();
+        if (db) {
+          await db.update(users).set({ stripeCustomerId: customerId }).where(eq(users.id, user.id));
+        }
+      }
+    }
+
+    if (!customerId) {
+      console.warn(`[Stripe] No customer found for user ${user.id} (email: ${user.email})`);
       res.status(400).json({ error: "No active subscription found" });
       return;
     }
 
-    const stripe = getStripe();
-    const origin = req.headers.origin || "http://localhost:3000";
-
-    const session = await stripe.billingPortal.sessions.create({
-      customer: user.stripeCustomerId,
-      return_url: `${origin}/billing`,
-    });
-
-    res.json({ url: session.url });
+    try {
+      const session = await stripe.billingPortal.sessions.create({
+        customer: customerId,
+        return_url: `${origin}/billing`,
+      });
+      res.json({ url: session.url });
+    } catch (err: any) {
+      console.error("[Stripe] Portal session creation failed:", err);
+      res.status(500).json({ error: err?.message || "Failed to create portal session" });
+    }
   });
 }
