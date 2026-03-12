@@ -138,6 +138,8 @@ export function registerStripeRoutes(app: Express) {
         mode: interval === "lifetime" ? "payment" : "subscription",
         payment_method_types: ["card"],
         customer_email: user.email || undefined,
+        // Always create a customer record so we can find them later via the billing portal fallback
+        ...(interval === "lifetime" ? { customer_creation: "always" } : {}),
         allow_promotion_codes: true,
         client_reference_id: String(user.id),
         metadata: {

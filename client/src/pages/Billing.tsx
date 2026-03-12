@@ -37,6 +37,8 @@ export default function Billing() {
   const [billingInterval, setBillingInterval] = useState<"monthly" | "yearly" | "lifetime">("yearly");
 
   const isPro = user?.plan === "pro";
+  // Lifetime users have Pro but no stripeSubscriptionId (one-time payment, not a subscription)
+  const isLifetime = isPro && !user?.stripeSubscriptionId;
 
   // Check for success/cancel from Stripe redirect
   const params = new URLSearchParams(window.location.search);
@@ -121,7 +123,13 @@ export default function Billing() {
                 </div>
               </div>
             </div>
-            {isPro && (
+            {isPro && isLifetime && (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-teal-100 border border-teal-300 text-teal-800 text-sm font-medium">
+                <Zap className="w-4 h-4 text-teal-600 shrink-0" />
+                Lifetime Access
+              </div>
+            )}
+            {isPro && !isLifetime && (
               <Button variant="outline" onClick={handlePortal} disabled={loadingPortal}>
                 {loadingPortal && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Manage Subscription
