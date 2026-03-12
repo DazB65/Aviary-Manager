@@ -143,7 +143,7 @@ export default function Landing() {
                 Sign in
               </Button>
             </div>
-            <p className="mt-4 text-sm text-gray-400">7-day free trial. No credit card required to start.</p>
+            <p className="mt-4 text-sm text-gray-400">7-day free trial. Card required — no charge until day 8.</p>
           </div>
         </div>
       </section>
@@ -180,7 +180,7 @@ export default function Landing() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Simple, honest pricing</h2>
-            <p className="text-lg text-gray-500">Try free for 7 days. No credit card required.</p>
+            <p className="text-lg text-gray-500">Try free for 7 days. Card required — no charge until day 8.</p>
           </div>
           <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
             {/* Pro */}
