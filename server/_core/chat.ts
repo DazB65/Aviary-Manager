@@ -145,6 +145,28 @@ const tools = (userId: number) => ({
  * registerChatRoutes(app);
  * ```
  */
+// ── Per-user daily chat rate limiter (in-memory) ──────────────────────────────
+const CHAT_MAX_PER_DAY = 20;
+const chatUsage = new Map<number, { count: number; resetAt: number }>();
+
+function checkChatRateLimit(userId: number): { allowed: boolean; remaining: number; resetAt: number } {
+  const now = Date.now();
+  const windowMs = 24 * 60 * 60 * 1000; // 24 hours
+
+  const entry = chatUsage.get(userId);
+  if (!entry || now > entry.resetAt) {
+    chatUsage.set(userId, { count: 1, resetAt: now + windowMs });
+    return { allowed: true, remaining: CHAT_MAX_PER_DAY - 1, resetAt: now + windowMs };
+  }
+
+  if (entry.count >= CHAT_MAX_PER_DAY) {
+    return { allowed: false, remaining: 0, resetAt: entry.resetAt };
+  }
+
+  entry.count++;
+  return { allowed: true, remaining: CHAT_MAX_PER_DAY - entry.count, resetAt: entry.resetAt };
+}
+
 export function registerChatRoutes(app: Express) {
   const openai = createLLMProvider();
 
@@ -153,6 +175,15 @@ export function registerChatRoutes(app: Express) {
       const user = await sdk.authenticateRequest(req);
       if (!user) {
         res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const limit = checkChatRateLimit(user.id);
+      if (!limit.allowed) {
+        const resetsIn = Math.ceil((limit.resetAt - Date.now()) / 1000 / 60 / 60);
+        res.status(429).json({
+          error: `Daily message limit reached (${CHAT_MAX_PER_DAY}/day). Resets in ~${resetsIn}h.`,
+        });
         return;
       }
 
