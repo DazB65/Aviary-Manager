@@ -19,6 +19,8 @@ import Cages from "./pages/Cages";
 import Statistics from "./pages/Statistics";
 import AdminUsers from "./pages/AdminUsers";
 import Help from "./pages/Help";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 
 function Router() {
   return (
@@ -40,6 +42,8 @@ function Router() {
       <Route path="/register" component={AuthPage} />
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/verify-email" component={AuthPage} />
+      <Route path="/terms" component={Terms} />
+      <Route path="/privacy" component={Privacy} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

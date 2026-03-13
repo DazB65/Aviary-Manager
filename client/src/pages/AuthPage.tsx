@@ -343,7 +343,10 @@ export default function AuthPage() {
                         Create Free Account
                       </Button>
                       <p className="text-xs text-center text-gray-500">
-                        By signing up you agree to our Terms of Service and Privacy Policy.
+                        By signing up you agree to our{" "}
+                        <button type="button" onClick={() => setLocation("/terms")} className="underline hover:text-gray-800 transition-colors">Terms of Service</button>
+                        {" "}and{" "}
+                        <button type="button" onClick={() => setLocation("/privacy")} className="underline hover:text-gray-800 transition-colors">Privacy Policy</button>.
                       </p>
                     </form>
                   )}

@@ -288,9 +288,11 @@ export default function Landing() {
           <span className="text-white font-semibold">Aviary Manager</span>
         </div>
         <p>© {new Date().getFullYear()} Aviary Manager. All rights reserved.</p>
-        <div className="flex justify-center gap-6 mt-4">
+        <div className="flex flex-wrap justify-center gap-6 mt-4">
           <button onClick={() => setLocation("/login")} className="hover:text-white transition-colors">Sign in</button>
           <button onClick={() => setLocation("/register")} className="hover:text-white transition-colors">Register</button>
+          <button onClick={() => setLocation("/terms")} className="hover:text-white transition-colors">Terms of Service</button>
+          <button onClick={() => setLocation("/privacy")} className="hover:text-white transition-colors">Privacy Policy</button>
           <a href="mailto:aviarymanager@icloud.com" className="hover:text-white transition-colors">Contact</a>
         </div>
       </footer>

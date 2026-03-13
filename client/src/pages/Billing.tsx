@@ -254,9 +254,25 @@ export default function Billing() {
           </Card>
         )}
 
+        {/* Support & Legal */}
+        <Card className="border border-gray-100 shadow-sm">
+          <CardContent className="pt-5 pb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-gray-800">Need help?</p>
+              <p className="text-sm text-gray-500 mt-0.5">Questions about billing, your plan, or anything else.</p>
+            </div>
+            <a
+              href="mailto:aviarymanager@icloud.com"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-teal-200 text-teal-700 text-sm font-medium hover:bg-teal-50 transition-colors shrink-0"
+            >
+              Contact Support
+            </a>
+          </CardContent>
+        </Card>
         <p className="text-xs text-center text-gray-400">
-          Questions about your plan? Email us at{" "}
-          <a href="mailto:aviarymanager@icloud.com" className="underline hover:text-gray-600 transition-colors">aviarymanager@icloud.com</a>
+          <button onClick={() => navigate("/terms")} className="underline hover:text-gray-600 transition-colors">Terms of Service</button>
+          {" · "}
+          <button onClick={() => navigate("/privacy")} className="underline hover:text-gray-600 transition-colors">Privacy Policy</button>
         </p>
 
         {/* Danger Zone */}
