@@ -4,24 +4,44 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    <title>Aviary Manager</title>
-    <!-- THIS IS THE START OF A COMMENT BLOCK, BLOCK TO BE DELETED: Google Fonts here, example:
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    THIS IS THE END OF A COMMENT BLOCK, BLOCK TO BE DELETED -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aviary Manager — Bird & Aviary Record Keeping</title>
+
+    <!-- Primary Meta -->
+    <meta name="description" content="Aviary Manager helps bird breeders track flocks, manage breeding pairs, record clutches, view pedigrees and get AI-powered genetic pairing advice. Start your free 7-day trial." />
+    <meta name="author" content="Aviary Manager" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://aviarymanager.app/" />
+    <meta property="og:title" content="Aviary Manager — Bird & Aviary Record Keeping" />
+    <meta property="og:description" content="Track your flock, manage breeding pairs, record clutches and get AI pairing advice. The complete aviary management tool for serious breeders." />
+    <meta property="og:image" content="https://aviarymanager.app/logo-color.svg" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Aviary Manager — Bird & Aviary Record Keeping" />
+    <meta name="twitter:description" content="Track your flock, manage breeding pairs, record clutches and get AI pairing advice." />
+    <meta name="twitter:image" content="https://aviarymanager.app/logo-color.svg" />
   </head>
 
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <script
-      defer
-      src="%VITE_ANALYTICS_ENDPOINT%/umami"
-      data-website-id="%VITE_ANALYTICS_WEBSITE_ID%"></script>
+    <!-- Analytics: only loads when env vars are substituted at build time -->
+    <script>
+      (function () {
+        var ep = "%VITE_ANALYTICS_ENDPOINT%";
+        var id = "%VITE_ANALYTICS_WEBSITE_ID%";
+        if (ep && !ep.startsWith("%") && id && !id.startsWith("%")) {
+          var s = document.createElement("script");
+          s.defer = true;
+          s.src = ep + "/umami";
+          s.setAttribute("data-website-id", id);
+          document.head.appendChild(s);
+        }
+      })();
+    </script>
   </body>
 
 </html>

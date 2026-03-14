@@ -1,10 +1,11 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useLocation } from "wouter";
 import {
   Bird, Egg, Heart, TreePine, CalendarDays, FileText,
-  Check, Star, ChevronRight, Dna, Users
+  Check, Star, ChevronRight, Dna, Users, Menu, X
 } from "lucide-react";
 
 const FEATURES = [
@@ -81,6 +82,7 @@ const TESTIMONIALS = [
 
 export default function Landing() {
   const [, setLocation] = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-white font-sans">
@@ -88,15 +90,44 @@ export default function Landing() {
       <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-gray-100 px-6 py-3">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <span className="text-lg font-bold text-gray-800 tracking-tight">Aviary Manager</span>
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" onClick={() => setLocation("/login")} className="text-gray-600">
+
+          {/* Desktop nav */}
+          <div className="hidden sm:flex items-center gap-3">
+            <Button variant="ghost" onClick={() => setLocation("/login")} className="text-gray-600 min-h-[44px]">
               Sign in
             </Button>
-            <Button onClick={() => setLocation("/register")} className="bg-teal-600 hover:bg-teal-700 text-white">
+            <Button onClick={() => setLocation("/register")} className="bg-teal-600 hover:bg-teal-700 text-white min-h-[44px]">
               Start free trial
             </Button>
           </div>
+
+          {/* Mobile hamburger */}
+          <button
+            className="sm:hidden flex items-center justify-center w-11 h-11 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+            onClick={() => setMenuOpen(o => !o)}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+          >
+            {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
         </div>
+
+        {/* Mobile dropdown */}
+        {menuOpen && (
+          <div className="sm:hidden border-t border-gray-100 mt-3 pt-3 pb-2 flex flex-col gap-2">
+            <button
+              onClick={() => { setMenuOpen(false); setLocation("/login"); }}
+              className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg transition-colors min-h-[44px] flex items-center"
+            >
+              Sign in
+            </button>
+            <button
+              onClick={() => { setMenuOpen(false); setLocation("/register"); }}
+              className="w-full text-left px-4 py-3 text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors min-h-[44px] flex items-center"
+            >
+              Start free trial
+            </button>
+          </div>
+        )}
       </nav>
 
       {/* Hero */}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,8 +12,16 @@ import { trpc } from "@/lib/trpc";
 type AuthTab = "login" | "register";
 
 export default function AuthPage() {
-  const [, setLocation] = useLocation();
-  const [tab, setTab] = useState<AuthTab>("login");
+  const [location, setLocation] = useLocation();
+  const [tab, setTab] = useState<AuthTab>(() =>
+    location === "/register" ? "register" : "login"
+  );
+
+  // Sync tab when navigating directly to /register or /login
+  useEffect(() => {
+    if (location === "/register") setTab("register");
+    else if (location === "/login") setTab("login");
+  }, [location]);
 
   // Login state
   const [loginEmail, setLoginEmail] = useState("");
