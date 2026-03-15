@@ -275,9 +275,10 @@ export const appRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         const { incubationDays, ...rest } = input;
-        const fertilityCheckDate = rest.layDate ? addDays(rest.layDate, 7) : undefined;
-        let expectedHatchDate = undefined;
-        if (rest.layDate) expectedHatchDate = addDays(rest.layDate, incubationDays);
+        // Default to today if no lay date provided
+        const baseDate = rest.layDate || new Date().toISOString().split("T")[0];
+        const fertilityCheckDate = addDays(baseDate, 7);
+        const expectedHatchDate = addDays(baseDate, incubationDays);
 
         const brood = await BroodService.createBrood({ ...rest, fertilityCheckDate, expectedHatchDate, userId: ctx.user.id } as any);
         await EventService.syncBroodEvents(ctx.user.id, rest.pairId, brood.id, fertilityCheckDate, expectedHatchDate);
@@ -337,13 +338,17 @@ export const appRouter = router({
     backfillEvents: activeProcedure.mutation(async ({ ctx }) => {
       const allBroods = await BroodService.getBroodsByUser(ctx.user.id);
       for (const brood of allBroods) {
-        const fDate = brood.fertilityCheckDate ? String(brood.fertilityCheckDate).split("T")[0] : undefined;
-        const hDate = brood.expectedHatchDate ? String(brood.expectedHatchDate).split("T")[0] : undefined;
-        if (fDate || hDate) {
-          await EventService.syncBroodEvents(ctx.user.id, brood.pairId, brood.id, fDate, hDate);
+        let fDate = brood.fertilityCheckDate ? String(brood.fertilityCheckDate).split("T")[0] : undefined;
+        let hDate = brood.expectedHatchDate ? String(brood.expectedHatchDate).split("T")[0] : undefined;
+        // Fall back to createdAt if no dates exist
+        if (!fDate && !hDate) {
+          const base = String(brood.createdAt).split("T")[0];
+          fDate = addDays(base, 7);
+          hDate = addDays(base, 14);
         }
+        await EventService.syncBroodEvents(ctx.user.id, brood.pairId, brood.id, fDate, hDate);
       }
-      return { synced: allBroods.filter(b => b.fertilityCheckDate || b.expectedHatchDate).length };
+      return { synced: allBroods.length };
     }),
   }),
 
