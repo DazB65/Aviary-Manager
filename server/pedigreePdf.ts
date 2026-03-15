@@ -95,8 +95,8 @@ function birdLines(b: PedigreeBird | null | undefined, species?: string): string
   const ls: string[] = [];
   if (b.name)          ls.push(b.name);
   if (b.ringId)        ls.push(`Ring: ${b.ringId}`);
-  if (species)         ls.push(species);
   if (b.colorMutation) ls.push(b.colorMutation);
+  if (species)         ls.push(species);
   return ls.length ? ls : ["Unknown"];
 }
 
