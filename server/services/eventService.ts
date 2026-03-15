@@ -1,6 +1,6 @@
 import { and, eq, asc, desc, sql, inArray } from "drizzle-orm";
 import { getDb } from "../db";
-import { events, type InsertEvent } from "../../drizzle/schema";
+import { events, birds, breedingPairs, type InsertEvent } from "../../drizzle/schema";
 
 export class EventService {
     static async getEventsByUser(userId: number) {
@@ -60,15 +60,32 @@ export class EventService {
         const fSeries = `brood-${broodId}-fertility`;
         const hSeries = `brood-${broodId}-hatch`;
 
+        // Build descriptive title: "Event - MaleName x FemaleName - Cage"
+        let pairLabel = `Pair #${pairId}`;
+        let cageLabel = "";
+        if (pairId) {
+            const [pair] = await db.select().from(breedingPairs).where(eq(breedingPairs.id, pairId)).limit(1);
+            if (pair) {
+                const [male] = await db.select().from(birds).where(eq(birds.id, pair.maleId)).limit(1);
+                const [female] = await db.select().from(birds).where(eq(birds.id, pair.femaleId)).limit(1);
+                const maleName = male?.name || male?.ringId || `Bird #${pair.maleId}`;
+                const femaleName = female?.name || female?.ringId || `Bird #${pair.femaleId}`;
+                pairLabel = `${maleName} x ${femaleName}`;
+                const cage = male?.cageNumber || female?.cageNumber;
+                if (cage) cageLabel = ` - ${cage}`;
+            }
+        }
+
+        const titleSuffix = ` - ${pairLabel}${cageLabel}`;
+
         // Clear previous auto-events for this specific brood
         await db.delete(events).where(and(eq(events.userId, userId), inArray(events.seriesId, [fSeries, hSeries])));
 
-        // Insert new ones if dates exist
         if (fertilityDate) {
             await db.insert(events).values({
                 userId,
-                title: `Fertility Check - Brood #${broodId}`,
-                notes: `Auto-generated fertility check for pair #${pairId}, brood #${broodId}.`,
+                title: `Fertility Check${titleSuffix}`,
+                notes: `Auto-generated fertility check for ${pairLabel}.`,
                 eventDate: fertilityDate,
                 eventType: "other",
                 pairId,
@@ -79,8 +96,8 @@ export class EventService {
         if (hatchDate) {
             await db.insert(events).values({
                 userId,
-                title: `Expected Hatch - Brood #${broodId}`,
-                notes: `Auto-generated expected hatch for pair #${pairId}, brood #${broodId}.`,
+                title: `Expected Hatch${titleSuffix}`,
+                notes: `Auto-generated expected hatch for ${pairLabel}.`,
                 eventDate: hatchDate,
                 eventType: "other",
                 pairId,
