@@ -65,14 +65,14 @@ const CT    = HDR_H + 3;                  // 53  – content area top y
 const CB    = PH - FTR_H;                 // ~569 – content area bottom y
 
 // ── Tree sub-layout ───────────────────────────────────────────────────────────
-const GEN_HDR = 16;                       // column header row height
-const TR_TOP  = CT + GEN_HDR;             // 69  – tree rows start y
-const TR_H    = CB - TR_TOP;              // ~500 – tree rows height
-const GENS    = 5;
-const COL_W   = TP_W / GENS;             // ~121
-const CARD_W  = COL_W - 10;              // ~111
-const CARD_H  = 26;                       // compact card height (fits 16 slots)
-const CARD_R  = 3;
+const GEN_HDR = 22;                       // column header row height
+const TR_TOP  = CT + GEN_HDR;             // 75  – tree rows start y
+const TR_H    = CB - TR_TOP;              // ~494 – tree rows height
+const GENS    = 4;                        // Subject → Parents → Grandparents → Gt-grandparents
+const COL_W   = TP_W / GENS;             // ~151
+const CARD_W  = COL_W - 10;              // ~141
+const CARD_H  = 56;                       // tall card — fills most of each slot
+const CARD_R  = 4;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function gc(g: string)   { return g === "male" ? C.male   : g === "female" ? C.female   : C.unknown; }
@@ -148,16 +148,16 @@ function drawHeader(
 
   const species = subject?.speciesId ? sMap[subject.speciesId]?.commonName : undefined;
 
-  doc.fillColor(C.white).font("Helvetica-Bold").fontSize(15)
-     .text("Aviary Manager", M, 10, { lineBreak: false });
-  doc.fillColor(C.white).font("Helvetica").fontSize(9)
+  doc.fillColor(C.white).font("Helvetica-Bold").fontSize(17)
+     .text("Aviary Manager", M, 9, { lineBreak: false });
+  doc.fillColor(C.white).font("Helvetica").fontSize(11)
      .text("Pedigree Certificate", M, 30, { lineBreak: false });
 
   const title = `${displayName}${species ? `  ·  ${species}` : ""}`;
-  doc.fillColor(C.white).font("Helvetica-Bold").fontSize(12)
-     .text(title, M, 10, { width: PW - M * 2, align: "right", lineBreak: false });
+  doc.fillColor(C.white).font("Helvetica-Bold").fontSize(14)
+     .text(title, M, 9, { width: PW - M * 2, align: "right", lineBreak: false });
   const today = new Date().toLocaleDateString("en-AU", { day: "2-digit", month: "long", year: "numeric" });
-  doc.fillColor(C.white).font("Helvetica").fontSize(8)
+  doc.fillColor(C.white).font("Helvetica").fontSize(10)
      .text(today, M, 30, { width: PW - M * 2, align: "right", lineBreak: false });
 }
 
@@ -185,45 +185,45 @@ function drawProfile(
   let y = CT + 6;
 
   // Bird name — allow wrapping, capped height so pdfkit can't paginate
-  doc.fillColor(C.text).font("Helvetica-Bold").fontSize(14)
-     .text(name, lx, y, { width: LP_W, height: 28 });
-  y += 32;
+  doc.fillColor(C.text).font("Helvetica-Bold").fontSize(16)
+     .text(name, lx, y, { width: LP_W, height: 34 });
+  y += 38;
 
   // Ring / species / mutation
   if (ringId) {
-    doc.fillColor(C.muted).font("Helvetica").fontSize(9.5)
+    doc.fillColor(C.muted).font("Helvetica").fontSize(11)
        .text(`Ring: ${ringId}`, lx, y, { width: LP_W, lineBreak: false });
-    y += 14;
+    y += 16;
   }
   if (species) {
-    doc.fillColor(C.muted).font("Helvetica").fontSize(9.5)
+    doc.fillColor(C.muted).font("Helvetica").fontSize(11)
        .text(species, lx, y, { width: LP_W, lineBreak: false });
-    y += 14;
+    y += 16;
   }
   if (mutation) {
-    doc.fillColor(C.muted).font("Helvetica").fontSize(9.5)
+    doc.fillColor(C.muted).font("Helvetica").fontSize(11)
        .text(mutation, lx, y, { width: LP_W, lineBreak: false });
-    y += 14;
+    y += 16;
   }
   y += 4;
 
   // Gender badge — use plain ASCII text (no Unicode symbols, Helvetica doesn't support them)
   const genderLabel = gender === "male" ? "Male" : gender === "female" ? "Female" : "Unknown";
-  doc.roundedRect(lx, y, 72, 18, 9).fill(gcBg(gender));
-  doc.fillColor(gColor).font("Helvetica-Bold").fontSize(9)
-     .text(genderLabel, lx, y + 4, { width: 72, align: "center", lineBreak: false });
-  y += 25;
+  doc.roundedRect(lx, y, 80, 22, 11).fill(gcBg(gender));
+  doc.fillColor(gColor).font("Helvetica-Bold").fontSize(11)
+     .text(genderLabel, lx, y + 5, { width: 80, align: "center", lineBreak: false });
+  y += 30;
 
   // Divider
   doc.rect(lx, y, LP_W, 0.5).fill(C.border);
-  y += 9;
+  y += 10;
 
   // Section label
-  doc.fillColor(C.muted).font("Helvetica-Bold").fontSize(7.5)
+  doc.fillColor(C.muted).font("Helvetica-Bold").fontSize(9)
      .text("BIRD DETAILS", lx, y, { lineBreak: false });
-  y += 13;
+  y += 15;
 
-  // Field rows: 26 px each (label 7.5pt + value 11pt bold)
+  // Field rows: label + value
   const fields: [string, string][] = [
     ["Date of Birth",   fmtDate(bird?.dateOfBirth)],
     ["Fledge Date",     fmtDate(bird?.fledgedDate)],
@@ -232,24 +232,24 @@ function drawProfile(
   ];
 
   for (const [label, value] of fields) {
-    doc.fillColor(C.muted).font("Helvetica").fontSize(7.5)
+    doc.fillColor(C.muted).font("Helvetica").fontSize(9)
        .text(label, lx, y, { lineBreak: false });
-    doc.fillColor(C.text).font("Helvetica-Bold").fontSize(11)
-       .text(value, lx, y + 10, { width: LP_W, lineBreak: false });
-    y += 26;
+    doc.fillColor(C.text).font("Helvetica-Bold").fontSize(13)
+       .text(value, lx, y + 12, { width: LP_W, lineBreak: false });
+    y += 30;
   }
 
   // Notes (capped to remaining space — will NOT paginate due to height cap)
   if (bird?.notes && y < CB - 30) {
     y += 4;
     doc.rect(lx, y, LP_W, 0.5).fill(C.border);
-    y += 9;
-    doc.fillColor(C.muted).font("Helvetica-Bold").fontSize(7.5)
+    y += 10;
+    doc.fillColor(C.muted).font("Helvetica-Bold").fontSize(9)
        .text("NOTES", lx, y, { lineBreak: false });
-    y += 13;
+    y += 15;
     const maxH = CB - y - 6;
     if (maxH > 10) {
-      doc.fillColor(C.text).font("Helvetica").fontSize(9.5)
+      doc.fillColor(C.text).font("Helvetica").fontSize(11)
          .text(bird.notes, lx, y, { width: LP_W, height: maxH });
     }
   }
@@ -265,7 +265,7 @@ function drawTree(
   pMap: PedigreeMap,
   sMap: SpeciesMap
 ) {
-  const genLabels = ["Subject", "Parents", "Grandparents", "Gt-grandparents", "Ggt-grandparents"];
+  const genLabels = ["Subject", "Parents", "Grandparents", "Gt-grandparents"];
 
   // Generation column headers
   for (let g = 0; g < GENS; g++) {
@@ -273,8 +273,8 @@ function drawTree(
     doc.rect(hx, CT, COL_W - 1, GEN_HDR - 1)
        .fill(g === 0 ? C.primary : C.light);
     doc.fillColor(g === 0 ? C.white : C.muted)
-       .font("Helvetica-Bold").fontSize(5.8)
-       .text(genLabels[g], hx, CT + 4, { width: COL_W - 1, align: "center", lineBreak: false });
+       .font("Helvetica-Bold").fontSize(8)
+       .text(genLabels[g], hx, CT + 6, { width: COL_W - 1, align: "center", lineBreak: false });
   }
 
   // ── Card helper — all text uses lineBreak:false + explicit width so pdfkit NEVER paginates
@@ -285,30 +285,37 @@ function drawTree(
     if (!b) {
       doc.roundedRect(x, y, CARD_W, CARD_H, CARD_R)
          .strokeColor(C.border).lineWidth(0.4).stroke();
-      doc.fillColor(C.border).font("Helvetica").fontSize(6)
-         .text("—", x, y + CARD_H / 2 - 3, { width: CARD_W, align: "center", lineBreak: false });
+      doc.fillColor(C.border).font("Helvetica").fontSize(10)
+         .text("—", x, y + CARD_H / 2 - 6, { width: CARD_W, align: "center", lineBreak: false });
       return;
     }
 
     const g = gc(b.gender);
 
     doc.roundedRect(x, y, CARD_W, CARD_H, CARD_R).fill(C.cardBg);
-    doc.rect(x, y + CARD_R, 3, CARD_H - CARD_R * 2).fill(g);
+    doc.rect(x, y + CARD_R, 5, CARD_H - CARD_R * 2).fill(g);
     doc.roundedRect(x, y, CARD_W, CARD_H, CARD_R)
-       .strokeColor(g).lineWidth(0.6).stroke();
+       .strokeColor(g).lineWidth(0.8).stroke();
 
     const sym = b.gender === "male" ? "M" : b.gender === "female" ? "F" : "?";
-    doc.fillColor(g).font("Helvetica-Bold").fontSize(7)
-       .text(sym, x + 4, y + 5, { lineBreak: false });
+    doc.fillColor(g).font("Helvetica-Bold").fontSize(9)
+       .text(sym, x + 7, y + 5, { lineBreak: false });
 
     const ls = birdLines(b, species);
-    const tx = x + 13;
-    const tw = CARD_W - 16;
-    doc.fillColor(C.text).font("Helvetica-Bold").fontSize(7)
-       .text(ls[0] ?? "", tx, y + 4, { width: tw, lineBreak: false });
+    const tx = x + 18;
+    const tw = CARD_W - 22;
+    // Name — large bold
+    doc.fillColor(C.text).font("Helvetica-Bold").fontSize(11)
+       .text(ls[0] ?? "", tx, y + 5, { width: tw, lineBreak: false });
+    // Ring ID
     if (ls[1]) {
-      doc.fillColor(C.muted).font("Helvetica").fontSize(5.5)
-         .text(ls[1], tx, y + 14, { width: tw, lineBreak: false });
+      doc.fillColor(C.muted).font("Helvetica").fontSize(9.5)
+         .text(ls[1], tx, y + 20, { width: tw, lineBreak: false });
+    }
+    // Mutation / species
+    if (ls[2]) {
+      doc.fillColor(C.muted).font("Helvetica").fontSize(9)
+         .text(ls[2], tx, y + 34, { width: tw, lineBreak: false });
     }
   }
 
@@ -357,9 +364,9 @@ function drawTree(
 function drawFooter(doc: Doc) {
   doc.rect(0, CB, PW, FTR_H).fill(C.light);
   const date = new Date().toLocaleDateString("en-AU", { day: "2-digit", month: "long", year: "numeric" });
-  doc.fillColor(C.muted).font("Helvetica").fontSize(7)
+  doc.fillColor(C.muted).font("Helvetica").fontSize(9)
      .text(
        `Generated by Aviary Manager · ${date} · aviarymanager.app`,
-       M, CB + 9, { width: PW - M * 2, align: "center", lineBreak: false }
+       M, CB + 8, { width: PW - M * 2, align: "center", lineBreak: false }
      );
 }
