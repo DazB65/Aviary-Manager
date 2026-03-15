@@ -15,13 +15,13 @@ export type PedigreeBird = {
 };
 
 export class PedigreeService {
-    static async getPedigree(birdId: number, userId: number, maxGenerations = 5): Promise<Record<number, PedigreeBird>> {
+    static async getPedigree(birdId: number, userId: number, maxGenerations = 4): Promise<Record<number, PedigreeBird>> {
         const db = getDb();
         if (!db) return {};
 
         // Fetch all birds for this user once, then walk the tree entirely in memory.
         // This replaces the previous approach that issued one full-table query per
-        // generation (up to 5 round-trips, each discarding most rows).
+        // generation (up to 4 round-trips, each discarding most rows).
         const allRows = await db
             .select({
                 id: birds.id,

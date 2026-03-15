@@ -137,7 +137,7 @@ export default function BirdDetail() {
   const [, setLocation] = useLocation();
   const birdId = Number(params.id);
   const { user } = useAuth();
-  const maxGenerations = 5;
+  const maxGenerations = 4;
 
   const { data: bird, isLoading } = trpc.birds.get.useQuery({ id: birdId });
   const { data: speciesList = [] } = trpc.species.list.useQuery();
@@ -334,7 +334,7 @@ export default function BirdDetail() {
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-base font-semibold">
                   <GitBranch className="h-4 w-4 text-primary" />
-                  Pedigree — up to 5 Generations
+                  Pedigree — up to 4 Generations
                 </CardTitle>
                 <p className="text-xs text-muted-foreground">Click any bird to view their profile. Scroll horizontally to see all generations.</p>
               </CardHeader>

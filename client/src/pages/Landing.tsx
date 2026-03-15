@@ -31,8 +31,8 @@ const FEATURES = [
   {
     icon: TreePine,
     color: "bg-teal-50 text-teal-600",
-    title: "5-Generation Pedigree",
-    desc: "Visualise lineage up to 5 generations. Detect siblings and calculate inbreeding coefficients.",
+    title: "4-Generation Pedigree",
+    desc: "Visualise lineage up to 4 generations. Detect siblings and calculate inbreeding coefficients.",
   },
   {
     icon: Dna,
@@ -50,7 +50,7 @@ const FEATURES = [
     icon: FileText,
     color: "bg-teal-100 text-teal-700",
     title: "PDF Pedigree Export",
-    desc: "Export a formatted 5-generation pedigree certificate — perfect for show registration or vet records.",
+    desc: "Export a formatted 4-generation pedigree certificate — perfect for show registration or vet records.",
   },
   {
     icon: Users,
@@ -239,7 +239,7 @@ export default function Landing() {
                   <div className="text-sm text-teal-600 font-medium mt-1">or $88 AUD/year (save 2 months)</div>
                 </div>
                 <ul className="space-y-3 mb-8 flex-1">
-                  {["Unlimited birds & pairs", "5-gen pedigree tree", "Inbreeding coefficient", "Sibling detection", "PDF pedigree export", "Photo uploads", "Priority support"].map(f => (
+                  {["Unlimited birds & pairs", "4-gen pedigree tree", "Inbreeding coefficient", "Sibling detection", "PDF pedigree export", "Photo uploads", "Priority support"].map(f => (
                     <li key={f} className="flex items-center gap-2 text-sm text-gray-700">
                       <Check className="w-4 h-4 text-teal-500 shrink-0" /> {f}
                     </li>

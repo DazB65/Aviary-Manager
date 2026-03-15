@@ -14,7 +14,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 const PRO_FEATURES = [
   "Unlimited birds",
   "Unlimited breeding pairs & broods",
-  "5-generation pedigree tree",
+  "4-generation pedigree tree",
   "Inbreeding coefficient calculator",
   "Sibling detection",
   "Descendant view",
