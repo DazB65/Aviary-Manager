@@ -107,7 +107,7 @@ export async function generatePedigreePdf(
   speciesMap: SpeciesMap,
   fullBird?: FullBird
 ): Promise<Buffer> {
-  const pedigreeMap = await PedigreeService.getPedigree(birdId, 5) as PedigreeMap;
+  const pedigreeMap = await PedigreeService.getPedigree(birdId, userId, 5) as PedigreeMap;
   const subject = pedigreeMap[birdId];
 
   return new Promise((resolve, reject) => {
