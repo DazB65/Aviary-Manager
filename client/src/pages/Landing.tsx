@@ -217,7 +217,7 @@ export default function Landing() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Simple, honest pricing</h2>
-            <p className="text-lg text-gray-500">Try free for 7 days. Card required — no charge until day 8.</p>
+            <p className="text-lg text-gray-500">Try free for 7 days — no card required.</p>
           </div>
           {/* Item 11: items-stretch so both cards fill equal height */}
           <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto items-stretch">
