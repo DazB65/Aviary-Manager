@@ -1,7 +1,10 @@
 import type { Express, Request, Response } from "express";
+import { and, eq } from "drizzle-orm";
 import { sdk } from "./_core/sdk";
 import { SpeciesService } from "./services/speciesService";
 import { generatePedigreePdf } from "./pedigreePdf";
+import { getDb } from "./db";
+import { birds } from "../drizzle/schema";
 
 /**
  * Register REST routes for PDF generation.
@@ -11,7 +14,7 @@ export function registerPdfRoutes(app: Express) {
   // GET /api/pdf/pedigree/:birdId
   app.get("/api/pdf/pedigree/:birdId", async (req: Request, res: Response) => {
     try {
-      // ── Auth: reuse the same session verification as tRPC ────────────────────────────────
+      // ── Auth ──────────────────────────────────────────────────────────────
       let userId: number | null = null;
       try {
         const user = await sdk.authenticateRequest(req as any);
@@ -31,12 +34,19 @@ export function registerPdfRoutes(app: Express) {
         return;
       }
 
-      // Build species map — pass userId so custom species are included
+      // ── Fetch full bird record (for profile page) ─────────────────────────
+      const [fullBird] = await getDb()
+        .select()
+        .from(birds)
+        .where(and(eq(birds.id, birdId), eq(birds.userId, userId)))
+        .limit(1);
+
+      // ── Build species map ─────────────────────────────────────────────────
       const speciesList = await SpeciesService.getAllSpecies(userId);
       const speciesMap: Record<number, { commonName: string }> = {};
       for (const s of speciesList) speciesMap[s.id] = { commonName: s.commonName };
 
-      const pdfBuffer = await generatePedigreePdf(birdId, userId, speciesMap);
+      const pdfBuffer = await generatePedigreePdf(birdId, userId, speciesMap, fullBird ?? undefined);
 
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `attachment; filename="pedigree-bird-${birdId}.pdf"`);
