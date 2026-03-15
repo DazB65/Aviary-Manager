@@ -177,7 +177,7 @@ export default function Landing() {
                 Sign in
               </Button>
             </div>
-            <p className="mt-4 text-sm text-gray-400">7-day free trial — no card required. Subscribe on day 8 to keep full access.</p>
+            <p className="mt-4 text-base text-gray-500">7-day free trial — no card required. Subscribe on day 8 to keep full access.</p>
           </div>
         </div>
       </section>
