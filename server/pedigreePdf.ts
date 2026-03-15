@@ -68,9 +68,9 @@ const CB    = PH - FTR_H;                 // ~569 – content area bottom y
 const GEN_HDR = 22;                       // column header row height
 const TR_TOP  = CT + GEN_HDR;             // 75  – tree rows start y
 const TR_H    = CB - TR_TOP;              // ~494 – tree rows height
-const GENS    = 4;                        // Subject → Parents → Grandparents → Gt-grandparents
-const COL_W   = TP_W / GENS;             // ~151
-const CARD_W  = COL_W - 10;              // ~141
+const GENS    = 5;                        // Subject → Parents → Grandparents → Gt-gp → Ggt-gp
+const COL_W   = TP_W / GENS;             // ~121
+const CARD_W  = COL_W - 10;              // ~111
 const CARD_H  = 56;                       // tall card — fills most of each slot
 const CARD_R  = 4;
 
@@ -265,7 +265,7 @@ function drawTree(
   pMap: PedigreeMap,
   sMap: SpeciesMap
 ) {
-  const genLabels = ["Subject", "Parents", "Grandparents", "Gt-grandparents"];
+  const genLabels = ["Subject", "Parents", "Grandparents", "Gt-grandparents", "Ggt-grandparents"];
 
   // Generation column headers
   for (let g = 0; g < GENS; g++) {
