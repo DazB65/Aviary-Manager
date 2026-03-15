@@ -97,7 +97,7 @@ function birdLines(b: PedigreeBird | null | undefined, species?: string): string
   if (b.ringId)        ls.push(`Ring: ${b.ringId}`);
   if (species)         ls.push(species);
   if (b.colorMutation) ls.push(b.colorMutation);
-  return ls.length ? ls : [`#${b.id}`];
+  return ls.length ? ls : ["Unknown"];
 }
 
 // ── Main export ───────────────────────────────────────────────────────────────
@@ -111,13 +111,14 @@ export async function generatePedigreePdf(
   const subject = pedigreeMap[birdId];
 
   return new Promise((resolve, reject) => {
+    const displayName = fullBird?.name || subject?.name || fullBird?.ringId || subject?.ringId || "Unknown Bird";
     const doc = new PDFDocument({
       size: "A4",
       layout: "landscape",
       margin: 0,
       autoFirstPage: true,
       info: {
-        Title: `Pedigree — ${subject?.name || subject?.ringId || `Bird #${birdId}`}`,
+        Title: `Pedigree — ${displayName}`,
         Author: "Aviary Manager",
       },
     });
@@ -127,7 +128,7 @@ export async function generatePedigreePdf(
     doc.on("end",  () => resolve(Buffer.concat(chunks)));
     doc.on("error", reject);
 
-    drawHeader(doc, birdId, subject, speciesMap);
+    drawHeader(doc, displayName, subject, speciesMap);
     drawProfile(doc, birdId, fullBird, subject, speciesMap);
     drawTree(doc, birdId, pedigreeMap, speciesMap);
     drawFooter(doc);
@@ -139,21 +140,20 @@ export async function generatePedigreePdf(
 // ── Header bar ────────────────────────────────────────────────────────────────
 function drawHeader(
   doc: Doc,
-  birdId: number,
+  displayName: string,
   subject: PedigreeBird | undefined,
   sMap: SpeciesMap
 ) {
   doc.rect(0, 0, PW, HDR_H).fill(C.primary);
 
-  const birdName = subject?.name || subject?.ringId || `Bird #${birdId}`;
-  const species  = subject?.speciesId ? sMap[subject.speciesId]?.commonName : undefined;
+  const species = subject?.speciesId ? sMap[subject.speciesId]?.commonName : undefined;
 
   doc.fillColor(C.white).font("Helvetica-Bold").fontSize(15)
      .text("Aviary Manager", M, 10, { lineBreak: false });
   doc.fillColor(C.white).font("Helvetica").fontSize(9)
      .text("Pedigree Certificate", M, 30, { lineBreak: false });
 
-  const title = `${birdName}${species ? `  ·  ${species}` : ""}`;
+  const title = `${displayName}${species ? `  ·  ${species}` : ""}`;
   doc.fillColor(C.white).font("Helvetica-Bold").fontSize(12)
      .text(title, M, 10, { width: PW - M * 2, align: "right", lineBreak: false });
   const today = new Date().toLocaleDateString("en-AU", { day: "2-digit", month: "long", year: "numeric" });
@@ -169,12 +169,13 @@ function drawProfile(
   subject: PedigreeBird | undefined,
   sMap: SpeciesMap
 ) {
-  const lx     = M;
-  const gender = bird?.gender || subject?.gender || "unknown";
-  const name   = bird?.name   || subject?.name   || subject?.ringId || `Bird #${birdId}`;
-  const specId = bird?.speciesId ?? subject?.speciesId;
+  const lx      = M;
+  const gender  = bird?.gender || subject?.gender || "unknown";
+  // Use ring ID as display name if no bird name is set — never fall back to internal DB id
+  const name    = bird?.name || subject?.name || bird?.ringId || subject?.ringId || "Unknown Bird";
+  const specId  = bird?.speciesId ?? subject?.speciesId;
   const species = specId ? sMap[specId]?.commonName : undefined;
-  const ringId  = bird?.ringId    || subject?.ringId;
+  const ringId  = bird?.ringId || subject?.ringId;
   const mutation = bird?.colorMutation || subject?.colorMutation;
   const gColor   = gc(gender);
 
@@ -183,46 +184,46 @@ function drawProfile(
 
   let y = CT + 6;
 
-  // Bird name — allow wrapping, max 2 lines (~24 px), will NOT paginate due to height cap
-  doc.fillColor(C.text).font("Helvetica-Bold").fontSize(12)
-     .text(name, lx, y, { width: LP_W, height: 24 });
-  y += 27;
+  // Bird name — allow wrapping, capped height so pdfkit can't paginate
+  doc.fillColor(C.text).font("Helvetica-Bold").fontSize(14)
+     .text(name, lx, y, { width: LP_W, height: 28 });
+  y += 32;
 
-  // Ring / species / mutation (single-line each, lineBreak: false prevents auto-pagination)
+  // Ring / species / mutation
   if (ringId) {
-    doc.fillColor(C.muted).font("Helvetica").fontSize(7.5)
+    doc.fillColor(C.muted).font("Helvetica").fontSize(9.5)
        .text(`Ring: ${ringId}`, lx, y, { width: LP_W, lineBreak: false });
-    y += 12;
+    y += 14;
   }
   if (species) {
-    doc.fillColor(C.muted).font("Helvetica").fontSize(7.5)
+    doc.fillColor(C.muted).font("Helvetica").fontSize(9.5)
        .text(species, lx, y, { width: LP_W, lineBreak: false });
-    y += 12;
+    y += 14;
   }
   if (mutation) {
-    doc.fillColor(C.muted).font("Helvetica").fontSize(7.5)
+    doc.fillColor(C.muted).font("Helvetica").fontSize(9.5)
        .text(mutation, lx, y, { width: LP_W, lineBreak: false });
-    y += 12;
+    y += 14;
   }
   y += 4;
 
-  // Gender badge
-  const sym = gender === "male" ? "♂ Male" : gender === "female" ? "♀ Female" : "? Unknown";
-  doc.roundedRect(lx, y, 72, 17, 8).fill(gcBg(gender));
-  doc.fillColor(gColor).font("Helvetica-Bold").fontSize(8)
-     .text(sym, lx, y + 4, { width: 72, align: "center", lineBreak: false });
-  y += 23;
+  // Gender badge — use plain ASCII text (no Unicode symbols, Helvetica doesn't support them)
+  const genderLabel = gender === "male" ? "Male" : gender === "female" ? "Female" : "Unknown";
+  doc.roundedRect(lx, y, 72, 18, 9).fill(gcBg(gender));
+  doc.fillColor(gColor).font("Helvetica-Bold").fontSize(9)
+     .text(genderLabel, lx, y + 4, { width: 72, align: "center", lineBreak: false });
+  y += 25;
 
   // Divider
   doc.rect(lx, y, LP_W, 0.5).fill(C.border);
-  y += 8;
+  y += 9;
 
   // Section label
-  doc.fillColor(C.muted).font("Helvetica-Bold").fontSize(6.5)
+  doc.fillColor(C.muted).font("Helvetica-Bold").fontSize(7.5)
      .text("BIRD DETAILS", lx, y, { lineBreak: false });
-  y += 11;
+  y += 13;
 
-  // Field rows: 22 px each (label 6.5pt + value 9pt bold)
+  // Field rows: 26 px each (label 7.5pt + value 11pt bold)
   const fields: [string, string][] = [
     ["Date of Birth",   fmtDate(bird?.dateOfBirth)],
     ["Fledge Date",     fmtDate(bird?.fledgedDate)],
@@ -231,24 +232,24 @@ function drawProfile(
   ];
 
   for (const [label, value] of fields) {
-    doc.fillColor(C.muted).font("Helvetica").fontSize(6.5)
+    doc.fillColor(C.muted).font("Helvetica").fontSize(7.5)
        .text(label, lx, y, { lineBreak: false });
-    doc.fillColor(C.text).font("Helvetica-Bold").fontSize(9)
-       .text(value, lx, y + 9, { width: LP_W, lineBreak: false });
-    y += 22;
+    doc.fillColor(C.text).font("Helvetica-Bold").fontSize(11)
+       .text(value, lx, y + 10, { width: LP_W, lineBreak: false });
+    y += 26;
   }
 
   // Notes (capped to remaining space — will NOT paginate due to height cap)
   if (bird?.notes && y < CB - 30) {
     y += 4;
     doc.rect(lx, y, LP_W, 0.5).fill(C.border);
-    y += 8;
-    doc.fillColor(C.muted).font("Helvetica-Bold").fontSize(6.5)
+    y += 9;
+    doc.fillColor(C.muted).font("Helvetica-Bold").fontSize(7.5)
        .text("NOTES", lx, y, { lineBreak: false });
-    y += 11;
+    y += 13;
     const maxH = CB - y - 6;
     if (maxH > 10) {
-      doc.fillColor(C.text).font("Helvetica").fontSize(7.5)
+      doc.fillColor(C.text).font("Helvetica").fontSize(9.5)
          .text(bird.notes, lx, y, { width: LP_W, height: maxH });
     }
   }
@@ -296,9 +297,9 @@ function drawTree(
     doc.roundedRect(x, y, CARD_W, CARD_H, CARD_R)
        .strokeColor(g).lineWidth(0.6).stroke();
 
-    const sym = b.gender === "male" ? "♂" : b.gender === "female" ? "♀" : "?";
-    doc.fillColor(g).font("Helvetica-Bold").fontSize(8)
-       .text(sym, x + 4, y + 4, { lineBreak: false });
+    const sym = b.gender === "male" ? "M" : b.gender === "female" ? "F" : "?";
+    doc.fillColor(g).font("Helvetica-Bold").fontSize(7)
+       .text(sym, x + 4, y + 5, { lineBreak: false });
 
     const ls = birdLines(b, species);
     const tx = x + 13;
