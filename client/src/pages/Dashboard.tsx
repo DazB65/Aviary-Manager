@@ -220,7 +220,7 @@ export default function Dashboard() {
           </Card>
           <StatCard
             icon={Heart}
-            label="Active Pairs"
+            label="Breeding Pairs"
             value={statsLoading ? "—" : (stats?.activePairs ?? 0)}
             gradient="bg-gradient-to-br from-rose-400 to-pink-500"
             onClick={() => setLocation("/pairs")}
