@@ -143,8 +143,6 @@ export function registerStripeRoutes(app: Express) {
         // Always create a customer record so we can find them later via the billing portal fallback
         ...(!isSubscription ? { customer_creation: "always" } : {}),
         allow_promotion_codes: true,
-        // 7-day free trial for new subscriptions only
-        ...(isSubscription ? { subscription_data: { trial_period_days: 7 } } : {}),
         client_reference_id: String(user.id),
         metadata: {
           user_id: String(user.id),

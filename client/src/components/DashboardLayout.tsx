@@ -59,7 +59,7 @@ export default function DashboardLayout({
     return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
   });
   const { loading, user } = useAuth();
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
@@ -68,8 +68,17 @@ export default function DashboardLayout({
   useEffect(() => {
     if (!loading && !user) {
       navigate("/login");
+      return;
     }
-  }, [loading, user, navigate]);
+    if (!loading && user && user.plan !== "pro" && user.role !== "admin") {
+      const trialEnd = user.planExpiresAt
+        ? new Date(user.planExpiresAt)
+        : new Date(new Date(user.createdAt).getTime() + 7 * 24 * 60 * 60 * 1000);
+      if (trialEnd <= new Date() && location !== "/billing") {
+        navigate("/billing");
+      }
+    }
+  }, [loading, user, navigate, location]);
 
   if (loading || !user) {
     return <DashboardLayoutSkeleton />;
@@ -111,6 +120,17 @@ function DashboardLayoutContent({
   const breedingYear = settings?.breedingYear ?? new Date().getFullYear();
   const isAdmin = user?.role === "admin";
   const isPro = user?.plan === "pro";
+
+  // Trial status
+  const trialEnd = user && !isPro && !isAdmin
+    ? (user.planExpiresAt
+        ? new Date(user.planExpiresAt)
+        : new Date(new Date(user.createdAt).getTime() + 7 * 24 * 60 * 60 * 1000))
+    : null;
+  const isOnTrial = trialEnd && trialEnd > new Date();
+  const trialDaysLeft = isOnTrial
+    ? Math.max(1, Math.ceil((trialEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : 0;
   const { startTour, maybeStartTour, hasTourBeenSkipped } = useAppTour();
   const [aiOpen, setAiOpen] = useState(false);
 
@@ -318,6 +338,20 @@ function DashboardLayoutContent({
                 </div>
               </div>
             </div>
+          </div>
+        )}
+        {/* Trial banner */}
+        {isOnTrial && (
+          <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center justify-between gap-2 text-sm text-amber-800">
+            <span>
+              ⏳ Free trial — <strong>{trialDaysLeft} day{trialDaysLeft === 1 ? "" : "s"} remaining</strong>
+            </span>
+            <button
+              onClick={() => setLocation("/billing")}
+              className="font-semibold underline hover:text-amber-900 transition-colors shrink-0"
+            >
+              Subscribe now
+            </button>
           </div>
         )}
         <main className="flex-1 p-4">{children}</main>

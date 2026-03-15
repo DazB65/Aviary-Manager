@@ -15,6 +15,7 @@ import { ENV } from "./_core/env";
 const BCRYPT_ROUNDS = 12;
 const VERIFY_EXPIRY_MS = 24 * 60 * 60 * 1000;   // 24 hours
 const RESET_EXPIRY_MS  =  1 * 60 * 60 * 1000;   //  1 hour
+const TRIAL_DAYS = 7;
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -105,6 +106,7 @@ export function registerAuthRoutes(app: Express) {
         verifyToken,
         verifyTokenExpiry,
         lastSignedIn: new Date(),
+        planExpiresAt: new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000),
       });
 
       sendVerificationEmail(email.toLowerCase(), verifyToken).catch(console.error);

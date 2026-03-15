@@ -37,6 +37,18 @@ export default function Billing() {
   // Lifetime users have Pro but no stripeSubscriptionId (one-time payment, not a subscription)
   const isLifetime = isPro && !user?.stripeSubscriptionId;
 
+  // Trial status
+  const trialEnd = user && !isPro
+    ? (user.planExpiresAt
+        ? new Date(user.planExpiresAt)
+        : new Date(new Date(user.createdAt).getTime() + 7 * 24 * 60 * 60 * 1000))
+    : null;
+  const isOnTrial = trialEnd && trialEnd > new Date();
+  const trialExpired = trialEnd && trialEnd <= new Date();
+  const trialDaysLeft = isOnTrial
+    ? Math.max(1, Math.ceil((trialEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : 0;
+
   // Check for success/cancel from Stripe redirect
   const params = new URLSearchParams(window.location.search);
   const justUpgraded = params.get("success") === "1";
@@ -121,7 +133,23 @@ export default function Billing() {
         {cancelled && (
           <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 flex items-center gap-3">
             <Zap className="w-5 h-5 text-amber-600 shrink-0" />
-            <p className="text-amber-800">Checkout was cancelled. Start your 7-day free trial anytime.</p>
+            <p className="text-amber-800">Checkout was cancelled. Subscribe anytime before your trial ends.</p>
+          </div>
+        )}
+
+        {/* Trial status banner */}
+        {isOnTrial && !justUpgraded && (
+          <div className="rounded-xl bg-blue-50 border border-blue-200 p-4 flex items-center gap-3">
+            <Zap className="w-5 h-5 text-blue-600 shrink-0" />
+            <p className="text-blue-800">
+              You're on a free trial — <strong>{trialDaysLeft} day{trialDaysLeft === 1 ? "" : "s"} remaining</strong>. Subscribe below to keep full access after your trial ends.
+            </p>
+          </div>
+        )}
+        {trialExpired && !isPro && !justUpgraded && (
+          <div className="rounded-xl bg-red-50 border border-red-200 p-4 flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
+            <p className="text-red-800 font-medium">Your free trial has ended. Subscribe below to regain full access to your data.</p>
           </div>
         )}
 
@@ -135,8 +163,10 @@ export default function Billing() {
               <div>
                 <p className="text-sm text-gray-500">Current plan</p>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-xl font-bold text-gray-900">{isPro ? "Pro" : "Free"}</span>
+                  <span className="text-xl font-bold text-gray-900">{isPro ? "Pro" : "Free Trial"}</span>
                   {isPro && <Badge className="bg-teal-600 text-white text-xs">Active</Badge>}
+                  {isOnTrial && <Badge className="bg-blue-500 text-white text-xs">{trialDaysLeft}d left</Badge>}
+                  {trialExpired && !isPro && <Badge className="bg-red-500 text-white text-xs">Expired</Badge>}
                 </div>
               </div>
             </div>
@@ -182,9 +212,16 @@ export default function Billing() {
 
             {/* Plan card — single Pro */}
             <Card className="border-2 border-teal-500 relative overflow-hidden shadow-lg max-w-lg mx-auto w-full">
-              <div className="absolute top-0 right-0 bg-teal-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg flex items-center gap-1">
-                <Star className="w-3 h-3" /> 7-day free trial
-              </div>
+              {isOnTrial && (
+                <div className="absolute top-0 right-0 bg-teal-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg flex items-center gap-1">
+                  <Star className="w-3 h-3" /> {trialDaysLeft}d trial remaining
+                </div>
+              )}
+              {trialExpired && (
+                <div className="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" /> Trial ended
+                </div>
+              )}
               <CardHeader>
                 <CardTitle className="text-lg text-teal-700">Pro</CardTitle>
                 <CardDescription>For serious aviary managers</CardDescription>
@@ -222,12 +259,12 @@ export default function Billing() {
                   disabled={loadingInterval !== null || billingInterval === "lifetime"}
                 >
                   {loadingInterval === billingInterval && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  {billingInterval === "lifetime" ? "Get Lifetime Access" : "Start 7-day free trial"}
+                  {billingInterval === "lifetime" ? "Get Lifetime Access" : "Subscribe to Pro"}
                 </Button>
                 <p className="text-xs text-center text-gray-400">
                   {billingInterval === "lifetime"
                     ? "One-time payment. No recurring fees."
-                    : "No charge for 7 days. Cancel anytime. Have a coupon? Apply it at checkout."}
+                    : "Cancel anytime. Have a coupon? Apply it at checkout."}
                 </p>
               </CardContent>
             </Card>
