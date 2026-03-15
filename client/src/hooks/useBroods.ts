@@ -1,11 +1,24 @@
-import { useMemo } from "react";
+import { useMemo, useRef, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
 export function useBroods() {
     const utils = trpc.useUtils();
+    const backfillRan = useRef(false);
+    const backfillEvents = trpc.broods.backfillEvents.useMutation({
+        onSuccess: () => utils.events.list.invalidate(),
+    });
 
     const { data: broods = [], isLoading: broodsLoading } = trpc.broods.list.useQuery();
+
+    // Backfill events for existing broods created before auto-event syncing was added
+    useEffect(() => {
+        if (!broodsLoading && !backfillRan.current) {
+            backfillRan.current = true;
+            backfillEvents.mutate();
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [broodsLoading]);
     const { data: pairs = [], isLoading: pairsLoading } = trpc.pairs.list.useQuery();
     const { data: birds = [], isLoading: birdsLoading } = trpc.birds.list.useQuery();
     const { data: speciesList = [], isLoading: speciesLoading } = trpc.species.list.useQuery();

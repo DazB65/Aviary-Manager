@@ -333,6 +333,18 @@ export const appRouter = router({
         await EventService.syncBroodEvents(ctx.user.id, 0, input.id);
         return BroodService.deleteBrood(input.id, ctx.user.id);
       }),
+
+    backfillEvents: activeProcedure.mutation(async ({ ctx }) => {
+      const allBroods = await BroodService.getBroodsByUser(ctx.user.id);
+      for (const brood of allBroods) {
+        const fDate = brood.fertilityCheckDate ? String(brood.fertilityCheckDate).split("T")[0] : undefined;
+        const hDate = brood.expectedHatchDate ? String(brood.expectedHatchDate).split("T")[0] : undefined;
+        if (fDate || hDate) {
+          await EventService.syncBroodEvents(ctx.user.id, brood.pairId, brood.id, fDate, hDate);
+        }
+      }
+      return { synced: allBroods.filter(b => b.fertilityCheckDate || b.expectedHatchDate).length };
+    }),
   }),
 
   // ─── Events ────────────────────────────────────────────────────────────────
