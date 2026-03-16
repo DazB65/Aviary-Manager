@@ -4,10 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Bird, CalendarDays, CheckCircle2, ChevronRight, Circle, Egg, Heart, TrendingUp, X } from "lucide-react";
+import { Bird, CalendarDays, CheckCircle2, ChevronRight, Circle, Egg, Heart, TrendingUp, X, Activity } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { format, isToday, isTomorrow, parseISO } from "date-fns";
+import { format, isToday, isTomorrow, parseISO, formatDistanceToNow } from "date-fns";
 import { GenderIcon } from "@/components/ui/GenderIcon";
 
 function formatDateLabel(dateVal: Date | string | null | undefined): string {
@@ -127,7 +127,50 @@ export default function Dashboard() {
     }, [])
     .slice(0, 5);
 
-  const recentBirds = (birds ?? []).slice(0, 4);
+  type ActivityItem = {
+    id: string;
+    emoji: string;
+    label: string;
+    sublabel?: string;
+    timestamp: Date;
+    onClick: () => void;
+  };
+
+  const recentActivity: ActivityItem[] = [
+    ...(birds ?? []).map(b => ({
+      id: `bird-${b.id}`,
+      emoji: "🐦",
+      label: `Bird added: ${b.name || b.ringId || `#${b.id}`}`,
+      sublabel: b.colorMutation || undefined,
+      timestamp: new Date(b.createdAt),
+      onClick: () => setLocation(`/birds/${b.id}`),
+    })),
+    ...(pairs ?? []).map(p => ({
+      id: `pair-${p.id}`,
+      emoji: "🔗",
+      label: `Pair created: ${getPairLabel(p.id)}`,
+      timestamp: new Date(p.createdAt),
+      onClick: () => setLocation("/pairs"),
+    })),
+    ...(broods ?? []).map(b => ({
+      id: `brood-${b.id}`,
+      emoji: "🥚",
+      label: `Clutch logged for ${getPairLabel(b.pairId)}`,
+      sublabel: b.eggsLaid ? `${b.eggsLaid} egg${b.eggsLaid !== 1 ? "s" : ""}` : undefined,
+      timestamp: new Date(b.createdAt),
+      onClick: () => setLocation("/broods"),
+    })),
+    ...(events ?? []).map(e => ({
+      id: `event-${e.id}`,
+      emoji: "📅",
+      label: `Event scheduled: ${e.title}`,
+      sublabel: e.eventType,
+      timestamp: new Date(e.createdAt),
+      onClick: () => setLocation("/events"),
+    })),
+  ]
+    .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+    .slice(0, 8);
 
   const birdMap = Object.fromEntries((birds ?? []).map(b => [b.id, b]));
 
@@ -348,41 +391,38 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Recent Birds */}
+        {/* Recent Activity */}
         <Card className="border border-border shadow-card">
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <CardHeader className="pb-3">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <Bird className="h-4 w-4 text-amber-500" />
-              Recent Birds
+              <Activity className="h-4 w-4 text-amber-500" />
+              Recent Activity
             </CardTitle>
-            <Button variant="ghost" size="sm" onClick={() => setLocation("/birds")} className="text-xs text-muted-foreground hover:text-foreground">
-              View all <ChevronRight className="h-3 w-3 ml-1" />
-            </Button>
           </CardHeader>
           <CardContent>
-            {recentBirds.length === 0 ? (
+            {recentActivity.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground text-sm">
-                <Bird className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                No birds added yet.{" "}
-                <button onClick={() => setLocation("/birds")} className="text-primary underline">Add your first bird</button>
+                <Activity className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                No activity yet — start by adding birds or pairs.
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {recentBirds.map(bird => (
+              <div className="space-y-1">
+                {recentActivity.map(item => (
                   <button
-                    key={bird.id}
-                    onClick={() => setLocation(`/birds/${bird.id}`)}
-                    className="text-left rounded-xl border border-border p-3 hover:border-primary/40 hover:bg-primary/5 transition-all"
+                    key={item.id}
+                    onClick={item.onClick}
+                    className="w-full flex items-center justify-between gap-3 text-left px-3 py-2.5 rounded-lg hover:bg-muted/50 transition-colors group"
                   >
-                    <div className={`w-10 h-10 rounded-lg ${bird.gender === "male" ? "bg-blue-50" : bird.gender === "female" ? "bg-pink-50" : "bg-amber-50"} flex items-center justify-center mb-2 text-lg`}>
-                      {bird.photoUrl ? (
-                        <img src={bird.photoUrl} alt={bird.name ?? "Bird"} className="w-full h-full object-cover rounded-lg" />
-                      ) : (
-                        <GenderIcon gender={bird.gender} className="w-5 h-5" />
-                      )}
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="text-base shrink-0">{item.emoji}</span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">{item.label}</p>
+                        {item.sublabel && <p className="text-xs text-muted-foreground capitalize truncate">{item.sublabel}</p>}
+                      </div>
                     </div>
-                    <p className="text-sm font-medium truncate">{bird.name || bird.ringId || `Bird #${bird.id}`}</p>
-                    <p className="text-xs text-muted-foreground truncate">{bird.colorMutation || "—"}</p>
+                    <span className="text-xs text-muted-foreground shrink-0 whitespace-nowrap">
+                      {formatDistanceToNow(item.timestamp, { addSuffix: true })}
+                    </span>
                   </button>
                 ))}
               </div>
