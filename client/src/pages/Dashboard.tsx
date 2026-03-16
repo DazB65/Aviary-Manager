@@ -265,7 +265,7 @@ export default function Dashboard() {
             icon={Heart}
             label="Breeding Pairs"
             value={statsLoading ? "—" : (stats?.activePairs ?? 0)}
-            gradient="bg-gradient-to-br from-orange-500 to-red-400"
+            gradient="bg-gradient-to-br from-amber-500 to-orange-600"
             onClick={() => setLocation("/pairs")}
           />
           <StatCard
