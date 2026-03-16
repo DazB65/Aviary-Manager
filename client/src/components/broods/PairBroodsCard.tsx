@@ -80,7 +80,8 @@ export function PairBroodsCard({ pairId, broods, pairLabel, male, female, onEdit
                                 )}
                                 {activeBrood?.status === "incubating" && activeBrood.fertilityCheckDate && (
                                     <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                        🔍 <span className="font-medium text-foreground">{formatDateStr(activeBrood.fertilityCheckDate)}</span>
+                                        🔍 <span className="font-medium text-muted-foreground">Fertility Check:</span>
+                                        <span className="font-medium text-foreground">{formatDateStr(activeBrood.fertilityCheckDate)}</span>
                                         {daysUntil(activeBrood.fertilityCheckDate) && (
                                             <span className="text-amber-600">({daysUntil(activeBrood.fertilityCheckDate)})</span>
                                         )}
@@ -88,7 +89,8 @@ export function PairBroodsCard({ pairId, broods, pairLabel, male, female, onEdit
                                 )}
                                 {activeBrood?.status === "incubating" && activeBrood.expectedHatchDate && (
                                     <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                        🐣 <span className="font-medium text-foreground">{formatDateStr(activeBrood.expectedHatchDate)}</span>
+                                        🐣 <span className="font-medium text-muted-foreground">Hatch:</span>
+                                        <span className="font-medium text-foreground">{formatDateStr(activeBrood.expectedHatchDate)}</span>
                                         {daysUntil(activeBrood.expectedHatchDate) && (
                                             <span className="text-teal-600">({daysUntil(activeBrood.expectedHatchDate)})</span>
                                         )}
