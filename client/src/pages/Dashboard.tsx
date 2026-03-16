@@ -183,7 +183,7 @@ export default function Dashboard() {
     })),
   ]
     .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-    .slice(0, 8);
+    .slice(0, 4);
 
   return (
     <DashboardLayout>
