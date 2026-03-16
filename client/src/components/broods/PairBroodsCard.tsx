@@ -78,6 +78,22 @@ export function PairBroodsCard({ pairId, broods, pairLabel, male, female, onEdit
                                         {STATUS_ICONS[activeBrood.status]} {activeBrood.status}
                                     </Badge>
                                 )}
+                                {activeBrood?.status === "incubating" && activeBrood.fertilityCheckDate && (
+                                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                        🔍 <span className="font-medium text-foreground">{formatDateStr(activeBrood.fertilityCheckDate)}</span>
+                                        {daysUntil(activeBrood.fertilityCheckDate) && (
+                                            <span className="text-amber-600">({daysUntil(activeBrood.fertilityCheckDate)})</span>
+                                        )}
+                                    </span>
+                                )}
+                                {activeBrood?.status === "incubating" && activeBrood.expectedHatchDate && (
+                                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                        🐣 <span className="font-medium text-foreground">{formatDateStr(activeBrood.expectedHatchDate)}</span>
+                                        {daysUntil(activeBrood.expectedHatchDate) && (
+                                            <span className="text-teal-600">({daysUntil(activeBrood.expectedHatchDate)})</span>
+                                        )}
+                                    </span>
+                                )}
                             </div>
                             <div className="flex items-center gap-6 mt-2 text-sm text-muted-foreground">
                                 <div>Total Eggs: <span className="font-semibold text-foreground">{totalEggs}</span></div>
