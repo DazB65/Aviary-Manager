@@ -265,7 +265,7 @@ export default function Dashboard() {
             icon={Heart}
             label="Breeding Pairs"
             value={statsLoading ? "—" : (stats?.activePairs ?? 0)}
-            gradient="bg-gradient-to-br from-rose-400 to-pink-500"
+            gradient="bg-gradient-to-br from-orange-500 to-red-400"
             onClick={() => setLocation("/pairs")}
           />
           <StatCard
@@ -279,7 +279,7 @@ export default function Dashboard() {
             icon={CalendarDays}
             label="Upcoming Events"
             value={statsLoading ? "—" : (stats?.upcomingEvents ?? 0)}
-            gradient="bg-gradient-to-br from-violet-400 to-purple-500"
+            gradient="bg-gradient-to-br from-emerald-400 to-teal-600"
             onClick={() => setLocation("/events")}
           />
         </div>
