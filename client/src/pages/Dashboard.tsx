@@ -127,6 +127,19 @@ export default function Dashboard() {
     }, [])
     .slice(0, 5);
 
+  const birdMap = Object.fromEntries((birds ?? []).map(b => [b.id, b]));
+
+  function getPairLabel(pairId: number) {
+    const pair = pairs?.find(p => p.id === pairId);
+    if (!pair) return `Pair #${pairId}`;
+    const male = birdMap[pair.maleId];
+    const female = birdMap[pair.femaleId];
+    const mName = male?.name || male?.ringId || `#${pair.maleId}`;
+    const fName = female?.name || female?.ringId || `#${pair.femaleId}`;
+    const cageInfo = male?.cageNumber || female?.cageNumber ? ` (Cage ${male?.cageNumber || female?.cageNumber})` : "";
+    return `${mName} × ${fName}${cageInfo}`;
+  }
+
   type ActivityItem = {
     id: string;
     emoji: string;
@@ -171,19 +184,6 @@ export default function Dashboard() {
   ]
     .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
     .slice(0, 8);
-
-  const birdMap = Object.fromEntries((birds ?? []).map(b => [b.id, b]));
-
-  function getPairLabel(pairId: number) {
-    const pair = pairs?.find(p => p.id === pairId);
-    if (!pair) return `Pair #${pairId}`;
-    const male = birdMap[pair.maleId];
-    const female = birdMap[pair.femaleId];
-    const mName = male?.name || male?.ringId || `#${pair.maleId}`;
-    const fName = female?.name || female?.ringId || `#${pair.femaleId}`;
-    const cageInfo = male?.cageNumber || female?.cageNumber ? ` (Cage ${male?.cageNumber || female?.cageNumber})` : "";
-    return `${mName} × ${fName}${cageInfo}`;
-  }
 
   return (
     <DashboardLayout>
