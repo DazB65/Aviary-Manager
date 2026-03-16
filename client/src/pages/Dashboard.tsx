@@ -359,7 +359,7 @@ export default function Dashboard() {
           <Card className="border border-border shadow-card">
             <CardHeader className="flex flex-row items-center justify-between pb-3">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <CalendarDays className="h-4 w-4 text-violet-500" />
+                <CalendarDays className="h-4 w-4 text-orange-500" />
                 Upcoming Events
               </CardTitle>
               <Button variant="ghost" size="sm" onClick={() => setLocation("/events")} className="text-xs text-muted-foreground hover:text-foreground">
@@ -380,7 +380,7 @@ export default function Dashboard() {
                         <p className="text-sm font-medium">{e.title}</p>
                         <p className="text-xs text-muted-foreground capitalize">{e.eventType}</p>
                       </div>
-                      <Badge variant="outline" className="text-xs border-violet-200 text-violet-700 bg-violet-50">
+                      <Badge variant="outline" className="text-xs border-orange-200 text-orange-700 bg-orange-50">
                         {formatDateLabel(e.eventDate)}
                       </Badge>
                     </div>
