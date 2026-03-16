@@ -279,7 +279,7 @@ export default function Dashboard() {
             icon={CalendarDays}
             label="Upcoming Events"
             value={statsLoading ? "—" : (stats?.upcomingEvents ?? 0)}
-            gradient="bg-gradient-to-br from-emerald-400 to-teal-600"
+            gradient="bg-gradient-to-br from-cyan-400 to-teal-500"
             onClick={() => setLocation("/events")}
           />
         </div>
