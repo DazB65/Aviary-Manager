@@ -4,8 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { gouldianFinchPack } from "@/genetics/packs/gouldianFinch";
+import { useGeneticsPacks } from "@/genetics/useGeneticsPacks";
 import { trpc } from "@/lib/trpc";
-import { Check, Settings as SettingsIcon, Star, X, CalendarDays } from "lucide-react";
+import { CalendarDays, Check, Dna, Settings as SettingsIcon, Star, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
@@ -13,11 +16,13 @@ export default function Settings() {
   const utils = trpc.useUtils();
   const { data: speciesList = [], isLoading: loadingSpecies } = trpc.species.list.useQuery();
   const { data: settings, isLoading: loadingSettings } = trpc.settings.get.useQuery();
+  const { isPackActive, setPackActive } = useGeneticsPacks();
 
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [defaultId, setDefaultId] = useState<number | null>(null);
   const [breedingYear, setBreedingYear] = useState<string>("");
   const [dirty, setDirty] = useState(false);
+  const isGouldianPackActive = isPackActive(gouldianFinchPack.speciesId);
 
   // Populate from loaded settings
   useEffect(() => {
@@ -130,6 +135,46 @@ export default function Settings() {
               <div className="pb-1 text-sm text-teal-700/70">
                 <p>New pairs and broods will default to <strong>{breedingYear || new Date().getFullYear()}</strong>.</p>
                 <p className="mt-0.5">You can still override the year on individual records.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border border-border shadow-card">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <Dna className="h-5 w-5 text-violet-600" />
+              <CardTitle className="font-display text-lg">Genetics Packs</CardTitle>
+            </div>
+            <CardDescription>
+              Activate species-specific genetics tools on this device. Your selections are saved in this browser.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-xl border border-border bg-muted/20 p-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-sm">{gouldianFinchPack.speciesName}</p>
+                    <Badge variant={isGouldianPackActive ? "default" : "secondary"}>
+                      {isGouldianPackActive ? "Active" : "Inactive"}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground max-w-xl">
+                    Track head, body and breast colour mutations for Gouldian Finches
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Label htmlFor="gouldian-genetics-pack" className="text-sm font-medium">
+                    {isGouldianPackActive ? "On" : "Off"}
+                  </Label>
+                  <Switch
+                    id="gouldian-genetics-pack"
+                    checked={isGouldianPackActive}
+                    onCheckedChange={(checked) => setPackActive(gouldianFinchPack.speciesId, checked)}
+                    aria-label={`Toggle ${gouldianFinchPack.speciesName} genetics pack`}
+                  />
+                </div>
               </div>
             </div>
           </CardContent>
