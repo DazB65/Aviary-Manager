@@ -197,7 +197,7 @@ function DashboardLayoutContent({
             </button>
           </SidebarHeader>
 
-          <SidebarContent className="gap-0">
+          <SidebarContent className="gap-0 overflow-y-auto">
             {/* Breeding Season section */}
             {!isCollapsed && (
               <div className="px-4 py-2 border-b border-border/50">
