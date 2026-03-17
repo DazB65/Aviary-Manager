@@ -345,7 +345,7 @@ export function registerAuthRoutes(app: Express) {
       console.log(`[DeleteAccount] All data deleted for user ${user.id}`);
 
       // 3. Clear session cookie
-      res.clearCookie(COOKIE_NAME, getSessionCookieOptions());
+      res.clearCookie(COOKIE_NAME, getSessionCookieOptions(req));
       res.json({ success: true });
     } catch (err) {
       console.error("[DeleteAccount] Unexpected error:", err);

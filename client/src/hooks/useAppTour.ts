@@ -1,4 +1,4 @@
-import { driver } from "driver.js";
+import { driver, type Alignment, type DriveStep, type Side } from "driver.js";
 import "driver.js/dist/driver.css";
 
 // Bump this key whenever the tour content changes significantly so existing
@@ -34,8 +34,8 @@ type StepDef = {
   popover: {
     title: string;
     description: string;
-    side?: "top" | "bottom" | "left" | "right" | "over";
-    align?: "start" | "center" | "end";
+    side?: Side;
+    align?: Alignment;
   };
 };
 
@@ -249,7 +249,7 @@ export function useAppTour() {
     // via the moveNext callback after it has been assigned below.
     let driverObj: ReturnType<typeof driver>;
 
-    const introSteps = [
+    const introSteps: StepDef[] = [
       // ── 1. Welcome ──────────────────────────────────────────────────────
       {
         popover: {
@@ -273,7 +273,7 @@ export function useAppTour() {
       },
     ];
 
-    const outroSteps = [
+    const outroSteps: StepDef[] = [
       // ── AI assistant ─────────────────────────────────────────────────────
       {
         element: "#tour-ai-fab",
@@ -297,7 +297,7 @@ export function useAppTour() {
       },
     ];
 
-    const allSteps = [
+    const allSteps: DriveStep[] = [
       ...introSteps,
       ...buildSteps(TOUR_PHASES, () => driverObj.moveNext()),
       ...outroSteps,

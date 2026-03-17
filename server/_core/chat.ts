@@ -252,7 +252,7 @@ export function getChatStats() {
   let rateLimitedUsers = 0;
   const topUsers: Array<{ userId: number; count: number; remaining: number }> = [];
 
-  for (const [userId, entry] of chatUsage.entries()) {
+  for (const [userId, entry] of Array.from(chatUsage.entries())) {
     if (now > entry.resetAt) continue; // window expired, skip
     totalMessages += entry.count;
     if (entry.count >= CHAT_MAX_PER_DAY) rateLimitedUsers++;
