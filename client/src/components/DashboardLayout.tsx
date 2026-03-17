@@ -180,7 +180,7 @@ function DashboardLayoutContent({
       <div className="relative" ref={sidebarRef}>
         <Sidebar
           collapsible="icon"
-          className="border-r-0"
+          className="border-r-0 flex h-full flex-col"
           disableTransition={isResizing}
         >
           <SidebarHeader className="p-0 overflow-hidden">
@@ -197,7 +197,7 @@ function DashboardLayoutContent({
             </button>
           </SidebarHeader>
 
-          <SidebarContent className="gap-0 overflow-y-auto">
+          <SidebarContent className="gap-0 flex-1 min-h-0 overflow-y-auto">
             {/* Breeding Season section */}
             {!isCollapsed && (
               <div className="px-4 py-2 border-b border-border/50">
@@ -266,7 +266,7 @@ function DashboardLayoutContent({
               {!isCollapsed && (
                 <span className="text-xs font-semibold text-orange-500 mb-1">Aviary Assistant</span>
               )}
-              <img src="/aviary-assistant.svg" alt="Aviary Assistant" className="w-full h-auto object-contain" />
+              <img src="/aviary-assistant.svg" alt="Aviary Assistant" className="w-20 h-20 object-contain mx-auto" />
             </button>
             {!isCollapsed && (
               <button
