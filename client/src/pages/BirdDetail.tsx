@@ -247,6 +247,7 @@ export default function BirdDetail() {
   const [, setLocation] = useLocation();
   const birdId = Number(params.id);
   const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const maxGenerations = 4;
   const [activeGeneticsPacks] = useState<string[]>(() => readActiveGeneticsPacks());
   const [birdGenotype, setBirdGenotype] = useState<BirdGenotype>(() => readBirdGenotype(birdId));
@@ -261,6 +262,7 @@ export default function BirdDetail() {
   const speciesMap = Object.fromEntries(speciesList.map(s => [s.id, s]));
   const species = bird ? speciesMap[bird.speciesId] : undefined;
   const showGeneticsTab =
+    isAdmin &&
     activeGeneticsPacks.includes(gouldianFinchPack.speciesId) &&
     /gouldian/i.test(species?.commonName ?? "");
 

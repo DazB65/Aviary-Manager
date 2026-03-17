@@ -1,3 +1,4 @@
+import { useAuth } from "@/_core/hooks/useAuth";
 import { calculateOffspringProbabilities } from "@/genetics/engine";
 import { gouldianFinchPack } from "@/genetics/packs/gouldianFinch";
 import type { BirdGenotype, GeneticsPack, OffspringProbability } from "@/genetics/types";
@@ -72,9 +73,11 @@ function readStoredBirdGenotype(birdId?: number): BirdGenotype | null {
 }
 
 export function PredictedOffspringSection({ male, female }: { male?: PairBird; female?: PairBird }) {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const showPredictedOffspring = useMemo(
-    () => readActiveGeneticsPacks().includes(gouldianFinchPack.speciesId),
-    []
+    () => isAdmin && readActiveGeneticsPacks().includes(gouldianFinchPack.speciesId),
+    [isAdmin]
   );
 
   const maleGenotype = useMemo(() => readStoredBirdGenotype(male?.id), [male?.id]);
