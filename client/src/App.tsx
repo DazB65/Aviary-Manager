@@ -1,26 +1,28 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/NotFound";
+import { Suspense, lazy } from "react";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import Dashboard from "./pages/Dashboard";
-import Birds from "./pages/Birds";
-import BirdDetail from "./pages/BirdDetail";
-import Pairs from "./pages/Pairs";
-import Broods from "./pages/Broods";
-import Events from "./pages/Events";
-import AuthPage from "./pages/AuthPage";
-import ResetPassword from "./pages/ResetPassword";
-import Settings from "./pages/Settings";
-import Billing from "./pages/Billing";
-import Landing from "./pages/Landing";
-import Cages from "./pages/Cages";
-import Statistics from "./pages/Statistics";
-import AdminUsers from "./pages/AdminUsers";
-import Help from "./pages/Help";
-import Terms from "./pages/Terms";
-import Privacy from "./pages/Privacy";
+
+const NotFound = lazy(() => import("@/pages/NotFound"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Birds = lazy(() => import("./pages/Birds"));
+const BirdDetail = lazy(() => import("./pages/BirdDetail"));
+const Pairs = lazy(() => import("./pages/Pairs"));
+const Broods = lazy(() => import("./pages/Broods"));
+const Events = lazy(() => import("./pages/Events"));
+const AuthPage = lazy(() => import("./pages/AuthPage"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Billing = lazy(() => import("./pages/Billing"));
+const Landing = lazy(() => import("./pages/Landing"));
+const Cages = lazy(() => import("./pages/Cages"));
+const Statistics = lazy(() => import("./pages/Statistics"));
+const AdminUsers = lazy(() => import("./pages/AdminUsers"));
+const Help = lazy(() => import("./pages/Help"));
+const Terms = lazy(() => import("./pages/Terms"));
+const Privacy = lazy(() => import("./pages/Privacy"));
 
 function Router() {
   return (
@@ -56,7 +58,9 @@ function App() {
       <ThemeProvider defaultTheme="light">
         <TooltipProvider>
           <Toaster richColors position="top-right" />
-          <Router />
+          <Suspense fallback={<div>Loading...</div>}>
+            <Router />
+          </Suspense>
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>
