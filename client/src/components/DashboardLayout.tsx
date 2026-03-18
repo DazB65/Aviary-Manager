@@ -198,7 +198,7 @@ function DashboardLayoutContent({
             </button>
           </SidebarHeader>
 
-          <SidebarContent className="gap-0 flex-1 min-h-0 overflow-y-auto">
+          <SidebarContent className="gap-0 flex-1 min-h-0 overflow-y-scroll pb-4">
             {/* Breeding Season section */}
             {!isCollapsed && (
               <div className="px-4 py-2 border-b border-border/50">
@@ -235,11 +235,11 @@ function DashboardLayoutContent({
             </SidebarMenu>
             {/* Admin section */}
             {isAdmin && (
-              <div className="px-2 pb-1 mt-2">
+              <div className="px-2 pb-4 mt-4 border-t border-border/50 pt-2">
                 {!isCollapsed && (
-                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground px-2 py-2 mb-1">Admin</p>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground px-2 py-2 mb-2">Admin</p>
                 )}
-                <SidebarMenu>
+                <SidebarMenu className="space-y-1">
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       isActive={location === "/admin/users"}
