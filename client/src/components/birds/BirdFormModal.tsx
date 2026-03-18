@@ -91,7 +91,7 @@ export function BirdFormModal({
         <Dialog open={open} onOpenChange={onOpenChange}>
             {/* Keying by editingId or 'new' forces a proper full reset 
           when switching from editing one item to adding another */}
-            <DialogContent key={editingId ?? "new"} className="max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogContent key={editingId ?? "new"} className="max-w-2xl max-h-[92vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="font-display text-xl">
                         {editingId ? "Edit Bird" : "Add New Bird"}

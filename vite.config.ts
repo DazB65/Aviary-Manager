@@ -150,9 +150,16 @@ function vitePluginManusDebugCollector(): Plugin {
   };
 }
 
+const analyticsEndpoint = JSON.stringify(process.env.VITE_ANALYTICS_ENDPOINT ?? "");
+const analyticsWebsiteId = JSON.stringify(process.env.VITE_ANALYTICS_WEBSITE_ID ?? "");
+
 const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
 
 export default defineConfig({
+  define: {
+    __VITE_ANALYTICS_ENDPOINT__: analyticsEndpoint,
+    __VITE_ANALYTICS_WEBSITE_ID__: analyticsWebsiteId,
+  },
   plugins,
   resolve: {
     alias: {

@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "detectedAt": "2026-03-17T01:12:04.469Z",
+  "packageManager": "pnpm",
+  "manifestHash": "609220746030f46a5de69711dc41d0bd27fcc2caf45637733a53b58206303d1b",
+  "scripts": [
+    {
+      "name": "dev",
+      "command": "pnpm dev",
+      "category": "dev",
+      "mode": "service"
+    },
+    {
+      "name": "build",
+      "command": "pnpm build",
+      "category": "build",
+      "mode": "command"
+    },
+    {
+      "name": "start",
+      "command": "pnpm start",
+      "category": "dev",
+      "mode": "service"
+    },
+    {
+      "name": "check",
+      "command": "pnpm check",
+      "category": "typecheck",
+      "mode": "command"
+    },
+    {
+      "name": "format",
+      "command": "pnpm format",
+      "category": "format",
+      "mode": "command"
+    },
+    {
+      "name": "test",
+      "command": "pnpm test",
+      "category": "test",
+      "mode": "command"
+    },
+    {
+      "name": "db:push",
+      "command": "pnpm db:push",
+      "category": "other",
+      "mode": "command"
+    }
+  ]
+}
