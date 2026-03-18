@@ -184,7 +184,7 @@ function DashboardLayoutContent({
           className="border-r-0 flex h-full flex-col"
           disableTransition={isResizing}
         >
-          <SidebarHeader className="p-0 overflow-hidden">
+          <SidebarHeader className="p-0 overflow-hidden flex-shrink-0">
             <button
               onClick={toggleSidebar}
               className="w-full flex items-center justify-center hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -256,7 +256,7 @@ function DashboardLayoutContent({
             )}
           </SidebarContent>
 
-          <SidebarFooter className="p-3">
+          <SidebarFooter className="p-3 flex-shrink-0">
             {/* AI Assistant button */}
             <button
               id="tour-ai-fab"
