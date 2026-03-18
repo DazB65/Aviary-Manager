@@ -18,6 +18,164 @@ import { getChatStats } from "./_core/chat";
 import { storagePut } from "./storage";
 import { nanoid } from "nanoid";
 
+// ─── Marketing: content idea generator ───────────────────────────────────────
+type DashboardStats = Awaited<ReturnType<typeof StatsService.getDashboardStatsByUser>>;
+
+export interface ContentIdea {
+  id: string;
+  category: "feature" | "milestone" | "tip" | "seasonal";
+  emoji: string;
+  title: string;
+  caption: string;
+  hashtags: string;
+}
+
+function generateContentIdeas(stats: DashboardStats): ContentIdea[] {
+  const ideas: ContentIdea[] = [];
+  const month = new Date().getMonth(); // 0-based
+  const isSpringSeason = month >= 7 && month <= 10; // Aug–Nov (Southern Hemisphere)
+
+  // ── Data-driven milestones (only when user has relevant data) ───────────────
+  if (stats.totalBirds > 0) {
+    ideas.push({
+      id: "milestone-birds",
+      category: "milestone",
+      emoji: "🐦",
+      title: `${stats.totalBirds} birds tracked`,
+      caption: `Managing a flock of ${stats.totalBirds} birds takes dedication — and good record keeping. Aviary Manager keeps every bird's profile, lineage, and health history in one place. Try it free at aviarymanager.app`,
+      hashtags: "#AviaryManager #BirdKeeping #FinchBreeder #AviaryLife",
+    });
+  }
+
+  if (stats.activePairs > 0) {
+    ideas.push({
+      id: "milestone-pairs",
+      category: "milestone",
+      emoji: "💑",
+      title: `${stats.activePairs} active breeding pairs`,
+      caption: `${stats.activePairs} breeding pairs are active in our aviary this season. Aviary Manager tracks every pairing, clutch, and hatch date so nothing slips through the cracks. Learn more at aviarymanager.app`,
+      hashtags: "#AviaryManager #BreedingFinches #BirdBreeder #GouldianFinch",
+    });
+  }
+
+  if (stats.eggsIncubating > 0) {
+    ideas.push({
+      id: "milestone-eggs",
+      category: "milestone",
+      emoji: "🥚",
+      title: `${stats.eggsIncubating} eggs incubating`,
+      caption: `${stats.eggsIncubating} eggs currently incubating! Aviary Manager automatically calculates expected hatch dates and reminds you when to check. No more counting on your fingers. aviarymanager.app`,
+      hashtags: "#AviaryManager #EggTracking #BirdBreeding #FinchEggs",
+    });
+  }
+
+  if (stats.upcomingHatches > 0) {
+    ideas.push({
+      id: "milestone-hatches",
+      category: "milestone",
+      emoji: "🐣",
+      title: `${stats.upcomingHatches} broods hatching soon`,
+      caption: `${stats.upcomingHatches} broods are due to hatch in the next two weeks — exciting times in the aviary! Aviary Manager keeps track of every clutch so you're always prepared. aviarymanager.app`,
+      hashtags: "#AviaryManager #HatchDay #BirdBreeding #AviaryLife",
+    });
+  }
+
+  // ── Feature spotlights (always shown) ──────────────────────────────────────
+  ideas.push(
+    {
+      id: "feature-pedigree",
+      category: "feature",
+      emoji: "🌳",
+      title: "Pedigree tracking & PDF export",
+      caption: "Know exactly where every bird in your flock comes from. Aviary Manager builds a full pedigree tree for any bird and lets you export it as a PDF to share with buyers. Perfect for serious breeders. Try it free at aviarymanager.app",
+      hashtags: "#AviaryManager #BirdPedigree #FinchBreeder #BirdKeeping",
+    },
+    {
+      id: "feature-pairs",
+      category: "feature",
+      emoji: "❤️",
+      title: "Breeding pair management",
+      caption: "Set up a breeding pair, record when eggs were laid, track incubation, and log hatch outcomes — all in one place. Aviary Manager makes breeding record keeping simple. aviarymanager.app",
+      hashtags: "#AviaryManager #BreedingRecords #BirdBreeder #Aviculture",
+    },
+    {
+      id: "feature-events",
+      category: "feature",
+      emoji: "📅",
+      title: "Events & reminders",
+      caption: "Vet checks, banding dates, medication schedules — Aviary Manager's event reminders keep your aviary running smoothly. Never miss an important date again. aviarymanager.app",
+      hashtags: "#AviaryManager #BirdCare #VetReminders #BirdKeeping",
+    },
+    {
+      id: "feature-mutations",
+      category: "feature",
+      emoji: "🎨",
+      title: "Colour mutation tracking",
+      caption: "Planning your breeding program for specific colour outcomes? Aviary Manager lets you record each bird's colour mutation so you can plan pairings with confidence. aviarymanager.app",
+      hashtags: "#AviaryManager #ColourMutations #GouldianFinch #FinchBreeder",
+    },
+    {
+      id: "feature-mobile",
+      category: "feature",
+      emoji: "📱",
+      title: "Works on any device",
+      caption: "Aviary Manager works in your browser on phone, tablet, or desktop — no app download needed. Check on your flock from anywhere. Start your free trial at aviarymanager.app",
+      hashtags: "#AviaryManager #BirdKeeping #FinchBreeder #Aviculture",
+    }
+  );
+
+  // ── Tips ───────────────────────────────────────────────────────────────────
+  ideas.push(
+    {
+      id: "tip-hatch-rate",
+      category: "tip",
+      emoji: "📊",
+      title: "Tip: Track your hatch rate",
+      caption: "💡 Breeder tip: Log every egg outcome — hatched, infertile, cracked — and Aviary Manager will calculate your hatch rate over time. Knowing your numbers helps you improve your breeding results. aviarymanager.app",
+      hashtags: "#BreederTips #AviaryManager #BirdBreeding #HatchRate",
+    },
+    {
+      id: "tip-ring-id",
+      category: "tip",
+      emoji: "🔢",
+      title: "Tip: Use ring IDs for quick lookup",
+      caption: "💡 Breeder tip: Add each bird's leg ring ID in Aviary Manager and you can search your whole flock instantly by ring number. No more flipping through notebooks. aviarymanager.app",
+      hashtags: "#BreederTips #AviaryManager #BirdBanding #FinchBreeder",
+    },
+    {
+      id: "tip-notes",
+      category: "tip",
+      emoji: "📝",
+      title: "Tip: Use bird notes for behaviour logs",
+      caption: "💡 Breeder tip: The notes field on each bird profile is great for logging behaviour observations, weight checks, or anything unusual. Build a health history over time. aviarymanager.app",
+      hashtags: "#BreederTips #AviaryManager #BirdHealth #Aviculture",
+    }
+  );
+
+  // ── Seasonal ───────────────────────────────────────────────────────────────
+  if (isSpringSeason) {
+    ideas.push({
+      id: "seasonal-spring",
+      category: "seasonal",
+      emoji: "🌱",
+      title: "Spring breeding season is here",
+      caption: "Spring is breeding season in Australian aviaries! If you're not already tracking your pairs and clutches digitally, now is the perfect time to start. Aviary Manager is free to try — aviarymanager.app",
+      hashtags: "#SpringBreeding #AviaryManager #AustralianBirds #FinchBreeder",
+    });
+  } else {
+    ideas.push({
+      id: "seasonal-offseason",
+      category: "seasonal",
+      emoji: "✨",
+      title: "Off-season prep tip",
+      caption: "The quiet season is the best time to get your aviary records in order before breeding begins. Aviary Manager lets you set up all your birds and pairs so you're ready to go when the season starts. aviarymanager.app",
+      hashtags: "#AviaryManager #BirdKeeping #BreedingPrep #FinchBreeder",
+    });
+  }
+
+  return ideas;
+}
+
 // ─── Helper: add days to a date string ───────────────────────────────────────
 function addDays(dateStr: string, days: number): string {
   const d = new Date(dateStr);
@@ -452,6 +610,15 @@ export const appRouter = router({
         return UserService.deleteUser(input.userId);
       }),
   }),
+  // ─── Marketing ────────────────────────────────────────────────────────────
+  // Content idea generator for Aviary Manager's social media presence
+  marketing: router({
+    ideas: activeProcedure.query(async ({ ctx }) => {
+      const stats = await StatsService.getDashboardStatsByUser(ctx.user.id);
+      return generateContentIdeas(stats);
+    }),
+  }),
+
   // ─── User Settings ────────────────────────────────────────────────────────
   settings: router({
     get: protectedProcedure.query(({ ctx }) => SettingsService.getUserSettings(ctx.user.id)),

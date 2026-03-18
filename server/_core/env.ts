@@ -17,6 +17,4 @@ export const ENV = {
   ownerOpenId: process.env.OWNER_OPEN_ID ?? "",
   // Owner email — user with this email gets admin role automatically on login
   ownerEmail: (process.env.OWNER_EMAIL ?? "").toLowerCase(),
-  // SMM companion app — shared secret for /api/smm/* routes
-  smmApiSecret: process.env.SMM_API_SECRET ?? "",
 };

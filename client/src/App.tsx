@@ -21,6 +21,7 @@ const Cages = lazy(() => import("./pages/Cages"));
 const Statistics = lazy(() => import("./pages/Statistics"));
 const AdminUsers = lazy(() => import("./pages/AdminUsers"));
 const Help = lazy(() => import("./pages/Help"));
+const Marketing = lazy(() => import("./pages/Marketing"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 
@@ -40,6 +41,7 @@ function Router() {
       <Route path="/settings" component={Settings} />
       <Route path="/billing" component={Billing} />
       <Route path="/help" component={Help} />
+      <Route path="/marketing" component={Marketing} />
       <Route path="/login" component={AuthPage} />
       <Route path="/register" component={AuthPage} />
       <Route path="/reset-password" component={ResetPassword} />

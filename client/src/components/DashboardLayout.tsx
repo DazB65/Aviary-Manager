@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/useMobile";
 import { trpc } from "@/lib/trpc";
-import { BarChart2, Bird, CalendarDays, CreditCard, Egg, Heart, HelpCircle, Home, LayoutDashboard, LogOut, Settings, Users, MapPin } from "lucide-react";
+import { BarChart2, Bird, CalendarDays, CreditCard, Egg, Heart, HelpCircle, Home, LayoutDashboard, LogOut, Megaphone, Settings, Users, MapPin } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { useAppTour } from "@/hooks/useAppTour";
@@ -39,6 +39,7 @@ const mainMenuItems = [
   { icon: CalendarDays, label: "Events & Reminders", path: "/events" },
   { icon: Home, label: "Cages", path: "/cages" },
   { icon: BarChart2, label: "Statistics", path: "/statistics" },
+  { icon: Megaphone, label: "Marketing", path: "/marketing" },
   { icon: Settings, label: "Settings", path: "/settings" },
   { icon: CreditCard, label: "Billing", path: "/billing" },
   { icon: HelpCircle, label: "Help", path: "/help" },

@@ -7,7 +7,6 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerChatRoutes } from "./chat";
 import { registerPdfRoutes } from "../pdfRoutes";
-import { registerSmmRoutes } from "../smmRoutes";
 import { registerAuthRoutes } from "../authRoutes";
 import { registerStripeRoutes } from "../stripeRoutes";
 import { appRouter } from "../routers";
@@ -54,8 +53,6 @@ async function startServer() {
   registerChatRoutes(app);
   // PDF generation routes
   registerPdfRoutes(app);
-  // SMM companion app routes
-  registerSmmRoutes(app);
 
   // Run pending database migrations
   try {
