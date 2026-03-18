@@ -178,7 +178,7 @@ function DashboardLayoutContent({
 
   return (
     <>
-      <div className="relative" ref={sidebarRef}>
+      <div className="relative h-screen" ref={sidebarRef}>
         <Sidebar
           collapsible="icon"
           className="border-r-0 flex h-full flex-col"
