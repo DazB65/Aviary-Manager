@@ -10,7 +10,9 @@
     "check": "tsc --noEmit",
     "format": "prettier --write .",
     "test": "vitest run",
-    "db:push": "drizzle-kit generate && drizzle-kit migrate"
+    "db:generate": "drizzle-kit generate",
+    "postdb:generate": "tsx scripts/postprocess-migration.ts",
+    "db:push": "pnpm db:generate && drizzle-kit migrate"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.12",
