@@ -198,7 +198,7 @@ function DashboardLayoutContent({
             </button>
           </SidebarHeader>
 
-          <SidebarContent className="gap-0 flex-1 min-h-0 overflow-y-scroll pb-4">
+          <SidebarContent className="gap-0 flex-1 min-h-0 overflow-y-auto">
             {/* Breeding Season section */}
             {!isCollapsed && (
               <div className="px-4 py-2 border-b border-border/50">
@@ -235,20 +235,20 @@ function DashboardLayoutContent({
             </SidebarMenu>
             {/* Admin section */}
             {isAdmin && (
-              <div className="px-2 pb-4 mt-4 border-t border-border/50 pt-2">
+              <div className="px-2 pb-4 mt-2 border-t border-border/50 pt-2">
                 {!isCollapsed && (
-                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground px-2 py-2 mb-2">Admin</p>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground px-2 py-2 mb-1">Admin</p>
                 )}
-                <SidebarMenu className="space-y-1">
+                <SidebarMenu>
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       isActive={location === "/admin/users"}
                       onClick={() => setLocation("/admin/users")}
                       tooltip="Admin: Users"
-                      className="h-10 transition-all font-normal"
+                      className="h-10 transition-all font-normal text-base"
                     >
-                      <Users className={`h-4 w-4 ${location === "/admin/users" ? "text-primary" : ""}`} />
-                      <span>Admin: Users</span>
+                      <Users className={`h-5 w-5 ${location === "/admin/users" ? "text-primary" : ""}`} />
+                      <span className="text-base">Admin: Users</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 </SidebarMenu>
