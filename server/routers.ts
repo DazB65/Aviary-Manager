@@ -611,9 +611,9 @@ export const appRouter = router({
       }),
   }),
   // ─── Marketing ────────────────────────────────────────────────────────────
-  // Content idea generator for Aviary Manager's social media presence (admin-only)
+  // Content idea generator for social media content based on user's aviary data
   marketing: router({
-    ideas: adminProcedure.query(async ({ ctx }) => {
+    ideas: activeProcedure.query(async ({ ctx }) => {
       const stats = await StatsService.getDashboardStatsByUser(ctx.user.id);
       return generateContentIdeas(stats);
     }),

@@ -235,9 +235,9 @@ function DashboardLayoutContent({
             </SidebarMenu>
             {/* Admin section */}
             {isAdmin && (
-              <div className="px-2 pb-1">
+              <div className="px-2 pb-1 mt-2">
                 {!isCollapsed && (
-                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground px-2 py-1">Admin</p>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground px-2 py-2 mb-1">Admin</p>
                 )}
                 <SidebarMenu>
                   <SidebarMenuItem>
