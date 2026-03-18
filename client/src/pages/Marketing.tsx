@@ -2,6 +2,7 @@ import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Check, Copy, Megaphone } from "lucide-react";
 import type { ContentIdea } from "../../../server/routers";
+import DashboardLayout from "@/components/DashboardLayout";
 
 type Category = ContentIdea["category"] | "all";
 
@@ -60,7 +61,8 @@ export default function Marketing() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <DashboardLayout>
+      <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -124,7 +126,8 @@ export default function Marketing() {
           ))}
         </div>
       )}
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }
 
