@@ -41,9 +41,9 @@ function generateContentIdeas(stats: DashboardStats): ContentIdea[] {
       id: "milestone-birds",
       category: "milestone",
       emoji: "🐦",
-      title: `${stats.totalBirds} birds tracked`,
-      caption: `Managing a flock of ${stats.totalBirds} birds takes dedication — and good record keeping. Aviary Manager keeps every bird's profile, lineage, and health history in one place. Try it free at aviarymanager.app`,
-      hashtags: "#AviaryManager #BirdKeeping #FinchBreeder #AviaryLife",
+      title: `${stats.totalBirds} birds in the flock`,
+      caption: `${stats.totalBirds} birds and counting! 🐦 Every single one has their own personality and it's so rewarding watching them thrive. Loving every moment of this hobby — there's nothing quite like the sound of a happy aviary in the morning.`,
+      hashtags: "#AviaryLife #BirdKeeping #FinchBreeder #BackyardAviary",
     });
   }
 
@@ -52,9 +52,9 @@ function generateContentIdeas(stats: DashboardStats): ContentIdea[] {
       id: "milestone-pairs",
       category: "milestone",
       emoji: "💑",
-      title: `${stats.activePairs} active breeding pairs`,
-      caption: `${stats.activePairs} breeding pairs are active in our aviary this season. Aviary Manager tracks every pairing, clutch, and hatch date so nothing slips through the cracks. Learn more at aviarymanager.app`,
-      hashtags: "#AviaryManager #BreedingFinches #BirdBreeder #GouldianFinch",
+      title: `${stats.activePairs} active breeding pairs this season`,
+      caption: `We have ${stats.activePairs} breeding pairs active this season — fingers crossed for lots of healthy chicks! 🤞 Keeping detailed records of each pairing so we can track what's working and plan future pairings. Breeding season is always the most exciting time of year in the aviary.`,
+      hashtags: "#BreedingSeason #FinchBreeder #BirdBreeder #AviaryLife",
     });
   }
 
@@ -63,9 +63,9 @@ function generateContentIdeas(stats: DashboardStats): ContentIdea[] {
       id: "milestone-eggs",
       category: "milestone",
       emoji: "🥚",
-      title: `${stats.eggsIncubating} eggs incubating`,
-      caption: `${stats.eggsIncubating} eggs currently incubating! Aviary Manager automatically calculates expected hatch dates and reminds you when to check. No more counting on your fingers. aviarymanager.app`,
-      hashtags: "#AviaryManager #EggTracking #BirdBreeding #FinchEggs",
+      title: `${stats.eggsIncubating} eggs incubating right now`,
+      caption: `${stats.eggsIncubating} eggs currently incubating in the aviary! 🥚 The waiting game is always the hardest part. Checking on them every day and counting down to hatch day. There's nothing more exciting than seeing those first little cracks appear!`,
+      hashtags: "#EggWatch #BirdBreeding #FinchEggs #HatchDay #AviaryLife",
     });
   }
 
@@ -74,53 +74,53 @@ function generateContentIdeas(stats: DashboardStats): ContentIdea[] {
       id: "milestone-hatches",
       category: "milestone",
       emoji: "🐣",
-      title: `${stats.upcomingHatches} broods hatching soon`,
-      caption: `${stats.upcomingHatches} broods are due to hatch in the next two weeks — exciting times in the aviary! Aviary Manager keeps track of every clutch so you're always prepared. aviarymanager.app`,
-      hashtags: "#AviaryManager #HatchDay #BirdBreeding #AviaryLife",
+      title: `${stats.upcomingHatches} broods due to hatch soon`,
+      caption: `${stats.upcomingHatches} broods due to hatch in the next two weeks — the aviary is about to get a lot busier! 🐣 Making sure everything is ready for the new arrivals. Hatch day is honestly one of the best days as a breeder.`,
+      hashtags: "#HatchDay #BirdBreeding #NewChicks #AviaryLife #FinchBreeder",
     });
   }
 
-  // ── Feature spotlights (always shown) ──────────────────────────────────────
+  // ── Aviary life posts (always shown) ───────────────────────────────────────
   ideas.push(
     {
       id: "feature-pedigree",
       category: "feature",
       emoji: "🌳",
-      title: "Pedigree tracking & PDF export",
-      caption: "Know exactly where every bird in your flock comes from. Aviary Manager builds a full pedigree tree for any bird and lets you export it as a PDF to share with buyers. Perfect for serious breeders. Try it free at aviarymanager.app",
-      hashtags: "#AviaryManager #BirdPedigree #FinchBreeder #BirdKeeping",
+      title: "Knowing your birds' lineage",
+      caption: "One of the most important parts of a serious breeding program is knowing exactly where each bird comes from. Tracking lineage helps avoid inbreeding, plan better pairings, and produce healthier, stronger chicks. Do you keep pedigree records for your birds?",
+      hashtags: "#BirdPedigree #FinchBreeder #BreedingProgram #AviaryLife #BirdKeeping",
     },
     {
       id: "feature-pairs",
       category: "feature",
       emoji: "❤️",
-      title: "Breeding pair management",
-      caption: "Set up a breeding pair, record when eggs were laid, track incubation, and log hatch outcomes — all in one place. Aviary Manager makes breeding record keeping simple. aviarymanager.app",
-      hashtags: "#AviaryManager #BreedingRecords #BirdBreeder #Aviculture",
+      title: "Pair compatibility matters",
+      caption: "Not every pair works out — and that's okay! Watching how birds interact before committing them to a breeding box is so important. We track every pairing, note the egg dates, and log hatch outcomes so we know which pairs are our best producers each season.",
+      hashtags: "#BreedingPairs #FinchBreeder #BirdBreeder #AviaryLife #Aviculture",
     },
     {
       id: "feature-events",
       category: "feature",
       emoji: "📅",
-      title: "Events & reminders",
-      caption: "Vet checks, banding dates, medication schedules — Aviary Manager's event reminders keep your aviary running smoothly. Never miss an important date again. aviarymanager.app",
-      hashtags: "#AviaryManager #BirdCare #VetReminders #BirdKeeping",
+      title: "Staying on top of aviary schedules",
+      caption: "Vet checks, banding dates, worming schedules, vitamin rotations — there's a lot to keep track of when you're managing an aviary! Staying organised means nothing slips through the cracks and your birds get the best possible care.",
+      hashtags: "#AviaryManagement #BirdCare #FinchBreeder #AviaryLife #BirdHealth",
     },
     {
       id: "feature-mutations",
       category: "feature",
       emoji: "🎨",
-      title: "Colour mutation tracking",
-      caption: "Planning your breeding program for specific colour outcomes? Aviary Manager lets you record each bird's colour mutation so you can plan pairings with confidence. aviarymanager.app",
-      hashtags: "#AviaryManager #ColourMutations #GouldianFinch #FinchBreeder",
+      title: "The joy of colour mutations",
+      caption: "Colour mutations are one of the most fascinating parts of breeding finches. Planning pairings to produce specific colour outcomes takes patience, good records, and a bit of genetics knowledge — but when you get that stunning chick you've been working towards, it makes it all worth it! 🎨",
+      hashtags: "#ColourMutations #GouldianFinch #FinchBreeder #BirdBreeder #Aviculture",
     },
     {
-      id: "feature-mobile",
+      id: "feature-records",
       category: "feature",
-      emoji: "📱",
-      title: "Works on any device",
-      caption: "Aviary Manager works in your browser on phone, tablet, or desktop — no app download needed. Check on your flock from anywhere. Start your free trial at aviarymanager.app",
-      hashtags: "#AviaryManager #BirdKeeping #FinchBreeder #Aviculture",
+      emoji: "📋",
+      title: "Why record keeping matters",
+      caption: "Good records are the backbone of any successful breeding program. Knowing which pairs produced the most chicks, which birds have health issues, and what the lineage looks like helps you make better decisions every season. How do you keep track of your flock?",
+      hashtags: "#BirdBreeder #AviaryLife #BreedingRecords #FinchBreeder #Aviculture",
     }
   );
 
@@ -130,25 +130,33 @@ function generateContentIdeas(stats: DashboardStats): ContentIdea[] {
       id: "tip-hatch-rate",
       category: "tip",
       emoji: "📊",
-      title: "Tip: Track your hatch rate",
-      caption: "💡 Breeder tip: Log every egg outcome — hatched, infertile, cracked — and Aviary Manager will calculate your hatch rate over time. Knowing your numbers helps you improve your breeding results. aviarymanager.app",
-      hashtags: "#BreederTips #AviaryManager #BirdBreeding #HatchRate",
+      title: "Tip: Know your hatch rate",
+      caption: "💡 Breeder tip: Log every egg outcome — hatched, infertile, cracked, or abandoned. Once you start tracking this, you'll spot patterns quickly. Are certain pairs consistently producing infertile eggs? Is the humidity in your nest boxes right? Knowing your numbers is the first step to improving them.",
+      hashtags: "#BreederTips #BirdBreeding #HatchRate #AviaryLife #FinchBreeder",
     },
     {
       id: "tip-ring-id",
       category: "tip",
       emoji: "🔢",
-      title: "Tip: Use ring IDs for quick lookup",
-      caption: "💡 Breeder tip: Add each bird's leg ring ID in Aviary Manager and you can search your whole flock instantly by ring number. No more flipping through notebooks. aviarymanager.app",
-      hashtags: "#BreederTips #AviaryManager #BirdBanding #FinchBreeder",
+      title: "Tip: Band all your birds",
+      caption: "💡 Breeder tip: Leg banding is one of the best things you can do for your flock management. A unique ring ID means you can tell birds apart at a glance, track each bird's history, and prove provenance when selling. Do you band all your birds, or just the breeding stock?",
+      hashtags: "#BreederTips #BirdBanding #FinchBreeder #AviaryLife #Aviculture",
     },
     {
       id: "tip-notes",
       category: "tip",
       emoji: "📝",
-      title: "Tip: Use bird notes for behaviour logs",
-      caption: "💡 Breeder tip: The notes field on each bird profile is great for logging behaviour observations, weight checks, or anything unusual. Build a health history over time. aviarymanager.app",
-      hashtags: "#BreederTips #AviaryManager #BirdHealth #Aviculture",
+      title: "Tip: Log behaviour observations",
+      caption: "💡 Breeder tip: Keep notes on individual birds — not just health issues, but behaviour too. Is a bird becoming more aggressive? Has a hen started spending more time in the nest box? Small observations recorded over time can help you catch problems early and make smarter breeding decisions.",
+      hashtags: "#BreederTips #BirdHealth #AviaryLife #FinchBreeder #Aviculture",
+    },
+    {
+      id: "tip-diet",
+      category: "tip",
+      emoji: "🌿",
+      title: "Tip: Breeding condition diet",
+      caption: "💡 Breeder tip: Diet plays a huge role in breeding success. Introducing egg food, live food, and sprouted seed a few weeks before pairing up can make a real difference to fertility and chick survival rates. What do you feed your birds during breeding season?",
+      hashtags: "#BreederTips #BirdDiet #FinchBreeder #AviaryLife #BirdCare",
     }
   );
 
@@ -158,18 +166,18 @@ function generateContentIdeas(stats: DashboardStats): ContentIdea[] {
       id: "seasonal-spring",
       category: "seasonal",
       emoji: "🌱",
-      title: "Spring breeding season is here",
-      caption: "Spring is breeding season in Australian aviaries! If you're not already tracking your pairs and clutches digitally, now is the perfect time to start. Aviary Manager is free to try — aviarymanager.app",
-      hashtags: "#SpringBreeding #AviaryManager #AustralianBirds #FinchBreeder",
+      title: "Spring breeding season is here!",
+      caption: "Spring has arrived and the aviary is buzzing with energy! 🌱 The birds are in full breeding condition and the nest boxes are going in this week. There's nothing quite like the excitement of a new breeding season — so much to look forward to over the coming months!",
+      hashtags: "#SpringBreeding #BreedingSeason #AustralianBirds #FinchBreeder #AviaryLife",
     });
   } else {
     ideas.push({
       id: "seasonal-offseason",
       category: "seasonal",
       emoji: "✨",
-      title: "Off-season prep tip",
-      caption: "The quiet season is the best time to get your aviary records in order before breeding begins. Aviary Manager lets you set up all your birds and pairs so you're ready to go when the season starts. aviarymanager.app",
-      hashtags: "#AviaryManager #BirdKeeping #BreedingPrep #FinchBreeder",
+      title: "Off-season aviary prep",
+      caption: "The quiet season is the perfect time to get the aviary ready for breeding. Cleaning out nest boxes, checking cage condition, reviewing last season's records, and planning pairings for the year ahead. What does your off-season prep look like?",
+      hashtags: "#AviaryLife #BirdKeeping #BreedingPrep #FinchBreeder #Aviculture",
     });
   }
 
