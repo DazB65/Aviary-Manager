@@ -234,15 +234,10 @@ function DashboardLayoutContent({
                 );
               })}
             </SidebarMenu>
-            {/* Admin section */}
+            {/* Admin section — only visible to admins, no label */}
             {isAdmin && (
               <>
                 <SidebarSeparator />
-                {!isCollapsed && (
-                  <div className="px-4 pt-2 pb-0.5">
-                    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Admin</p>
-                  </div>
-                )}
                 <SidebarMenu className="px-2 py-1">
                   <SidebarMenuItem>
                     <SidebarMenuButton
