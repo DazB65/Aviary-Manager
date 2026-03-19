@@ -11,12 +11,16 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
+  SidebarSeparator,
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
@@ -235,24 +239,27 @@ function DashboardLayoutContent({
             </SidebarMenu>
             {/* Admin section */}
             {isAdmin && (
-              <div className="px-2 pb-4 mt-2 border-t border-border/50 pt-2">
-                {!isCollapsed && (
-                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground px-2 py-2 mb-1">Admin</p>
-                )}
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      isActive={location === "/admin/users"}
-                      onClick={() => setLocation("/admin/users")}
-                      tooltip="Admin: Users"
-                      className="h-10 transition-all font-normal text-base"
-                    >
-                      <Users className={`h-5 w-5 ${location === "/admin/users" ? "text-primary" : ""}`} />
-                      <span className="text-base">Admin: Users</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </div>
+              <>
+                <SidebarSeparator />
+                <SidebarGroup>
+                  <SidebarGroupLabel>Admin</SidebarGroupLabel>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          isActive={location === "/admin/users"}
+                          onClick={() => setLocation("/admin/users")}
+                          tooltip="Admin: Users"
+                          className="h-10 transition-all font-normal text-base"
+                        >
+                          <Users className={`h-5 w-5 ${location === "/admin/users" ? "text-primary" : ""}`} />
+                          <span className="text-base">Admin: Users</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+              </>
             )}
           </SidebarContent>
 
@@ -361,14 +368,18 @@ function DashboardLayoutContent({
       {/* AI Assistant Sheet */}
       <Sheet open={aiOpen} onOpenChange={setAiOpen}>
         <SheetContent side="right" className="w-[400px] sm:w-[540px] p-0 flex flex-col border-l">
-          <div className="flex bg-primary/10 p-4 items-center gap-3 border-b">
-            <img src="/logo-color.svg" alt="Aviary Manager" className="h-10 w-10 object-contain shrink-0" />
-            <div>
-              <SheetTitle className="text-lg">Aviary Assistant</SheetTitle>
+          <div className="flex bg-gradient-to-r from-primary/10 to-primary/5 p-4 items-center gap-3 border-b">
+            <div className="relative shrink-0">
+              <img src="/logo-color.svg" alt="Aviary Manager" className="h-10 w-10 object-contain" />
+              <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 border-2 border-background" title="Online" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <SheetTitle className="text-base font-semibold">Aviary Assistant</SheetTitle>
               <SheetDescription className="text-xs">
-                Ask questions about your flock, upcoming events, and stats.
+                Your AI expert for birds, breeding &amp; mutations
               </SheetDescription>
             </div>
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-primary/15 text-primary shrink-0">AI Powered</span>
           </div>
           <div className="flex-1 overflow-hidden">
             {user && (
@@ -376,12 +387,16 @@ function DashboardLayoutContent({
                 chatId={`assistant-global-${user.id}`}
                 initialMessages={[]}
                 api="/api/chat"
-                placeholder="Message your Aviary Assistant..."
+                placeholder="Ask anything about your aviary..."
                 className="h-full border-0 rounded-none shadow-none"
-                emptyStateMessage="Hello! I'm your AI Aviary Assistant. I can help you search birds, check flock stats, or review upcoming events."
+                assistantAvatarUrl="/logo-color.svg"
+                emptyStateMessage="I'm your Aviary Assistant. Ask me about your birds, breeding pairs, upcoming events, hatch rates, and colour mutations."
                 suggestedPrompts={[
                   "What's my total flock size?",
-                  "Show me my upcoming events",
+                  "Which pairs have eggs incubating right now?",
+                  "Show my upcoming events this week",
+                  "What's my hatch rate this season?",
+                  "Recommend pairings based on my mutations",
                   "Search for birds that are breeding",
                 ]}
               />

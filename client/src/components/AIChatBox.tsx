@@ -158,18 +158,30 @@ export interface AIChatBoxProps {
 
   /** Suggested prompts shown in empty state */
   suggestedPrompts?: string[];
+
+  /** URL for the assistant avatar image (shown next to assistant messages and in empty state) */
+  assistantAvatarUrl?: string;
 }
 
 // ============================================================================
 // DEFAULT TOOL RENDERER
 // ============================================================================
 
-function DefaultToolPartRenderer({ toolName, state, output, errorText }: ToolPartRendererProps) {
+const TOOL_LOADING_LABELS: Record<string, string> = {
+  getFlockStats: "📊 Checking your flock stats...",
+  searchBirds: "🔍 Searching your birds...",
+  getUpcomingEvents: "📅 Looking up upcoming events...",
+  getMutationSummary: "🧬 Analysing colour mutations...",
+  getPairEggStats: "🥚 Fetching breeding pair stats...",
+};
+
+function DefaultToolPartRenderer({ toolName, state, errorText }: ToolPartRendererProps) {
   if (isToolLoading(state)) {
+    const label = TOOL_LOADING_LABELS[toolName] ?? `Looking that up...`;
     return (
-      <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg my-2">
-        <Loader2 className="size-4 animate-spin" />
-        <span className="text-sm text-muted-foreground">Running {toolName}...</span>
+      <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/10 rounded-lg my-2">
+        <Loader2 className="size-3.5 animate-spin text-primary shrink-0" />
+        <span className="text-xs text-muted-foreground">{label}</span>
       </div>
     );
   }
@@ -177,16 +189,12 @@ function DefaultToolPartRenderer({ toolName, state, output, errorText }: ToolPar
   if (isToolError(state)) {
     return (
       <div className="p-3 bg-destructive/10 rounded-lg my-2 text-sm text-destructive">
-        Error: {errorText || "Tool execution failed"}
+        {errorText || "Something went wrong — please try again."}
       </div>
     );
   }
 
-  if (isToolComplete(state) && output) {
-    // Hide raw JSON output from the UI, rely entirely on the LLM's natural language response.
-    return null;
-  }
-
+  // Hide raw JSON output; rely on the LLM's natural language response.
   return null;
 }
 
@@ -198,10 +206,12 @@ function MessageBubble({
   message,
   renderToolPart,
   isStreaming,
+  assistantAvatarUrl,
 }: {
   message: UIMessage;
   renderToolPart: ToolPartRenderer;
   isStreaming: boolean;
+  assistantAvatarUrl?: string;
 }) {
   const isUser = message.role === "user";
 
@@ -214,8 +224,12 @@ function MessageBubble({
     >
       {/* Assistant avatar */}
       {!isUser && (
-        <div className="size-8 shrink-0 mt-1 rounded-full bg-primary/10 flex items-center justify-center">
-          <Sparkles className="size-4 text-primary" />
+        <div className="size-8 shrink-0 mt-1 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+          {assistantAvatarUrl ? (
+            <img src={assistantAvatarUrl} alt="Assistant" className="size-5 object-contain" />
+          ) : (
+            <Sparkles className="size-4 text-primary" />
+          )}
         </div>
       )}
 
@@ -297,16 +311,21 @@ function MessageBubble({
 // THINKING INDICATOR
 // ============================================================================
 
-function ThinkingIndicator() {
+function ThinkingIndicator({ assistantAvatarUrl }: { assistantAvatarUrl?: string }) {
   return (
     <div className="flex gap-3 justify-start items-start">
-      <div className="size-8 shrink-0 mt-1 rounded-full bg-primary/10 flex items-center justify-center">
-        <Sparkles className="size-4 text-primary" />
+      <div className="size-8 shrink-0 mt-1 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+        {assistantAvatarUrl ? (
+          <img src={assistantAvatarUrl} alt="Assistant" className="size-5 object-contain" />
+        ) : (
+          <Sparkles className="size-4 text-primary" />
+        )}
       </div>
-      <div className="bg-muted rounded-lg px-4 py-2.5">
-        <div className="flex items-center gap-2">
-          <Loader2 className="size-4 animate-spin" />
-          <span className="text-sm text-muted-foreground">Thinking...</span>
+      <div className="bg-muted rounded-lg px-4 py-3.5">
+        <div className="flex items-center gap-1.5">
+          <span className="size-2 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:-0.3s]" />
+          <span className="size-2 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:-0.15s]" />
+          <span className="size-2 rounded-full bg-muted-foreground/50 animate-bounce" />
         </div>
       </div>
     </div>
@@ -328,6 +347,7 @@ export function AIChatBox({
   className,
   emptyStateMessage = "Start a conversation with AI",
   suggestedPrompts,
+  assistantAvatarUrl,
 }: AIChatBoxProps) {
   const [input, setInput] = useState("");
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -437,17 +457,23 @@ export function AIChatBox({
           <div className="mx-auto max-w-3xl space-y-4 p-4">
             {/* Empty state */}
             {messages.length === 0 && !isWaitingForContent ? (
-              <div className="flex h-[60vh] flex-col items-center justify-center gap-6 text-muted-foreground">
-                <Sparkles className="size-12 opacity-20" />
-                <p className="text-center max-w-md">{emptyStateMessage}</p>
+              <div className="flex h-[60vh] flex-col items-center justify-center gap-5 text-muted-foreground px-4">
+                {assistantAvatarUrl ? (
+                  <div className="size-16 rounded-full bg-primary/10 flex items-center justify-center">
+                    <img src={assistantAvatarUrl} alt="Assistant" className="size-9 object-contain" />
+                  </div>
+                ) : (
+                  <Sparkles className="size-12 opacity-20" />
+                )}
+                <p className="text-center text-sm max-w-xs text-foreground/70 leading-relaxed">{emptyStateMessage}</p>
                 {suggestedPrompts && suggestedPrompts.length > 0 && (
-                  <div className="flex flex-wrap justify-center gap-2 max-w-lg">
+                  <div className="flex flex-wrap justify-center gap-2 max-w-sm">
                     {suggestedPrompts.map((prompt, i) => (
                       <Button
                         key={i}
                         variant="outline"
                         size="sm"
-                        className="text-xs"
+                        className="text-xs h-auto py-1.5 px-3 text-left leading-snug border-primary/20 hover:border-primary/40 hover:bg-primary/5"
                         onClick={() => {
                           setInput(prompt);
                           textareaRef.current?.focus();
@@ -476,12 +502,13 @@ export function AIChatBox({
                       message={message}
                       renderToolPart={renderToolPart}
                       isStreaming={isStreaming && isLastAssistant && hasContent}
+                      assistantAvatarUrl={assistantAvatarUrl}
                     />
                   );
                 })}
 
                 {/* Thinking indicator */}
-                {isWaitingForContent && <ThinkingIndicator />}
+                {isWaitingForContent && <ThinkingIndicator assistantAvatarUrl={assistantAvatarUrl} />}
               </>
             )}
 
