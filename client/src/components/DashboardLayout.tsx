@@ -11,9 +11,6 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
@@ -241,24 +238,24 @@ function DashboardLayoutContent({
             {isAdmin && (
               <>
                 <SidebarSeparator />
-                <SidebarGroup>
-                  <SidebarGroupLabel>Admin</SidebarGroupLabel>
-                  <SidebarGroupContent>
-                    <SidebarMenu>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton
-                          isActive={location === "/admin/users"}
-                          onClick={() => setLocation("/admin/users")}
-                          tooltip="Admin: Users"
-                          className="h-10 transition-all font-normal text-base"
-                        >
-                          <Users className={`h-5 w-5 ${location === "/admin/users" ? "text-primary" : ""}`} />
-                          <span className="text-base">Admin: Users</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    </SidebarMenu>
-                  </SidebarGroupContent>
-                </SidebarGroup>
+                {!isCollapsed && (
+                  <div className="px-4 pt-2 pb-0.5">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Admin</p>
+                  </div>
+                )}
+                <SidebarMenu className="px-2 py-1">
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={location === "/admin/users"}
+                      onClick={() => setLocation("/admin/users")}
+                      tooltip="Admin: Users"
+                      className="h-10 transition-all font-normal text-base"
+                    >
+                      <Users className={`h-5 w-5 ${location === "/admin/users" ? "text-primary" : ""}`} />
+                      <span className="text-base">Admin: Users</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
               </>
             )}
           </SidebarContent>
