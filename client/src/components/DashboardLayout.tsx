@@ -393,7 +393,6 @@ function DashboardLayoutContent({
                   "Which pairs have eggs incubating right now?",
                   "Show my upcoming events this week",
                   "What's my hatch rate this season?",
-                  "Recommend pairings based on my mutations",
                   "Search for birds that are breeding",
                 ]}
               />
