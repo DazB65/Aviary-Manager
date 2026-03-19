@@ -23,7 +23,7 @@ type DashboardStats = Awaited<ReturnType<typeof StatsService.getDashboardStatsBy
 
 export interface ContentIdea {
   id: string;
-  category: "feature" | "milestone" | "tip" | "seasonal";
+  category: "milestone" | "tip" | "seasonal";
   emoji: string;
   title: string;
   caption: string;
@@ -43,7 +43,7 @@ function generateContentIdeas(stats: DashboardStats): ContentIdea[] {
       emoji: "🐦",
       title: `${stats.totalBirds} birds in the flock`,
       caption: `${stats.totalBirds} birds and counting! 🐦 Every single one has their own personality and it's so rewarding watching them thrive. Loving every moment of this hobby — there's nothing quite like the sound of a happy aviary in the morning.`,
-      hashtags: "#AviaryLife #BirdKeeping #FinchBreeder #BackyardAviary",
+      hashtags: "#AviaryLife #BirdKeeping #FinchBreeder #BackyardAviary #AviaryManager",
     });
   }
 
@@ -54,7 +54,7 @@ function generateContentIdeas(stats: DashboardStats): ContentIdea[] {
       emoji: "💑",
       title: `${stats.activePairs} active breeding pairs this season`,
       caption: `We have ${stats.activePairs} breeding pairs active this season — fingers crossed for lots of healthy chicks! 🤞 Keeping detailed records of each pairing so we can track what's working and plan future pairings. Breeding season is always the most exciting time of year in the aviary.`,
-      hashtags: "#BreedingSeason #FinchBreeder #BirdBreeder #AviaryLife",
+      hashtags: "#BreedingSeason #FinchBreeder #BirdBreeder #AviaryLife #AviaryManager",
     });
   }
 
@@ -65,7 +65,7 @@ function generateContentIdeas(stats: DashboardStats): ContentIdea[] {
       emoji: "🥚",
       title: `${stats.eggsIncubating} eggs incubating right now`,
       caption: `${stats.eggsIncubating} eggs currently incubating in the aviary! 🥚 The waiting game is always the hardest part. Checking on them every day and counting down to hatch day. There's nothing more exciting than seeing those first little cracks appear!`,
-      hashtags: "#EggWatch #BirdBreeding #FinchEggs #HatchDay #AviaryLife",
+      hashtags: "#EggWatch #BirdBreeding #FinchEggs #HatchDay #AviaryLife #AviaryManager",
     });
   }
 
@@ -76,51 +76,43 @@ function generateContentIdeas(stats: DashboardStats): ContentIdea[] {
       emoji: "🐣",
       title: `${stats.upcomingHatches} broods due to hatch soon`,
       caption: `${stats.upcomingHatches} broods due to hatch in the next two weeks — the aviary is about to get a lot busier! 🐣 Making sure everything is ready for the new arrivals. Hatch day is honestly one of the best days as a breeder.`,
-      hashtags: "#HatchDay #BirdBreeding #NewChicks #AviaryLife #FinchBreeder",
+      hashtags: "#HatchDay #BirdBreeding #NewChicks #AviaryLife #FinchBreeder #AviaryManager",
     });
   }
 
-  // ── Aviary life posts (always shown) ───────────────────────────────────────
+  // ── Personal aviary stories (always shown) ─────────────────────────────────
   ideas.push(
     {
-      id: "feature-pedigree",
-      category: "feature",
-      emoji: "🌳",
-      title: "Knowing your birds' lineage",
-      caption: "One of the most important parts of a serious breeding program is knowing exactly where each bird comes from. Tracking lineage helps avoid inbreeding, plan better pairings, and produce healthier, stronger chicks. Do you keep pedigree records for your birds?",
-      hashtags: "#BirdPedigree #FinchBreeder #BreedingProgram #AviaryLife #BirdKeeping",
+      id: "story-morning",
+      category: "milestone",
+      emoji: "🌅",
+      title: "Morning in the aviary",
+      caption: "There's something special about the first hour in the aviary each morning. Checking in on every bird, spotting who's active, who's sitting tight on eggs, and who might need a little extra attention. These quiet morning checks are honestly one of the best parts of keeping birds. 🐦",
+      hashtags: "#AviaryLife #BirdKeeping #FinchBreeder #MorningRoutine #AviaryManager",
     },
     {
-      id: "feature-pairs",
-      category: "feature",
-      emoji: "❤️",
-      title: "Pair compatibility matters",
-      caption: "Not every pair works out — and that's okay! Watching how birds interact before committing them to a breeding box is so important. We track every pairing, note the egg dates, and log hatch outcomes so we know which pairs are our best producers each season.",
-      hashtags: "#BreedingPairs #FinchBreeder #BirdBreeder #AviaryLife #Aviculture",
-    },
-    {
-      id: "feature-events",
-      category: "feature",
-      emoji: "📅",
-      title: "Staying on top of aviary schedules",
-      caption: "Vet checks, banding dates, worming schedules, vitamin rotations — there's a lot to keep track of when you're managing an aviary! Staying organised means nothing slips through the cracks and your birds get the best possible care.",
-      hashtags: "#AviaryManagement #BirdCare #FinchBreeder #AviaryLife #BirdHealth",
-    },
-    {
-      id: "feature-mutations",
-      category: "feature",
+      id: "story-mutations",
+      category: "milestone",
       emoji: "🎨",
       title: "The joy of colour mutations",
       caption: "Colour mutations are one of the most fascinating parts of breeding finches. Planning pairings to produce specific colour outcomes takes patience, good records, and a bit of genetics knowledge — but when you get that stunning chick you've been working towards, it makes it all worth it! 🎨",
-      hashtags: "#ColourMutations #GouldianFinch #FinchBreeder #BirdBreeder #Aviculture",
+      hashtags: "#ColourMutations #GouldianFinch #FinchBreeder #BirdBreeder #AviaryManager",
     },
     {
-      id: "feature-records",
-      category: "feature",
-      emoji: "📋",
-      title: "Why record keeping matters",
-      caption: "Good records are the backbone of any successful breeding program. Knowing which pairs produced the most chicks, which birds have health issues, and what the lineage looks like helps you make better decisions every season. How do you keep track of your flock?",
-      hashtags: "#BirdBreeder #AviaryLife #BreedingRecords #FinchBreeder #Aviculture",
+      id: "story-lineage",
+      category: "milestone",
+      emoji: "🌳",
+      title: "Knowing your birds' lineage",
+      caption: "One of the most important parts of a serious breeding program is knowing exactly where each bird comes from. Tracking lineage helps avoid inbreeding, plan better pairings, and produce healthier, stronger chicks. The history behind each bird makes them even more special. 🐦",
+      hashtags: "#BirdPedigree #FinchBreeder #BreedingProgram #AviaryLife #AviaryManager",
+    },
+    {
+      id: "story-nestbox",
+      category: "milestone",
+      emoji: "🏠",
+      title: "Nest box check day",
+      caption: "Nest box check day! 🏠 Always a mix of excitement and nerves — you never quite know what you'll find. New eggs, tiny chicks, or a pair that's decided they're not ready yet. Every check tells a story. This is the part of the hobby that keeps me coming back season after season.",
+      hashtags: "#NestBox #BirdBreeding #FinchBreeder #AviaryLife #AviaryManager",
     }
   );
 
@@ -132,7 +124,7 @@ function generateContentIdeas(stats: DashboardStats): ContentIdea[] {
       emoji: "📊",
       title: "Tip: Know your hatch rate",
       caption: "💡 Breeder tip: Log every egg outcome — hatched, infertile, cracked, or abandoned. Once you start tracking this, you'll spot patterns quickly. Are certain pairs consistently producing infertile eggs? Is the humidity in your nest boxes right? Knowing your numbers is the first step to improving them.",
-      hashtags: "#BreederTips #BirdBreeding #HatchRate #AviaryLife #FinchBreeder",
+      hashtags: "#BreederTips #BirdBreeding #HatchRate #AviaryLife #AviaryManager",
     },
     {
       id: "tip-ring-id",
@@ -140,7 +132,7 @@ function generateContentIdeas(stats: DashboardStats): ContentIdea[] {
       emoji: "🔢",
       title: "Tip: Band all your birds",
       caption: "💡 Breeder tip: Leg banding is one of the best things you can do for your flock management. A unique ring ID means you can tell birds apart at a glance, track each bird's history, and prove provenance when selling. Do you band all your birds, or just the breeding stock?",
-      hashtags: "#BreederTips #BirdBanding #FinchBreeder #AviaryLife #Aviculture",
+      hashtags: "#BreederTips #BirdBanding #FinchBreeder #AviaryLife #AviaryManager",
     },
     {
       id: "tip-notes",
@@ -148,7 +140,7 @@ function generateContentIdeas(stats: DashboardStats): ContentIdea[] {
       emoji: "📝",
       title: "Tip: Log behaviour observations",
       caption: "💡 Breeder tip: Keep notes on individual birds — not just health issues, but behaviour too. Is a bird becoming more aggressive? Has a hen started spending more time in the nest box? Small observations recorded over time can help you catch problems early and make smarter breeding decisions.",
-      hashtags: "#BreederTips #BirdHealth #AviaryLife #FinchBreeder #Aviculture",
+      hashtags: "#BreederTips #BirdHealth #AviaryLife #FinchBreeder #AviaryManager",
     },
     {
       id: "tip-diet",
@@ -156,7 +148,7 @@ function generateContentIdeas(stats: DashboardStats): ContentIdea[] {
       emoji: "🌿",
       title: "Tip: Breeding condition diet",
       caption: "💡 Breeder tip: Diet plays a huge role in breeding success. Introducing egg food, live food, and sprouted seed a few weeks before pairing up can make a real difference to fertility and chick survival rates. What do you feed your birds during breeding season?",
-      hashtags: "#BreederTips #BirdDiet #FinchBreeder #AviaryLife #BirdCare",
+      hashtags: "#BreederTips #BirdDiet #FinchBreeder #AviaryLife #AviaryManager",
     }
   );
 
@@ -168,7 +160,7 @@ function generateContentIdeas(stats: DashboardStats): ContentIdea[] {
       emoji: "🌱",
       title: "Spring breeding season is here!",
       caption: "Spring has arrived and the aviary is buzzing with energy! 🌱 The birds are in full breeding condition and the nest boxes are going in this week. There's nothing quite like the excitement of a new breeding season — so much to look forward to over the coming months!",
-      hashtags: "#SpringBreeding #BreedingSeason #AustralianBirds #FinchBreeder #AviaryLife",
+      hashtags: "#SpringBreeding #BreedingSeason #AustralianBirds #FinchBreeder #AviaryManager",
     });
   } else {
     ideas.push({
@@ -177,7 +169,7 @@ function generateContentIdeas(stats: DashboardStats): ContentIdea[] {
       emoji: "✨",
       title: "Off-season aviary prep",
       caption: "The quiet season is the perfect time to get the aviary ready for breeding. Cleaning out nest boxes, checking cage condition, reviewing last season's records, and planning pairings for the year ahead. What does your off-season prep look like?",
-      hashtags: "#AviaryLife #BirdKeeping #BreedingPrep #FinchBreeder #Aviculture",
+      hashtags: "#AviaryLife #BirdKeeping #BreedingPrep #FinchBreeder #AviaryManager",
     });
   }
 

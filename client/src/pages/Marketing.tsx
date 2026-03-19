@@ -9,14 +9,12 @@ type Category = ContentIdea["category"] | "all";
 const CATEGORY_LABELS: Record<Category, string> = {
   all: "All",
   milestone: "🏆 Milestones",
-  feature: "✨ Features",
   tip: "💡 Tips",
   seasonal: "🌱 Seasonal",
 };
 
 const CATEGORY_COLORS: Record<ContentIdea["category"], string> = {
   milestone: "bg-yellow-100 text-yellow-800",
-  feature:   "bg-blue-100 text-blue-800",
   tip:       "bg-green-100 text-green-800",
   seasonal:  "bg-purple-100 text-purple-800",
 };
@@ -71,7 +69,7 @@ export default function Marketing() {
             Content Ideas
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Ready-to-post captions for Aviary Manager's Facebook &amp; Instagram.
+            Ready-to-post captions about your aviary for Facebook &amp; Instagram.
             Copy a caption, paste it into{" "}
             <a
               href="https://business.facebook.com"

@@ -191,7 +191,7 @@ function DashboardLayoutContent({
               aria-label="Toggle navigation"
             >
               <img
-                src="/logo.svg"
+                src="/logo-transparent.svg"
                 alt="Aviary Manager"
                 className="w-full h-auto object-contain"
               />
