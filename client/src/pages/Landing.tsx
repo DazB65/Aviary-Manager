@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useLocation } from "wouter";
 import {
   Bird, Egg, Heart, TreePine, CalendarDays, FileText,
-  Check, Star, ChevronRight, Dna, Users, Menu, X
+  Check, ChevronRight, Dna, Users, Menu, X
 } from "lucide-react";
 
 // Item 8: All icons use teal brand palette (alternating two tints)
@@ -60,26 +60,6 @@ const FEATURES = [
   },
 ];
 
-const TESTIMONIALS = [
-  {
-    name: "Sarah M.",
-    role: "Canary breeder, QLD",
-    text: "Finally a breeding app that actually understands aviculture. The pedigree tree alone is worth it.",
-    stars: 5,
-  },
-  {
-    name: "James T.",
-    role: "Finch & parrot keeper, VIC",
-    text: "The inbreeding calculator has saved me from some bad pairings. Brilliant tool.",
-    stars: 5,
-  },
-  {
-    name: "Linda K.",
-    role: "Cockatiel breeder, NSW",
-    text: "I used to manage everything in spreadsheets. This is so much better. The egg tracking is fantastic.",
-    stars: 5,
-  },
-];
 
 export default function Landing() {
   const [, setLocation] = useLocation();
@@ -320,45 +300,6 @@ export default function Landing() {
                 </div>
               </CardContent>
             </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials — Item 7: py-20, Item 9: shadow, Item 14: italic, quote mark, cream bg */}
-      <section className="px-6 py-20 bg-white">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Loved by breeders</h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            {TESTIMONIALS.map(t => (
-              <Card
-                key={t.name}
-                className="border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.08)] bg-amber-50/40"
-              >
-                <CardContent className="pt-6 relative">
-                  {/* Item 14: large decorative opening quote */}
-                  <span
-                    className="absolute top-4 left-5 text-7xl font-serif leading-none text-teal-500 select-none pointer-events-none"
-                    style={{ opacity: 0.15 }}
-                    aria-hidden="true"
-                  >
-                    "
-                  </span>
-                  <div className="flex gap-1 mb-3 relative">
-                    {Array.from({ length: t.stars }).map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
-                    ))}
-                  </div>
-                  {/* Item 14: italic quote text */}
-                  <p className="text-gray-700 text-sm leading-relaxed mb-4 italic relative">"{t.text}"</p>
-                  <div>
-                    <p className="font-semibold text-gray-900 text-sm">{t.name}</p>
-                    <p className="text-gray-400 text-xs">{t.role}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
           </div>
         </div>
       </section>
