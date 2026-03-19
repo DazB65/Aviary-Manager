@@ -35,10 +35,6 @@ export function useBirds() {
         onSuccess: () => { utils.birds.list.invalidate(); utils.dashboard.stats.invalidate(); toast.success("Bird removed."); },
         onError: (e) => toast.error(e.message),
     });
-    const uploadPhoto = trpc.birds.uploadPhoto.useMutation({
-        onError: (e) => toast.error("Upload failed: " + e.message),
-    });
-
     const inactiveStatuses = ["deceased", "sold"];
 
     const speciesMap = useMemo(() => Object.fromEntries(speciesList.map(s => [s.id, s])), [speciesList]);
@@ -96,6 +92,5 @@ export function useBirds() {
         createBird,
         updateBird,
         deleteBird,
-        uploadPhoto,
     };
 }
