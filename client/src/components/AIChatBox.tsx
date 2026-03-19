@@ -457,7 +457,7 @@ export function AIChatBox({
           <div className="mx-auto max-w-3xl space-y-4 p-4">
             {/* Empty state */}
             {messages.length === 0 && !isWaitingForContent ? (
-              <div className="flex h-[60vh] flex-col items-center justify-center gap-5 text-muted-foreground px-4">
+              <div className="flex flex-col items-center gap-4 text-muted-foreground px-4 pt-6">
                 {assistantAvatarUrl ? (
                   <div className="size-16 rounded-full bg-primary/10 flex items-center justify-center">
                     <img src={assistantAvatarUrl} alt="Assistant" className="size-9 object-contain" />

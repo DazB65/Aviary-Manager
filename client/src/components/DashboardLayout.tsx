@@ -358,7 +358,7 @@ function DashboardLayoutContent({
         <SheetContent side="right" className="w-[400px] sm:w-[540px] p-0 flex flex-col border-l">
           <div className="flex bg-gradient-to-r from-primary/10 to-primary/5 p-4 items-center gap-3 border-b">
             <div className="relative shrink-0">
-              <img src="/logo-color.svg" alt="Aviary Manager" className="h-10 w-10 object-contain" />
+              <img src="/logo-transparent.svg" alt="Aviary Manager" className="h-10 w-10 object-contain" />
               <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 border-2 border-background" title="Online" />
             </div>
             <div className="flex-1 min-w-0">
@@ -377,7 +377,7 @@ function DashboardLayoutContent({
                 api="/api/chat"
                 placeholder="Ask anything about your aviary..."
                 className="h-full border-0 rounded-none shadow-none"
-                assistantAvatarUrl="/logo-color.svg"
+                assistantAvatarUrl="/logo-transparent.svg"
                 emptyStateMessage="I'm your Aviary AI Assistant. Ask me about your birds, breeding pairs, upcoming events, hatch rates, and colour mutations."
                 suggestedPrompts={[
                   "What's my total flock size?",
