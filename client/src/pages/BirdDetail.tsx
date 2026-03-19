@@ -9,6 +9,7 @@ import { ArrowLeft, Bird, Calendar, Tag, Dna, GitBranch, Users, CalendarDays, Ch
 import { useLocation, useParams } from "wouter";
 import { format } from "date-fns";
 import { GenderIcon } from "@/components/ui/GenderIcon";
+import { useState } from "react";
 
 type PedigreeBird = {
   id: number;
@@ -136,6 +137,7 @@ export default function BirdDetail() {
   const params = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const birdId = Number(params.id);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const { user } = useAuth();
   const maxGenerations = 4;
 
@@ -236,7 +238,10 @@ export default function BirdDetail() {
           <div className="bg-gradient-to-r from-amber-400 to-orange-500 h-24" />
           <CardContent className="px-6 pb-6">
             <div className="flex items-end gap-5 -mt-10">
-              <div className={`w-20 h-20 rounded-2xl border-4 border-white shadow-md overflow-hidden ${bird.gender === "male" ? "bg-blue-50" : bird.gender === "female" ? "bg-pink-50" : "bg-amber-50"} flex items-center justify-center text-3xl`}>
+              <div
+                className={`w-20 h-20 rounded-2xl border-4 border-white shadow-md overflow-hidden ${bird.gender === "male" ? "bg-blue-50" : bird.gender === "female" ? "bg-pink-50" : "bg-amber-50"} flex items-center justify-center text-3xl ${bird.photoUrl ? "cursor-zoom-in" : ""}`}
+                onClick={() => bird.photoUrl && setLightboxSrc(bird.photoUrl)}
+              >
                 {bird.photoUrl ? (
                   <img src={bird.photoUrl} alt={bird.name ?? "Bird"} className="w-full h-full object-cover" />
                 ) : (
@@ -505,5 +510,20 @@ export default function BirdDetail() {
 
       </div>
     </DashboardLayout>
+
+    {/* Lightbox */}
+    {lightboxSrc && (
+      <div
+        className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 cursor-zoom-out"
+        onClick={() => setLightboxSrc(null)}
+      >
+        <img
+          src={lightboxSrc}
+          alt="Bird"
+          className="max-w-full max-h-full rounded-2xl shadow-2xl object-contain"
+          style={{ maxWidth: "min(90vw, 600px)", maxHeight: "90vh" }}
+        />
+      </div>
+    )}
   );
 }

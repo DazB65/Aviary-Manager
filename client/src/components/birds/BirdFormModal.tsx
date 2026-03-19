@@ -135,8 +135,9 @@ export function BirdFormModal({
             e.preventDefault();
             const factor = e.deltaY < 0 ? 1.08 : 0.92;
             const { w, h } = origSizeRef.current;
-            const minS = Math.min(CROP_VIEW / w, CROP_VIEW / h); // fit = min zoom
-            const next = Math.max(minS, Math.min(minS * 4, cropScaleRef.current * factor));
+            const fitS = Math.min(CROP_VIEW / w, CROP_VIEW / h);
+            const minS = fitS * 0.3; // allow zooming out to 30% of fit
+            const next = Math.max(minS, Math.min(fitS * 4, cropScaleRef.current * factor));
             const off = clampOff(cropOffsetRef.current.x, cropOffsetRef.current.y, next);
             cropScaleRef.current = next;
             cropOffsetRef.current = off;
@@ -161,8 +162,9 @@ export function BirdFormModal({
 
     function adjustZoom(factor: number) {
         const { w, h } = origSizeRef.current;
-        const minS = Math.min(CROP_VIEW / w, CROP_VIEW / h); // fit = min zoom
-        const next = Math.max(minS, Math.min(minS * 4, cropScaleRef.current * factor));
+        const fitS = Math.min(CROP_VIEW / w, CROP_VIEW / h);
+        const minS = fitS * 0.3; // allow zooming out to 30% of fit
+        const next = Math.max(minS, Math.min(fitS * 4, cropScaleRef.current * factor));
         const off = clampOff(cropOffsetRef.current.x, cropOffsetRef.current.y, next);
         cropScaleRef.current = next;
         cropOffsetRef.current = off;
@@ -190,6 +192,8 @@ export function BirdFormModal({
         img.onload = () => {
             const s = cropScaleRef.current;
             const { x: ox, y: oy } = cropOffsetRef.current;
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, CROP_OUT, CROP_OUT);
             ctx.drawImage(img, -ox / s, -oy / s, CROP_VIEW / s, CROP_VIEW / s, 0, 0, CROP_OUT, CROP_OUT);
             form.setValue("photoUrl", canvas.toDataURL("image/jpeg", 0.85), { shouldValidate: true });
             setCropSrc(null);
@@ -218,9 +222,8 @@ export function BirdFormModal({
     const maleBirds = birdsList.filter(b => b.gender === "male");
     const femaleBirds = birdsList.filter(b => b.gender === "female");
 
-    const zoomPct = Math.round(
-        cropScale / Math.min(CROP_VIEW / Math.max(origSizeRef.current.w, 1), CROP_VIEW / Math.max(origSizeRef.current.h, 1)) * 100
-    );
+    const fitScale = Math.min(CROP_VIEW / Math.max(origSizeRef.current.w, 1), CROP_VIEW / Math.max(origSizeRef.current.h, 1));
+    const zoomPct = Math.round(cropScale / fitScale * 100);
 
     return (
         <Dialog
