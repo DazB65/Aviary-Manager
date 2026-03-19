@@ -211,6 +211,7 @@ export default function BirdDetail() {
   const pedigreeBird = pedigreeMap[birdId] ?? { ...bird, fatherId: bird.fatherId ?? null, motherId: bird.motherId ?? null };
 
   return (
+    <>
     <DashboardLayout>
       <div className="space-y-6 max-w-6xl mx-auto">
         <div className="flex items-center justify-between gap-3">
@@ -525,5 +526,6 @@ export default function BirdDetail() {
         />
       </div>
     )}
+    </>
   );
 }

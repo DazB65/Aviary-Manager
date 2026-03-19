@@ -44,7 +44,6 @@ export default function Broods() {
   // Pull in bird mutation logic
   const {
     createBird,
-    uploadPhoto,
     userSettings,
     birds,
     speciesList
@@ -156,23 +155,6 @@ export default function Broods() {
           utils.clutchEggs.byBrood.invalidate({ broodId: birdFromEgg.fromBroodId });
         }
       }
-    });
-  };
-
-  const handleUploadPhoto = async (file: File) => {
-    return new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = async (ev) => {
-        try {
-          const dataBase64 = (ev.target?.result as string).split(",")[1];
-          const result = await uploadPhoto.mutateAsync({ filename: file.name, contentType: file.type, dataBase64 });
-          resolve(result.url);
-        } catch (e) {
-          reject(e);
-        }
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
     });
   };
 
@@ -304,7 +286,6 @@ export default function Broods() {
         birdsList={birds}
         onSubmit={handleBirdSubmit}
         isSubmitting={createBird.isPending}
-        onUploadPhoto={handleUploadPhoto}
       />
     </DashboardLayout>
   );
