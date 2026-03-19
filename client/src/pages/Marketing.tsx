@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
-import { Check, Copy, Megaphone } from "lucide-react";
+import { Check, Copy } from "lucide-react";
 import type { ContentIdea } from "../../../server/routers";
 import DashboardLayout from "@/components/DashboardLayout";
 
@@ -67,7 +67,7 @@ export default function Marketing() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Megaphone className="h-6 w-6 text-primary" />
+            <img src="/logo-transparent.svg" alt="Aviary Manager" className="h-8 w-8 object-contain" />
             Content Ideas
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
