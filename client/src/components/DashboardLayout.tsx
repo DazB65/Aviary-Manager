@@ -257,12 +257,12 @@ function DashboardLayoutContent({
               id="tour-ai-fab"
               onClick={() => setAiOpen(true)}
               className="w-full flex flex-col items-center justify-center hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-ring mb-1"
-              aria-label="Open Aviary Assistant"
+              aria-label="Open Aviary AI Assistant"
             >
               {!isCollapsed && (
-                <span className="text-xs font-semibold text-orange-500 mb-1">Aviary Assistant</span>
+                <span className="text-xs font-semibold text-orange-500 mb-1">Aviary AI Assistant</span>
               )}
-              <img src="/aviary-assistant.svg" alt="Aviary Assistant" className="w-20 h-20 object-contain mx-auto" />
+              <img src="/aviary-assistant.svg" alt="Aviary AI Assistant" className="w-20 h-20 object-contain mx-auto" />
             </button>
             {!isCollapsed && (
               <button
@@ -362,7 +362,7 @@ function DashboardLayoutContent({
               <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 border-2 border-background" title="Online" />
             </div>
             <div className="flex-1 min-w-0">
-              <SheetTitle className="text-base font-semibold">Aviary Assistant</SheetTitle>
+              <SheetTitle className="text-base font-semibold">Aviary AI Assistant</SheetTitle>
               <SheetDescription className="text-xs">
                 Your AI expert for birds, breeding &amp; mutations
               </SheetDescription>
@@ -378,7 +378,7 @@ function DashboardLayoutContent({
                 placeholder="Ask anything about your aviary..."
                 className="h-full border-0 rounded-none shadow-none"
                 assistantAvatarUrl="/logo-color.svg"
-                emptyStateMessage="I'm your Aviary Assistant. Ask me about your birds, breeding pairs, upcoming events, hatch rates, and colour mutations."
+                emptyStateMessage="I'm your Aviary AI Assistant. Ask me about your birds, breeding pairs, upcoming events, hatch rates, and colour mutations."
                 suggestedPrompts={[
                   "What's my total flock size?",
                   "Which pairs have eggs incubating right now?",
