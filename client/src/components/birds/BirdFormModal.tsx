@@ -68,12 +68,17 @@ export function BirdFormModal({
     useEffect(() => { cropScaleRef.current = cropScale; }, [cropScale]);
     useEffect(() => { cropOffsetRef.current = cropOffset; }, [cropOffset]);
 
+    // When the image is smaller than the crop area, centre it and lock it there.
+    // When larger, constrain so the image always covers the area.
     function clampOff(ox: number, oy: number, s: number) {
         const { w, h } = origSizeRef.current;
-        return {
-            x: Math.min(0, Math.max(CROP_VIEW - w * s, ox)),
-            y: Math.min(0, Math.max(CROP_VIEW - h * s, oy)),
-        };
+        const iw = w * s;
+        const ih = h * s;
+        const clampAxis = (val: number, imgDim: number) =>
+            imgDim < CROP_VIEW
+                ? (CROP_VIEW - imgDim) / 2          // centre + lock
+                : Math.min(0, Math.max(CROP_VIEW - imgDim, val)); // cover clamp
+        return { x: clampAxis(ox, iw), y: clampAxis(oy, ih) };
     }
 
     function initCrop(src: string) {
@@ -82,7 +87,8 @@ export function BirdFormModal({
             const w = img.naturalWidth;
             const h = img.naturalHeight;
             origSizeRef.current = { w, h };
-            const s = Math.max(CROP_VIEW / w, CROP_VIEW / h);
+            // Start at "fit" so the whole bird is visible immediately
+            const s = Math.min(CROP_VIEW / w, CROP_VIEW / h);
             const off = { x: (CROP_VIEW - w * s) / 2, y: (CROP_VIEW - h * s) / 2 };
             cropScaleRef.current = s;
             cropOffsetRef.current = off;
@@ -129,8 +135,8 @@ export function BirdFormModal({
             e.preventDefault();
             const factor = e.deltaY < 0 ? 1.08 : 0.92;
             const { w, h } = origSizeRef.current;
-            const minS = Math.max(CROP_VIEW / w, CROP_VIEW / h);
-            const next = Math.max(minS, Math.min(minS * 5, cropScaleRef.current * factor));
+            const minS = Math.min(CROP_VIEW / w, CROP_VIEW / h); // fit = min zoom
+            const next = Math.max(minS, Math.min(minS * 4, cropScaleRef.current * factor));
             const off = clampOff(cropOffsetRef.current.x, cropOffsetRef.current.y, next);
             cropScaleRef.current = next;
             cropOffsetRef.current = off;
@@ -155,8 +161,8 @@ export function BirdFormModal({
 
     function adjustZoom(factor: number) {
         const { w, h } = origSizeRef.current;
-        const minS = Math.max(CROP_VIEW / w, CROP_VIEW / h);
-        const next = Math.max(minS, Math.min(minS * 5, cropScaleRef.current * factor));
+        const minS = Math.min(CROP_VIEW / w, CROP_VIEW / h); // fit = min zoom
+        const next = Math.max(minS, Math.min(minS * 4, cropScaleRef.current * factor));
         const off = clampOff(cropOffsetRef.current.x, cropOffsetRef.current.y, next);
         cropScaleRef.current = next;
         cropOffsetRef.current = off;
@@ -213,7 +219,7 @@ export function BirdFormModal({
     const femaleBirds = birdsList.filter(b => b.gender === "female");
 
     const zoomPct = Math.round(
-        cropScale / Math.max(CROP_VIEW / Math.max(origSizeRef.current.w, 1), CROP_VIEW / Math.max(origSizeRef.current.h, 1)) * 100
+        cropScale / Math.min(CROP_VIEW / Math.max(origSizeRef.current.w, 1), CROP_VIEW / Math.max(origSizeRef.current.h, 1)) * 100
     );
 
     return (
