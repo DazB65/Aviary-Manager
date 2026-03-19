@@ -21,7 +21,6 @@ const tableHeaders: { id: SortCol; label: string; className: string }[] = [
     { id: "name", label: "Bird", className: "" },
     { id: "species", label: "Species", className: "hidden sm:table-cell" },
     { id: "gender", label: "Gender", className: "" },
-    { id: "ringId", label: "Ring ID", className: "hidden md:table-cell" },
     { id: "cage", label: "Cage", className: "hidden lg:table-cell" },
     { id: "mutation", label: "Colour / Mutation", className: "hidden lg:table-cell" },
     { id: "dob", label: "DOB", className: "hidden md:table-cell" },
@@ -128,9 +127,6 @@ export function BirdList({
                                     >
                                         {GENDER_LABELS[bird.gender] || bird.gender}
                                     </span>
-                                </td>
-                                <td className="px-4 py-3 font-mono text-xs text-muted-foreground hidden md:table-cell">
-                                    {bird.ringId || "—"}
                                 </td>
                                 <td className="px-4 py-3 text-xs text-teal-600 font-medium hidden lg:table-cell">
                                     {bird.cageNumber || "—"}
