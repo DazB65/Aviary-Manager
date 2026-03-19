@@ -89,7 +89,7 @@ export function BirdGrid({ birds, speciesMap, inactiveStatuses, onEdit, onDelete
                                 <span className="text-xs text-muted-foreground">
                                     {GENDER_LABELS[bird.gender] || bird.gender}
                                 </span>
-                                {bird.ringId && (
+                                {bird.ringId && bird.name && (
                                     <span className="text-xs font-mono text-muted-foreground">
                                         {bird.ringId}
                                     </span>

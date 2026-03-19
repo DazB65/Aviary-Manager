@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Upload } from "lucide-react";
-import { useRef, useCallback, useState, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Controller } from "react-hook-form";
 import { useBirdForm, type BirdFormData } from "@/hooks/useBirdForm";
 import { GenderIcon } from "@/components/ui/GenderIcon";
@@ -93,11 +93,39 @@ export function BirdFormModal({
         img.src = src;
     }
 
-    // Native wheel listener (passive: false so we can preventDefault)
+    // Document-level mouse drag + wheel (passive:false) — attached when crop UI is open.
+    // Attaching move/up to the document means fast drags outside the container still work.
     useEffect(() => {
-        const el = cropContainerRef.current;
-        if (!el || !cropSrc) return;
-        const handler = (e: WheelEvent) => {
+        if (!cropSrc) return;
+
+        const applyMove = (dx: number, dy: number) => {
+            const off = clampOff(
+                cropOffsetRef.current.x + dx,
+                cropOffsetRef.current.y + dy,
+                cropScaleRef.current,
+            );
+            cropOffsetRef.current = off;
+            setCropOffset(off);
+        };
+
+        const onMouseMove = (e: MouseEvent) => {
+            if (!cropDragging.current) return;
+            applyMove(e.clientX - cropLast.current.x, e.clientY - cropLast.current.y);
+            cropLast.current = { x: e.clientX, y: e.clientY };
+        };
+        const onMouseUp = () => { cropDragging.current = false; };
+
+        const onTouchMoveDoc = (e: TouchEvent) => {
+            if (!cropDragging.current) return;
+            applyMove(
+                e.touches[0].clientX - touchLast.current.x,
+                e.touches[0].clientY - touchLast.current.y,
+            );
+            touchLast.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        };
+        const onTouchEnd = () => { cropDragging.current = false; };
+
+        const onWheel = (e: WheelEvent) => {
             e.preventDefault();
             const factor = e.deltaY < 0 ? 1.08 : 0.92;
             const { w, h } = origSizeRef.current;
@@ -109,8 +137,20 @@ export function BirdFormModal({
             setCropScale(next);
             setCropOffset(off);
         };
-        el.addEventListener("wheel", handler, { passive: false });
-        return () => el.removeEventListener("wheel", handler);
+
+        document.addEventListener("mousemove", onMouseMove);
+        document.addEventListener("mouseup", onMouseUp);
+        document.addEventListener("touchmove", onTouchMoveDoc, { passive: false });
+        document.addEventListener("touchend", onTouchEnd);
+        cropContainerRef.current?.addEventListener("wheel", onWheel, { passive: false });
+
+        return () => {
+            document.removeEventListener("mousemove", onMouseMove);
+            document.removeEventListener("mouseup", onMouseUp);
+            document.removeEventListener("touchmove", onTouchMoveDoc);
+            document.removeEventListener("touchend", onTouchEnd);
+            cropContainerRef.current?.removeEventListener("wheel", onWheel);
+        };
     }, [cropSrc]);
 
     function adjustZoom(factor: number) {
@@ -129,29 +169,9 @@ export function BirdFormModal({
         cropLast.current = { x: e.clientX, y: e.clientY };
         e.preventDefault();
     }
-    function onCropMove(e: React.MouseEvent) {
-        if (!cropDragging.current) return;
-        const dx = e.clientX - cropLast.current.x;
-        const dy = e.clientY - cropLast.current.y;
-        cropLast.current = { x: e.clientX, y: e.clientY };
-        const off = clampOff(cropOffsetRef.current.x + dx, cropOffsetRef.current.y + dy, cropScaleRef.current);
-        cropOffsetRef.current = off;
-        setCropOffset(off);
-    }
-    function onCropUp() { cropDragging.current = false; }
-
     function onTouchStart(e: React.TouchEvent) {
         cropDragging.current = true;
         touchLast.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    }
-    function onTouchMove(e: React.TouchEvent) {
-        if (!cropDragging.current) return;
-        const dx = e.touches[0].clientX - touchLast.current.x;
-        const dy = e.touches[0].clientY - touchLast.current.y;
-        touchLast.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        const off = clampOff(cropOffsetRef.current.x + dx, cropOffsetRef.current.y + dy, cropScaleRef.current);
-        cropOffsetRef.current = off;
-        setCropOffset(off);
     }
 
     function confirmCrop() {
@@ -224,12 +244,7 @@ export function BirdFormModal({
                             className="relative mx-auto overflow-hidden rounded-xl cursor-grab active:cursor-grabbing select-none bg-muted border border-border"
                             style={{ width: CROP_VIEW, height: CROP_VIEW }}
                             onMouseDown={onCropDown}
-                            onMouseMove={onCropMove}
-                            onMouseUp={onCropUp}
-                            onMouseLeave={onCropUp}
                             onTouchStart={onTouchStart}
-                            onTouchMove={onTouchMove}
-                            onTouchEnd={onCropUp}
                         >
                             <img
                                 src={cropSrc}

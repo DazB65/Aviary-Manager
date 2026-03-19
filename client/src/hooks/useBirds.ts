@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
-export type SortCol = "name" | "species" | "gender" | "ringId" | "cage" | "mutation" | "dob" | "status";
+export type SortCol = "name" | "species" | "gender" | "cage" | "mutation" | "dob" | "status";
 
 export function useBirds() {
     const utils = trpc.useUtils();
@@ -59,8 +59,7 @@ export function useBirds() {
             if (sortCol === "name") { aVal = a.name || a.ringId || ""; bVal = b.name || b.ringId || ""; }
             else if (sortCol === "species") { aVal = sp(a.speciesId); bVal = sp(b.speciesId); }
             else if (sortCol === "gender") { aVal = a.gender; bVal = b.gender; }
-            else if (sortCol === "ringId") { aVal = a.ringId ?? ""; bVal = b.ringId ?? ""; }
-            else if (sortCol === "cage") { aVal = (a as any).cageNumber ?? ""; bVal = (b as any).cageNumber ?? ""; }
+else if (sortCol === "cage") { aVal = (a as any).cageNumber ?? ""; bVal = (b as any).cageNumber ?? ""; }
             else if (sortCol === "mutation") { aVal = a.colorMutation ?? ""; bVal = b.colorMutation ?? ""; }
             else if (sortCol === "dob") { aVal = String(a.dateOfBirth ?? ""); bVal = String(b.dateOfBirth ?? ""); }
             else if (sortCol === "status") { aVal = a.status; bVal = b.status; }
