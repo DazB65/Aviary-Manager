@@ -42,6 +42,17 @@ export async function runMigrations() {
   try {
     const db = getDb();
     await migrate(db, { migrationsFolder: MIGRATIONS_FOLDER });
+
+    // Run enum additions directly outside any transaction to ensure they apply.
+    // ALTER TYPE ... ADD VALUE cannot be reliably used inside a transaction on all PG versions.
+    const client = postgres(process.env.DATABASE_URL!);
+    try {
+      await client`ALTER TYPE "public"."egg_outcome" ADD VALUE IF NOT EXISTS 'missing'`;
+      console.log("[DB] Enum patch applied.");
+    } finally {
+      await client.end();
+    }
+
     console.log("[DB] Migrations complete.");
   } catch (err) {
     console.error("[DB] Migration failed:", err);
