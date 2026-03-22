@@ -17,8 +17,14 @@ import { BroodFormModal } from "@/components/broods/BroodFormModal";
 import { BirdFormModal } from "@/components/birds/BirdFormModal";
 import type { BroodFormData } from "@/hooks/useBroodForm";
 import type { BirdFormData } from "@/hooks/useBirdForm";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { writeBirdGenotype, readActiveGeneticsPacks } from "@/genetics/storage";
+import type { BirdGenotype } from "@/genetics/types";
 
 export default function Broods() {
+  const { user } = useAuth();
+  const isPro = user?.plan === "pro" || user?.role === "admin";
+  const activeGeneticsPacks = readActiveGeneticsPacks();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingBrood, setEditingBrood] = useState<any>(null);
@@ -129,7 +135,7 @@ export default function Broods() {
     }
   };
 
-  const handleBirdSubmit = (data: BirdFormData) => {
+  const handleBirdSubmit = (data: BirdFormData, genotype: BirdGenotype) => {
     const payload = {
       speciesId: Number(data.speciesId),
       ringId: data.ringId || undefined,
@@ -149,7 +155,8 @@ export default function Broods() {
     };
 
     createBird.mutate(payload, {
-      onSuccess: () => {
+      onSuccess: (created: any) => {
+        if (created?.id) writeBirdGenotype(created.id, genotype);
         setBirdModalOpen(false);
         if (birdFromEgg?.fromBroodId) {
           utils.clutchEggs.byBrood.invalidate({ broodId: birdFromEgg.fromBroodId });
@@ -286,6 +293,8 @@ export default function Broods() {
         birdsList={birds}
         onSubmit={handleBirdSubmit}
         isSubmitting={createBird.isPending}
+        isPro={isPro}
+        activeGeneticsPacks={activeGeneticsPacks}
       />
     </DashboardLayout>
   );

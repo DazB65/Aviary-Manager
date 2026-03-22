@@ -12,8 +12,14 @@ import { BirdGrid } from "@/components/birds/BirdGrid";
 import { BirdList } from "@/components/birds/BirdList";
 import { BirdFormModal } from "@/components/birds/BirdFormModal";
 import { GenderIcon } from "@/components/ui/GenderIcon";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { writeBirdGenotype, readActiveGeneticsPacks } from "@/genetics/storage";
+import type { BirdGenotype } from "@/genetics/types";
 
 export default function Birds() {
+  const { user } = useAuth();
+  const isPro = user?.plan === "pro" || user?.role === "admin";
+  const activeGeneticsPacks = readActiveGeneticsPacks();
   const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
     try { return (localStorage.getItem("birds-view-mode") as "grid" | "list") || "grid"; } catch { return "grid"; }
   });
@@ -59,7 +65,7 @@ export default function Birds() {
     setDialogOpen(true);
   };
 
-  const handleSubmit = (data: BirdFormData) => {
+  const handleSubmit = (data: BirdFormData, genotype: BirdGenotype) => {
     const payload = {
       speciesId: Number(data.speciesId),
       ringId: data.ringId || undefined,
@@ -77,11 +83,17 @@ export default function Birds() {
     };
     if (editingId) {
       updateBird.mutate({ id: editingId, ...payload }, {
-        onSuccess: () => setDialogOpen(false)
+        onSuccess: () => {
+          writeBirdGenotype(editingId, genotype);
+          setDialogOpen(false);
+        }
       });
     } else {
       createBird.mutate(payload, {
-        onSuccess: () => setDialogOpen(false)
+        onSuccess: (created: any) => {
+          if (created?.id) writeBirdGenotype(created.id, genotype);
+          setDialogOpen(false);
+        }
       });
     }
   };
@@ -210,6 +222,8 @@ export default function Birds() {
         birdsList={birds}
         onSubmit={handleSubmit}
         isSubmitting={createBird.isPending || updateBird.isPending}
+        isPro={isPro}
+        activeGeneticsPacks={activeGeneticsPacks}
       />
     </DashboardLayout>
   );

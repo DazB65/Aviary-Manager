@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { describeVisualPhenotype } from "@/genetics/engine";
 import { gouldianFinchPack } from "@/genetics/packs/gouldianFinch";
+import { readActiveGeneticsPacks, readBirdGenotype, writeBirdGenotype } from "@/genetics/storage";
 import { GenotypeState, InheritanceType, type BirdGenotype } from "@/genetics/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
@@ -34,45 +35,10 @@ type PedigreeBird = {
   motherId: number | null;
 };
 
-const ACTIVE_GENETICS_PACKS_KEY = "activeGeneticsPacks";
-
 type GenotypeOption = {
   value: GenotypeState;
   label: string;
 };
-
-function readActiveGeneticsPacks(): string[] {
-  if (typeof window === "undefined") return [];
-
-  const storedValue = localStorage.getItem(ACTIVE_GENETICS_PACKS_KEY);
-  if (!storedValue) return [];
-
-  try {
-    const parsedValue = JSON.parse(storedValue);
-    return Array.isArray(parsedValue) ? parsedValue.filter((value): value is string => typeof value === "string") : [];
-  } catch {
-    return storedValue.includes(gouldianFinchPack.speciesId) ? [gouldianFinchPack.speciesId] : [];
-  }
-}
-
-function readBirdGenotype(birdId: number): BirdGenotype {
-  if (typeof window === "undefined") return {};
-
-  try {
-    const storedValue = localStorage.getItem(`birdGenetics_${birdId}`);
-    if (!storedValue) return {};
-
-    const parsedValue = JSON.parse(storedValue);
-    return parsedValue && typeof parsedValue === "object" ? parsedValue as BirdGenotype : {};
-  } catch {
-    return {};
-  }
-}
-
-function writeBirdGenotype(birdId: number, genotype: BirdGenotype) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(`birdGenetics_${birdId}`, JSON.stringify(genotype));
-}
 
 function getInheritanceLabel(inheritanceType: InheritanceType): string {
   switch (inheritanceType) {
