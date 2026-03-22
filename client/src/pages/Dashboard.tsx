@@ -297,7 +297,7 @@ export default function Dashboard() {
             <div className="grid grid-cols-4 gap-4">
               {[
                 { label: "Pairs", value: seasonStats?.pairs ?? 0 },
-                { label: "Broods", value: seasonStats?.broods ?? 0 },
+                { label: "Clutches", value: seasonStats?.broods ?? 0 },
                 { label: "Total Eggs", value: seasonStats?.totalEggs ?? 0 },
                 { label: "Hatch Rate", value: `${seasonStats?.hatchRate ?? 0}%` },
               ].map(stat => (
