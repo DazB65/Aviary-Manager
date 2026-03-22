@@ -34,20 +34,20 @@ export function EggCell({
                 disabled={isPending}
                 title={ringId ? `Egg ${num} (Ring: ${ringId}): ${cfg.label} — click to change` : `Egg ${num}: ${cfg.label} — click to change`}
                 className={`
-          w-16 h-24 rounded-xl border-2 flex flex-col items-center justify-center gap-1
+          w-20 h-28 rounded-xl border-2 flex flex-col items-center justify-center gap-1
           transition-all hover:scale-105 active:scale-95 select-none
           ${cfg.bg} ${cfg.border}
           ${isPending ? "opacity-50 cursor-wait" : "cursor-pointer"}
           ${open ? `ring-2 ${cfg.ring} ring-offset-1` : ""}
         `}
             >
-                <span className="text-[1.5rem] leading-none">{cfg.emoji}</span>
-                <span className={`text-[11px] font-bold leading-none ${cfg.text} truncate max-w-full px-1`}>
+                <span className="text-3xl leading-none">{cfg.emoji}</span>
+                <span className={`text-sm font-bold leading-none ${cfg.text} truncate max-w-full px-1`}>
                     {ringId ? ringId : `#${num}`}
                 </span>
-                <span className={`text-[10px] leading-none ${cfg.text} opacity-80`}>{cfg.label}</span>
+                <span className={`text-xs leading-none ${cfg.text} opacity-80`}>{cfg.label}</span>
                 {outcomeDate && (
-                    <span className={`text-[9px] leading-none ${cfg.text} opacity-60 truncate max-w-full px-1`}>
+                    <span className={`text-[11px] leading-none ${cfg.text} opacity-60 truncate max-w-full px-1`}>
                         {new Date(outcomeDate + "T00:00:00").toLocaleDateString(undefined, { day: "numeric", month: "short" })}
                     </span>
                 )}
