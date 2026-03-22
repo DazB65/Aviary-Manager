@@ -25,7 +25,7 @@ export function EggCell({
 }) {
     const [open, setOpen] = useState(false);
     const cfg = EGG_OUTCOME_CONFIG[outcome];
-    const needsDate = ["hatched", "fledged", "died"].includes(outcome);
+    const needsDate = outcome !== "unknown";
 
     return (
         <div className="relative">
@@ -64,7 +64,7 @@ export function EggCell({
                                     <button
                                         key={opt}
                                         onClick={() => {
-                                            const optNeedsDate = ["hatched", "fledged", "died"].includes(opt);
+                                            const optNeedsDate = opt !== "unknown";
                                             onSelect(opt, optNeedsDate ? (outcomeDate || new Date().toISOString().split("T")[0]) : null);
                                             if (!optNeedsDate) setOpen(false);
                                         }}
