@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { STATUS_STYLES, STATUS_LABELS } from "./constants";
 import { PairInbreeding } from "./InbreedingUI";
 import { GenderIcon } from "@/components/ui/GenderIcon";
+import { PredictedOffspringSection } from "./PredictedOffspringSection";
 
 interface PairCardProps {
     pair: any;
@@ -132,6 +133,8 @@ export function PairCard({
                     <PairInbreeding maleId={pair.maleId} femaleId={pair.femaleId} />
                     {pair.notes && <p className="text-xs text-muted-foreground">{pair.notes}</p>}
                 </div>
+
+                <PredictedOffspringSection male={male} female={female} />
             </CardContent>
         </Card>
     );

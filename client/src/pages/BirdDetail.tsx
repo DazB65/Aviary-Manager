@@ -3,9 +3,20 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { describeVisualPhenotype } from "@/genetics/engine";
+import { gouldianFinchPack } from "@/genetics/packs/gouldianFinch";
+import { GenotypeState, InheritanceType, type BirdGenotype } from "@/genetics/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
 import { ArrowLeft, Bird, Calendar, Tag, Dna, GitBranch, Users, CalendarDays, CheckCircle2, Circle } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { format } from "date-fns";
 import { GenderIcon } from "@/components/ui/GenderIcon";
@@ -22,6 +33,105 @@ type PedigreeBird = {
   fatherId: number | null;
   motherId: number | null;
 };
+
+const ACTIVE_GENETICS_PACKS_KEY = "activeGeneticsPacks";
+
+type GenotypeOption = {
+  value: GenotypeState;
+  label: string;
+};
+
+function readActiveGeneticsPacks(): string[] {
+  if (typeof window === "undefined") return [];
+
+  const storedValue = localStorage.getItem(ACTIVE_GENETICS_PACKS_KEY);
+  if (!storedValue) return [];
+
+  try {
+    const parsedValue = JSON.parse(storedValue);
+    return Array.isArray(parsedValue) ? parsedValue.filter((value): value is string => typeof value === "string") : [];
+  } catch {
+    return storedValue.includes(gouldianFinchPack.speciesId) ? [gouldianFinchPack.speciesId] : [];
+  }
+}
+
+function readBirdGenotype(birdId: number): BirdGenotype {
+  if (typeof window === "undefined") return {};
+
+  try {
+    const storedValue = localStorage.getItem(`birdGenetics_${birdId}`);
+    if (!storedValue) return {};
+
+    const parsedValue = JSON.parse(storedValue);
+    return parsedValue && typeof parsedValue === "object" ? parsedValue as BirdGenotype : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeBirdGenotype(birdId: number, genotype: BirdGenotype) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(`birdGenetics_${birdId}`, JSON.stringify(genotype));
+}
+
+function getInheritanceLabel(inheritanceType: InheritanceType): string {
+  switch (inheritanceType) {
+    case InheritanceType.AUTOSOMAL_RECESSIVE:
+      return "Autosomal recessive";
+    case InheritanceType.AUTOSOMAL_DOMINANT:
+      return "Autosomal dominant";
+    case InheritanceType.SEX_LINKED_RECESSIVE:
+      return "Sex-linked recessive";
+    case InheritanceType.SEX_LINKED_DOMINANT:
+      return "Sex-linked dominant";
+    case InheritanceType.CO_DOMINANT_SEX_LINKED:
+      return "Co-dominant sex-linked";
+    case InheritanceType.INCOMPLETE_DOMINANT:
+      return "Incomplete dominant";
+  }
+}
+
+function getGenotypeOptions(inheritanceType: InheritanceType, sex: string): GenotypeOption[] {
+  const isFemale = sex === "female";
+
+  switch (inheritanceType) {
+    case InheritanceType.AUTOSOMAL_RECESSIVE:
+      return [
+        { value: GenotypeState.WILD_TYPE, label: "Wild Type" },
+        { value: GenotypeState.CARRIER, label: "Carrier (split)" },
+        { value: GenotypeState.EXPRESSING, label: "Expressing" },
+      ];
+    case InheritanceType.AUTOSOMAL_DOMINANT:
+    case InheritanceType.SEX_LINKED_DOMINANT:
+      return [
+        { value: GenotypeState.WILD_TYPE, label: "Wild Type" },
+        { value: GenotypeState.EXPRESSING, label: "Expressing" },
+      ];
+    case InheritanceType.SEX_LINKED_RECESSIVE:
+      return isFemale
+        ? [
+            { value: GenotypeState.WILD_TYPE, label: "Wild Type" },
+            { value: GenotypeState.EXPRESSING, label: "Expressing" },
+          ]
+        : [
+            { value: GenotypeState.WILD_TYPE, label: "Wild Type" },
+            { value: GenotypeState.CARRIER, label: "Carrier" },
+            { value: GenotypeState.EXPRESSING, label: "Expressing" },
+          ];
+    case InheritanceType.CO_DOMINANT_SEX_LINKED:
+    case InheritanceType.INCOMPLETE_DOMINANT:
+      return isFemale
+        ? [
+            { value: GenotypeState.WILD_TYPE, label: "Wild Type" },
+            { value: GenotypeState.SINGLE_FACTOR, label: "Single Factor" },
+          ]
+        : [
+            { value: GenotypeState.WILD_TYPE, label: "Wild Type" },
+            { value: GenotypeState.SINGLE_FACTOR, label: "Single Factor" },
+            { value: GenotypeState.DOUBLE_FACTOR, label: "Double Factor" },
+          ];
+  }
+}
 
 // ─── Pedigree card component ─────────────────────────────────────────────────
 function PedigreeCard({
@@ -139,7 +249,11 @@ export default function BirdDetail() {
   const birdId = Number(params.id);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+  const isPro = user?.plan === "pro" || isAdmin;
   const maxGenerations = 4;
+  const [activeGeneticsPacks] = useState<string[]>(() => readActiveGeneticsPacks());
+  const [birdGenotype, setBirdGenotype] = useState<BirdGenotype>(() => readBirdGenotype(birdId));
 
   const { data: bird, isLoading } = trpc.birds.get.useQuery({ id: birdId });
   const { data: speciesList = [] } = trpc.species.list.useQuery();
@@ -149,6 +263,20 @@ export default function BirdDetail() {
   const { data: allEvents = [] } = trpc.events.list.useQuery();
 
   const speciesMap = Object.fromEntries(speciesList.map(s => [s.id, s]));
+  const species = bird ? speciesMap[bird.speciesId] : undefined;
+  const showGeneticsTab =
+    isPro &&
+    activeGeneticsPacks.includes(gouldianFinchPack.speciesId) &&
+    /gouldian/i.test(species?.commonName ?? "");
+
+  useEffect(() => {
+    setBirdGenotype(readBirdGenotype(birdId));
+  }, [birdId]);
+
+  const phenotypeSummary = useMemo(
+    () => bird && showGeneticsTab ? describeVisualPhenotype(bird.gender, birdGenotype, gouldianFinchPack) : [],
+    [bird, birdGenotype, showGeneticsTab]
+  );
 
   // Events relevant to this bird: either linked directly or applies to all birds
   const birdEvents = allEvents.filter(e =>
@@ -182,7 +310,6 @@ export default function BirdDetail() {
     );
   }
 
-  const species = speciesMap[bird.speciesId];
   const dobStr = bird.dateOfBirth
     ? format(typeof bird.dateOfBirth === 'object' && bird.dateOfBirth ? bird.dateOfBirth : new Date(String(bird.dateOfBirth)), "dd MMM yyyy")
     : null;
@@ -209,6 +336,18 @@ export default function BirdDetail() {
   })();
 
   const pedigreeBird = pedigreeMap[birdId] ?? { ...bird, fatherId: bird.fatherId ?? null, motherId: bird.motherId ?? null };
+
+  const handleGenotypeChange = (mutationId: string, nextState: GenotypeState) => {
+    setBirdGenotype((currentGenotype) => {
+      const nextGenotype = {
+        ...currentGenotype,
+        [mutationId]: nextState,
+      };
+
+      writeBirdGenotype(birdId, nextGenotype);
+      return nextGenotype;
+    });
+  };
 
   return (
     <>
@@ -332,6 +471,11 @@ export default function BirdDetail() {
               <CalendarDays className="h-4 w-4" /> Events
               {birdEvents.length > 0 && <Badge variant="secondary" className="ml-1 text-xs">{birdEvents.length}</Badge>}
             </TabsTrigger>
+            {showGeneticsTab && (
+              <TabsTrigger value="genetics" className="gap-2">
+                <Dna className="h-4 w-4" /> Genetics
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Pedigree Tab */}
@@ -507,6 +651,83 @@ export default function BirdDetail() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {showGeneticsTab && (
+            <TabsContent value="genetics">
+              <div className="space-y-4">
+                <Card className="border border-teal-200 shadow-card">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                      <Dna className="h-4 w-4 text-teal-600" />
+                      Visual Phenotype
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground">
+                      Selections are auto-saved in this browser for this bird profile.
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      {phenotypeSummary.map((summary) => {
+                        const [traitName, ...valueParts] = summary.split(": ");
+                        return (
+                          <div key={traitName} className="rounded-xl border border-border bg-muted/30 p-3">
+                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{traitName}</p>
+                            <p className="mt-1 text-sm font-semibold text-foreground">{valueParts.join(": ") || "—"}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {gouldianFinchPack.traits.map((trait) => (
+                  <Card key={trait.traitName} className="border border-border shadow-card">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base font-semibold">{trait.traitName}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid gap-4 lg:grid-cols-2">
+                        {trait.mutations.map((mutation) => {
+                          const selectedState = birdGenotype[mutation.id] ?? GenotypeState.WILD_TYPE;
+                          const genotypeOptions = getGenotypeOptions(mutation.inheritanceType, bird.gender);
+
+                          return (
+                            <div key={mutation.id} className="rounded-xl border border-border bg-white p-4">
+                              <div className="mb-3 flex items-start justify-between gap-3">
+                                <div>
+                                  <p className="text-sm font-semibold">{mutation.name}</p>
+                                  <p className="text-xs text-muted-foreground">{mutation.id}</p>
+                                </div>
+                                <Badge variant="outline" className="text-[11px] whitespace-nowrap">
+                                  {getInheritanceLabel(mutation.inheritanceType)}
+                                </Badge>
+                              </div>
+
+                              <Select
+                                value={selectedState}
+                                onValueChange={(value) => handleGenotypeChange(mutation.id, value as GenotypeState)}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select genotype state" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {genotypeOptions.map((option) => (
+                                    <SelectItem key={option.value} value={option.value}>
+                                      {option.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+          )}
         </Tabs>
 
       </div>
