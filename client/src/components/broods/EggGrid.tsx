@@ -46,6 +46,11 @@ export function EggCell({
                     {ringId ? ringId : `#${num}`}
                 </span>
                 <span className={`text-[8px] leading-none ${cfg.text} opacity-80`}>{cfg.label}</span>
+                {outcomeDate && (
+                    <span className={`text-[7px] leading-none ${cfg.text} opacity-60 truncate max-w-full px-1`}>
+                        {new Date(outcomeDate + "T00:00:00").toLocaleDateString(undefined, { day: "numeric", month: "short" })}
+                    </span>
+                )}
             </button>
 
             {open && (
