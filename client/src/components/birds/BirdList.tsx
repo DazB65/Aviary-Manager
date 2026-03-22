@@ -13,9 +13,9 @@ function GeneticsMutationCell({ colorMutation }: { colorMutation: string | null 
     const parts = colorMutation.split(" / ");
     if (parts.length < 2) return <span>{colorMutation}</span>;
     return (
-        <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+        <div className="flex flex-col gap-0.5">
             {parts.map((part, i) => (
-                <span key={i} className="whitespace-nowrap">
+                <span key={i}>
                     <span className="text-[10px] font-bold tracking-wider text-muted-foreground mr-1">{TRAIT_LABELS[i]}</span>
                     <span>{part}</span>
                 </span>
