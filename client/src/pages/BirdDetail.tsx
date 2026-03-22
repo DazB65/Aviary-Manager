@@ -35,10 +35,44 @@ type PedigreeBird = {
   motherId: number | null;
 };
 
-type GenotypeOption = {
-  value: GenotypeState;
-  label: string;
-};
+const RECESSIVE_TYPES = new Set([
+  InheritanceType.AUTOSOMAL_RECESSIVE,
+  InheritanceType.SEX_LINKED_RECESSIVE,
+]);
+
+function buildGenotypeFromSelections(
+  selections: Record<string, { colour: string; splitTo: string }>,
+  pack: typeof gouldianFinchPack,
+): BirdGenotype {
+  const g: BirdGenotype = {};
+  for (const trait of pack.traits) {
+    const sel = selections[trait.traitName] ?? { colour: "", splitTo: "" };
+    for (const m of trait.mutations) {
+      if (m.id === sel.colour) g[m.id] = GenotypeState.EXPRESSING;
+      else if (m.id === sel.splitTo) g[m.id] = GenotypeState.CARRIER;
+      else g[m.id] = GenotypeState.WILD_TYPE;
+    }
+  }
+  return g;
+}
+
+function parseSelectionsFromGenotype(
+  genotype: BirdGenotype,
+  pack: typeof gouldianFinchPack,
+): Record<string, { colour: string; splitTo: string }> {
+  const result: Record<string, { colour: string; splitTo: string }> = {};
+  for (const trait of pack.traits) {
+    let colour = "";
+    let splitTo = "";
+    for (const m of trait.mutations) {
+      const state = genotype[m.id];
+      if (state === GenotypeState.EXPRESSING) colour = m.id;
+      else if (state === GenotypeState.CARRIER) splitTo = m.id;
+    }
+    result[trait.traitName] = { colour, splitTo };
+  }
+  return result;
+}
 
 function getInheritanceLabel(inheritanceType: InheritanceType): string {
   switch (inheritanceType) {
@@ -220,6 +254,9 @@ export default function BirdDetail() {
   const maxGenerations = 4;
   const [activeGeneticsPacks] = useState<string[]>(() => readActiveGeneticsPacks());
   const [birdGenotype, setBirdGenotype] = useState<BirdGenotype>(() => readBirdGenotype(birdId));
+  const [traitSelections, setTraitSelections] = useState(() =>
+    parseSelectionsFromGenotype(readBirdGenotype(birdId), gouldianFinchPack)
+  );
 
   const { data: bird, isLoading } = trpc.birds.get.useQuery({ id: birdId });
   const { data: speciesList = [] } = trpc.species.list.useQuery();
@@ -236,7 +273,9 @@ export default function BirdDetail() {
     /gouldian/i.test(species?.commonName ?? "");
 
   useEffect(() => {
-    setBirdGenotype(readBirdGenotype(birdId));
+    const g = readBirdGenotype(birdId);
+    setBirdGenotype(g);
+    setTraitSelections(parseSelectionsFromGenotype(g, gouldianFinchPack));
   }, [birdId]);
 
   const phenotypeSummary = useMemo(
@@ -646,51 +685,66 @@ export default function BirdDetail() {
                   </CardContent>
                 </Card>
 
-                {gouldianFinchPack.traits.map((trait) => (
-                  <Card key={trait.traitName} className="border border-border shadow-card">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base font-semibold">{trait.traitName}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid gap-4 lg:grid-cols-2">
-                        {trait.mutations.map((mutation) => {
-                          const selectedState = birdGenotype[mutation.id] ?? GenotypeState.WILD_TYPE;
-                          const genotypeOptions = getGenotypeOptions(mutation.inheritanceType, bird.gender);
+                <Card className="border border-border shadow-card">
+                  <CardContent className="pt-5">
+                    <div className="space-y-4">
+                      {gouldianFinchPack.traits.map((trait) => {
+                        const sel = traitSelections[trait.traitName] ?? { colour: "", splitTo: "" };
+                        const recessiveMutations = trait.mutations.filter(m => RECESSIVE_TYPES.has(m.inheritanceType));
+                        const splitOptions = recessiveMutations.filter(m => m.id !== sel.colour);
 
-                          return (
-                            <div key={mutation.id} className="rounded-xl border border-border bg-white p-4">
-                              <div className="mb-3 flex items-start justify-between gap-3">
-                                <div>
-                                  <p className="text-sm font-semibold">{mutation.name}</p>
-                                  <p className="text-xs text-muted-foreground">{mutation.id}</p>
-                                </div>
-                                <Badge variant="outline" className="text-[11px] whitespace-nowrap">
-                                  {getInheritanceLabel(mutation.inheritanceType)}
-                                </Badge>
-                              </div>
+                        const handleChange = (field: "colour" | "splitTo", value: string) => {
+                          const next = {
+                            ...traitSelections,
+                            [trait.traitName]: {
+                              ...sel,
+                              [field]: value === "none" ? "" : value,
+                              // clear split if same as new colour
+                              ...(field === "colour" && value === sel.splitTo ? { splitTo: "" } : {}),
+                            }
+                          };
+                          setTraitSelections(next);
+                          const newGenotype = buildGenotypeFromSelections(next, gouldianFinchPack);
+                          setBirdGenotype(newGenotype);
+                          writeBirdGenotype(birdId, newGenotype);
+                        };
 
-                              <Select
-                                value={selectedState}
-                                onValueChange={(value) => handleGenotypeChange(mutation.id, value as GenotypeState)}
-                              >
+                        return (
+                          <div key={trait.traitName} className="grid grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-xs font-medium text-muted-foreground mb-1">{trait.traitName}</p>
+                              <Select value={sel.colour || "none"} onValueChange={(v) => handleChange("colour", v)}>
                                 <SelectTrigger>
-                                  <SelectValue placeholder="Select genotype state" />
+                                  <SelectValue placeholder="Select colour…" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {genotypeOptions.map((option) => (
-                                    <SelectItem key={option.value} value={option.value}>
-                                      {option.label}
-                                    </SelectItem>
+                                  <SelectItem value="none">— Not set —</SelectItem>
+                                  {trait.mutations.map(m => (
+                                    <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
                             </div>
-                          );
-                        })}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                            <div>
+                              <p className="text-xs font-medium text-muted-foreground mb-1">Split to</p>
+                              <Select value={sel.splitTo || "none"} onValueChange={(v) => handleChange("splitTo", v)}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="None" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">None</SelectItem>
+                                  {splitOptions.map(m => (
+                                    <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </TabsContent>
           )}

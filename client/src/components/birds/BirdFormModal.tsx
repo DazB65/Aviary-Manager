@@ -25,49 +25,45 @@ import { gouldianFinchPack } from "@/genetics/packs/gouldianFinch";
 import { GenotypeState, InheritanceType, type BirdGenotype } from "@/genetics/types";
 import { readBirdGenotype } from "@/genetics/storage";
 
-function getGenotypeOptions(inheritanceType: InheritanceType, gender: string) {
-    switch (inheritanceType) {
-        case InheritanceType.AUTOSOMAL_RECESSIVE:
-        case InheritanceType.SEX_LINKED_RECESSIVE:
-            return [
-                { value: GenotypeState.WILD_TYPE, label: "Wild Type" },
-                { value: GenotypeState.CARRIER, label: "Carrier (split)" },
-                { value: GenotypeState.EXPRESSING, label: "Expressing" },
-            ];
-        case InheritanceType.AUTOSOMAL_DOMINANT:
-        case InheritanceType.SEX_LINKED_DOMINANT:
-            return [
-                { value: GenotypeState.WILD_TYPE, label: "Wild Type" },
-                { value: GenotypeState.EXPRESSING, label: "Expressing" },
-            ];
-        case InheritanceType.CO_DOMINANT_SEX_LINKED:
-            return gender === "male"
-                ? [
-                    { value: GenotypeState.WILD_TYPE, label: "Wild Type" },
-                    { value: GenotypeState.EXPRESSING, label: "Expressing" },
-                    { value: GenotypeState.CARRIER, label: "Carrier" },
-                ]
-                : [
-                    { value: GenotypeState.WILD_TYPE, label: "Wild Type" },
-                    { value: GenotypeState.EXPRESSING, label: "Expressing" },
-                ];
-        case InheritanceType.INCOMPLETE_DOMINANT:
-            return gender === "male"
-                ? [
-                    { value: GenotypeState.WILD_TYPE, label: "Wild Type" },
-                    { value: GenotypeState.SINGLE_FACTOR, label: "Single Factor" },
-                    { value: GenotypeState.DOUBLE_FACTOR, label: "Double Factor" },
-                ]
-                : [
-                    { value: GenotypeState.WILD_TYPE, label: "Wild Type" },
-                    { value: GenotypeState.SINGLE_FACTOR, label: "Single Factor" },
-                ];
-        default:
-            return [
-                { value: GenotypeState.WILD_TYPE, label: "Wild Type" },
-                { value: GenotypeState.EXPRESSING, label: "Expressing" },
-            ];
+const RECESSIVE_TYPES = new Set([
+    InheritanceType.AUTOSOMAL_RECESSIVE,
+    InheritanceType.SEX_LINKED_RECESSIVE,
+]);
+
+/** Convert per-trait colour+split selections into the flat genotype map */
+function buildGenotypeFromSelections(
+    selections: Record<string, { colour: string; splitTo: string }>,
+    pack: typeof gouldianFinchPack,
+): BirdGenotype {
+    const g: BirdGenotype = {};
+    for (const trait of pack.traits) {
+        const sel = selections[trait.traitName] ?? { colour: "", splitTo: "" };
+        for (const m of trait.mutations) {
+            if (m.id === sel.colour) g[m.id] = GenotypeState.EXPRESSING;
+            else if (m.id === sel.splitTo) g[m.id] = GenotypeState.CARRIER;
+            else g[m.id] = GenotypeState.WILD_TYPE;
+        }
     }
+    return g;
+}
+
+/** Parse a flat genotype map back into per-trait colour+split selections */
+function parseSelectionsFromGenotype(
+    genotype: BirdGenotype,
+    pack: typeof gouldianFinchPack,
+): Record<string, { colour: string; splitTo: string }> {
+    const result: Record<string, { colour: string; splitTo: string }> = {};
+    for (const trait of pack.traits) {
+        let colour = "";
+        let splitTo = "";
+        for (const m of trait.mutations) {
+            const state = genotype[m.id];
+            if (state === GenotypeState.EXPRESSING) colour = m.id;
+            else if (state === GenotypeState.CARRIER) splitTo = m.id;
+        }
+        result[trait.traitName] = { colour, splitTo };
+    }
+    return result;
 }
 
 const CROP_VIEW = 280; // px visible in the crop UI
@@ -103,13 +99,13 @@ export function BirdFormModal({
     const form = useBirdForm(initialBird, userSettings);
     const fileRef = useRef<HTMLInputElement>(null);
     const [showAllSpecies, setShowAllSpecies] = useState(!!editingId);
-    const [genotype, setGenotype] = useState<BirdGenotype>(() =>
-        editingId ? readBirdGenotype(editingId) : {}
+    const [traitSelections, setTraitSelections] = useState<Record<string, { colour: string; splitTo: string }>>(() =>
+        parseSelectionsFromGenotype(editingId ? readBirdGenotype(editingId) : {}, gouldianFinchPack)
     );
 
-    // Reset genotype when dialog opens/closes or editing target changes
+    // Reset selections when dialog opens/closes or editing target changes
     useEffect(() => {
-        setGenotype(editingId ? readBirdGenotype(editingId) : {});
+        setTraitSelections(parseSelectionsFromGenotype(editingId ? readBirdGenotype(editingId) : {}, gouldianFinchPack));
     }, [editingId, open]);
 
     // ── Crop state ────────────────────────────────────────────────────────────
@@ -351,7 +347,7 @@ export function BirdFormModal({
                             </DialogTitle>
                         </DialogHeader>
 
-                        <form onSubmit={form.handleSubmit((data) => onSubmit(data, genotype))} className="space-y-4 py-2">
+                        <form onSubmit={form.handleSubmit((data) => onSubmit(data, buildGenotypeFromSelections(traitSelections, gouldianFinchPack)))} className="space-y-4 py-2">
                             {/* Photo */}
                             <div className="flex items-center gap-4">
                                 <div
@@ -609,47 +605,69 @@ export function BirdFormModal({
                                     const selectedSpecies = speciesList.find(s => String(s.id) === selectedSpeciesId);
                                     const isGouldian = /gouldian/i.test(selectedSpecies?.commonName ?? "");
                                     const showGenetics = isPro && activeGeneticsPacks.includes(gouldianFinchPack.speciesId) && isGouldian;
-                                    const gender = form.watch("gender");
                                     if (!showGenetics) return null;
                                     return (
-                                        <div className="col-span-2 rounded-xl border border-teal-200 bg-teal-50/50 p-4 space-y-3">
+                                        <div className="col-span-2 rounded-xl border border-teal-200 bg-teal-50/50 p-4 space-y-4">
                                             <div className="flex items-center gap-2">
                                                 <Dna className="h-4 w-4 text-teal-600" />
                                                 <span className="text-sm font-semibold text-teal-800">Genetics</span>
                                             </div>
-                                            {gouldianFinchPack.traits.map((trait) => (
-                                                <div key={trait.traitName}>
-                                                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">{trait.traitName}</p>
-                                                    <div className="grid gap-2 sm:grid-cols-2">
-                                                        {trait.mutations.map((mutation) => {
-                                                            const options = getGenotypeOptions(mutation.inheritanceType, gender);
-                                                            const value = genotype[mutation.id] ?? GenotypeState.WILD_TYPE;
-                                                            return (
-                                                                <div key={mutation.id}>
-                                                                    <p className="text-xs text-foreground mb-1">{mutation.name}</p>
-                                                                    <Select
-                                                                        value={value}
-                                                                        onValueChange={(v) =>
-                                                                            setGenotype((prev) => ({ ...prev, [mutation.id]: v as GenotypeState }))
+                                            {gouldianFinchPack.traits.map((trait) => {
+                                                const sel = traitSelections[trait.traitName] ?? { colour: "", splitTo: "" };
+                                                const recessiveMutations = trait.mutations.filter(m => RECESSIVE_TYPES.has(m.inheritanceType));
+                                                const splitOptions = recessiveMutations.filter(m => m.id !== sel.colour);
+                                                return (
+                                                    <div key={trait.traitName} className="grid grid-cols-2 gap-3">
+                                                        <div>
+                                                            <p className="text-xs font-medium text-muted-foreground mb-1">{trait.traitName}</p>
+                                                            <Select
+                                                                value={sel.colour || "none"}
+                                                                onValueChange={(v) =>
+                                                                    setTraitSelections(prev => ({
+                                                                        ...prev,
+                                                                        [trait.traitName]: {
+                                                                            colour: v === "none" ? "" : v,
+                                                                            splitTo: prev[trait.traitName]?.splitTo === v ? "" : prev[trait.traitName]?.splitTo ?? "",
                                                                         }
-                                                                    >
-                                                                        <SelectTrigger className="h-8 text-xs">
-                                                                            <SelectValue />
-                                                                        </SelectTrigger>
-                                                                        <SelectContent>
-                                                                            {options.map((opt) => (
-                                                                                <SelectItem key={opt.value} value={opt.value} className="text-xs">
-                                                                                    {opt.label}
-                                                                                </SelectItem>
-                                                                            ))}
-                                                                        </SelectContent>
-                                                                    </Select>
-                                                                </div>
-                                                            );
-                                                        })}
+                                                                    }))
+                                                                }
+                                                            >
+                                                                <SelectTrigger className="h-8 text-xs">
+                                                                    <SelectValue placeholder="Select colour…" />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    <SelectItem value="none" className="text-xs">— Not set —</SelectItem>
+                                                                    {trait.mutations.map(m => (
+                                                                        <SelectItem key={m.id} value={m.id} className="text-xs">{m.name}</SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-xs font-medium text-muted-foreground mb-1">Split to</p>
+                                                            <Select
+                                                                value={sel.splitTo || "none"}
+                                                                onValueChange={(v) =>
+                                                                    setTraitSelections(prev => ({
+                                                                        ...prev,
+                                                                        [trait.traitName]: { ...prev[trait.traitName], splitTo: v === "none" ? "" : v }
+                                                                    }))
+                                                                }
+                                                            >
+                                                                <SelectTrigger className="h-8 text-xs">
+                                                                    <SelectValue placeholder="None" />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    <SelectItem value="none" className="text-xs">None</SelectItem>
+                                                                    {splitOptions.map(m => (
+                                                                        <SelectItem key={m.id} value={m.id} className="text-xs">{m.name}</SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
                                     );
                                 })()}

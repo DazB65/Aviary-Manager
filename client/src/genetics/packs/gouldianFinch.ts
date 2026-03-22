@@ -9,7 +9,7 @@ export const gouldianFinchPack: GeneticsPack = {
       mutations: [
         { id: "red-head", name: "Red head", inheritanceType: InheritanceType.SEX_LINKED_DOMINANT },
         { id: "black-head", name: "Black head", inheritanceType: InheritanceType.SEX_LINKED_RECESSIVE },
-        { id: "orange-head", name: "Orange head", inheritanceType: InheritanceType.AUTOSOMAL_RECESSIVE },
+        { id: "yellow-head", name: "Yellow head", inheritanceType: InheritanceType.AUTOSOMAL_RECESSIVE },
       ],
     },
     {
