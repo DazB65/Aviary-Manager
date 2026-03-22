@@ -57,6 +57,13 @@
       "when": 1773200000000,
       "tag": "0007_add_missing_egg_outcome_fix",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1773300000000,
+      "tag": "0008_add_missing_outcome_final",
+      "breakpoints": true
     }
   ]
 }
