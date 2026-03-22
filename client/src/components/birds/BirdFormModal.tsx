@@ -23,7 +23,7 @@ import { useBirdForm, type BirdFormData } from "@/hooks/useBirdForm";
 import { GenderIcon } from "@/components/ui/GenderIcon";
 import { gouldianFinchPack } from "@/genetics/packs/gouldianFinch";
 import { GenotypeState, InheritanceType, type BirdGenotype } from "@/genetics/types";
-import { readBirdGenotype } from "@/genetics/storage";
+import { readBirdGenotype, formatGeneticsDisplay } from "@/genetics/storage";
 
 const RECESSIVE_TYPES = new Set([
     InheritanceType.AUTOSOMAL_RECESSIVE,
@@ -668,6 +668,16 @@ export function BirdFormModal({
                                                     </div>
                                                 );
                                             })}
+                                            {/* Live preview */}
+                                            {(() => {
+                                                const preview = formatGeneticsDisplay(traitSelections, gouldianFinchPack);
+                                                if (!preview) return null;
+                                                return (
+                                                    <div className="rounded-lg bg-teal-100/80 border border-teal-200 px-3 py-2">
+                                                        <p className="text-xs font-semibold text-teal-800">{preview}</p>
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
                                     );
                                 })()}

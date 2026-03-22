@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { describeVisualPhenotype } from "@/genetics/engine";
 import { gouldianFinchPack } from "@/genetics/packs/gouldianFinch";
-import { readActiveGeneticsPacks, readBirdGenotype, writeBirdGenotype } from "@/genetics/storage";
+import { readActiveGeneticsPacks, readBirdGenotype, writeBirdGenotype, formatGeneticsDisplay } from "@/genetics/storage";
 import { GenotypeState, InheritanceType, type BirdGenotype } from "@/genetics/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
@@ -73,6 +73,7 @@ function parseSelectionsFromGenotype(
   }
   return result;
 }
+
 
 function getInheritanceLabel(inheritanceType: InheritanceType): string {
   switch (inheritanceType) {
@@ -660,30 +661,16 @@ export default function BirdDetail() {
           {showGeneticsTab && (
             <TabsContent value="genetics">
               <div className="space-y-4">
-                <Card className="border border-teal-200 shadow-card">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                      <Dna className="h-4 w-4 text-teal-600" />
-                      Visual Phenotype
-                    </CardTitle>
-                    <p className="text-xs text-muted-foreground">
-                      Selections are auto-saved in this browser for this bird profile.
-                    </p>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid gap-3 sm:grid-cols-3">
-                      {phenotypeSummary.map((summary) => {
-                        const [traitName, ...valueParts] = summary.split(": ");
-                        return (
-                          <div key={traitName} className="rounded-xl border border-border bg-muted/30 p-3">
-                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{traitName}</p>
-                            <p className="mt-1 text-sm font-semibold text-foreground">{valueParts.join(": ") || "—"}</p>
-                          </div>
-                        );
-                      })}
+                {(() => {
+                  const display = formatGeneticsDisplay(traitSelections, gouldianFinchPack);
+                  if (!display) return null;
+                  return (
+                    <div className="rounded-xl border border-teal-200 bg-teal-50/60 px-4 py-3 flex items-center gap-3">
+                      <Dna className="h-4 w-4 text-teal-600 shrink-0" />
+                      <p className="text-sm font-semibold text-teal-900">{display}</p>
                     </div>
-                  </CardContent>
-                </Card>
+                  );
+                })()}
 
                 <Card className="border border-border shadow-card">
                   <CardContent className="pt-5">
