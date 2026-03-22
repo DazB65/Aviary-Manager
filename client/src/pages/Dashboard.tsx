@@ -294,11 +294,13 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Top row: breeding overview */}
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-4">
               {[
                 { label: "Pairs", value: seasonStats?.pairs ?? 0 },
                 { label: "Clutches", value: seasonStats?.broods ?? 0 },
-                { label: "Total Eggs", value: seasonStats?.totalEggs ?? 0 },
+                { label: "Eggs Laid", value: seasonStats?.totalEggs ?? 0 },
+                { label: "Eggs Remaining", value: seasonStats?.eggsRemaining ?? 0 },
+                { label: "Eggs Resolved", value: seasonStats?.eggsResolved ?? 0 },
                 { label: "Hatch Rate", value: `${seasonStats?.hatchRate ?? 0}%` },
               ].map(stat => (
                 <div key={stat.label} className="text-center">
