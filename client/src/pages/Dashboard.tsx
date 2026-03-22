@@ -292,14 +292,13 @@ export default function Dashboard() {
               🌱 {breedingYear} Season Summary
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-4">
+          <CardContent className="space-y-4">
+            {/* Top row: breeding overview */}
+            <div className="grid grid-cols-4 gap-4">
               {[
                 { label: "Pairs", value: seasonStats?.pairs ?? 0 },
                 { label: "Broods", value: seasonStats?.broods ?? 0 },
-                { label: "Incubating", value: seasonStats?.incubating ?? 0 },
                 { label: "Total Eggs", value: seasonStats?.totalEggs ?? 0 },
-                { label: "Hatched", value: seasonStats?.hatched ?? 0 },
                 { label: "Hatch Rate", value: `${seasonStats?.hatchRate ?? 0}%` },
               ].map(stat => (
                 <div key={stat.label} className="text-center">
@@ -307,6 +306,52 @@ export default function Dashboard() {
                   <p className="text-xs text-muted-foreground mt-0.5">{stat.label}</p>
                 </div>
               ))}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Active */}
+              <div className="rounded-xl bg-blue-50 border border-blue-100 p-3">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-blue-500 mb-2">🥚 Active</p>
+                <div className="flex justify-around">
+                  <div className="text-center">
+                    <p className="text-xl font-bold text-blue-700">{seasonStats?.incubating ?? 0}</p>
+                    <p className="text-[11px] text-blue-500">Incubating</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Success */}
+              <div className="rounded-xl bg-green-50 border border-green-100 p-3">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-green-600 mb-2">✅ Success</p>
+                <div className="flex justify-around">
+                  <div className="text-center">
+                    <p className="text-xl font-bold text-green-700">{seasonStats?.hatched ?? 0}</p>
+                    <p className="text-[11px] text-green-600">Hatched</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xl font-bold text-green-700">{seasonStats?.fledged ?? 0}</p>
+                    <p className="text-[11px] text-green-600">Fledged</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Losses */}
+              <div className="rounded-xl bg-red-50 border border-red-100 p-3">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-red-500 mb-2">❌ Losses <span className="font-normal normal-case tracking-normal">({seasonStats?.losses ?? 0} total)</span></p>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                  {[
+                    { label: "Infertile", value: seasonStats?.infertile ?? 0 },
+                    { label: "Died", value: seasonStats?.died ?? 0 },
+                    { label: "Cracked", value: seasonStats?.cracked ?? 0 },
+                    { label: "Missing", value: seasonStats?.missing ?? 0 },
+                  ].map(({ label, value }) => (
+                    <div key={label} className="flex justify-between items-center">
+                      <span className="text-[11px] text-red-400">{label}</span>
+                      <span className="text-sm font-semibold text-red-600">{value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>

@@ -105,21 +105,39 @@ export class StatsService {
 
     static async getSeasonStats(userId: number, year: number) {
         const db = getDb();
-        if (!db) return { pairs: 0, broods: 0, incubating: 0, totalEggs: 0, hatched: 0, hatchRate: 0 };
+        if (!db) return { pairs: 0, broods: 0, incubating: 0, totalEggs: 0, hatched: 0, fledged: 0, infertile: 0, died: 0, cracked: 0, missing: 0, losses: 0, hatchRate: 0 };
 
         const yearStr = String(year);
-        const [seasonPairs, seasonBroods] = await Promise.all([
+        const [seasonPairs, seasonBroods, eggOutcomes] = await Promise.all([
             db.select().from(breedingPairs).where(and(eq(breedingPairs.userId, userId), eq(breedingPairs.season, year))),
             db.select().from(broods).where(and(eq(broods.userId, userId), eq(broods.season, yearStr))),
+            db.select({ outcome: clutchEggs.outcome, total: count() })
+                .from(clutchEggs)
+                .innerJoin(broods, eq(clutchEggs.broodId, broods.id))
+                .where(and(eq(clutchEggs.userId, userId), eq(broods.season, yearStr)))
+                .groupBy(clutchEggs.outcome),
         ]);
 
         const pairs = seasonPairs.length;
         const broodsCount = seasonBroods.length;
         const incubating = seasonBroods.filter(b => b.status === "incubating").length;
-        const totalEggs = seasonBroods.reduce((sum, b) => sum + (b.eggsLaid ?? 0), 0);
-        const hatched = seasonBroods.reduce((sum, b) => sum + (b.chicksSurvived ?? 0), 0);
-        const hatchRate = totalEggs > 0 ? Math.round((hatched / totalEggs) * 100) : 0;
 
-        return { pairs, broods: broodsCount, incubating, totalEggs, hatched, hatchRate };
+        // Build outcome map from individual egg records
+        const outcomeMap: Record<string, number> = {};
+        for (const row of eggOutcomes) {
+            outcomeMap[row.outcome] = Number(row.total);
+        }
+
+        const totalEggs = Object.values(outcomeMap).reduce((s, n) => s + n, 0);
+        const hatched = outcomeMap["hatched"] ?? 0;
+        const fledged = outcomeMap["fledged"] ?? 0;
+        const infertile = outcomeMap["infertile"] ?? 0;
+        const died = outcomeMap["died"] ?? 0;
+        const cracked = outcomeMap["cracked"] ?? 0;
+        const missing = outcomeMap["missing"] ?? 0;
+        const losses = infertile + died + cracked + missing;
+        const hatchRate = totalEggs > 0 ? Math.round(((hatched + fledged) / totalEggs) * 100) : 0;
+
+        return { pairs, broods: broodsCount, incubating, totalEggs, hatched, fledged, infertile, died, cracked, missing, losses, hatchRate };
     }
 }
