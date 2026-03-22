@@ -617,53 +617,56 @@ export function BirdFormModal({
                                                 const recessiveMutations = trait.mutations.filter(m => RECESSIVE_TYPES.has(m.inheritanceType));
                                                 const splitOptions = recessiveMutations.filter(m => m.id !== sel.colour);
                                                 return (
-                                                    <div key={trait.traitName} className="grid grid-cols-2 gap-3">
-                                                        <div>
-                                                            <p className="text-xs font-medium text-muted-foreground mb-1">{trait.traitName}</p>
-                                                            <Select
-                                                                value={sel.colour || "none"}
-                                                                onValueChange={(v) =>
-                                                                    setTraitSelections(prev => ({
-                                                                        ...prev,
-                                                                        [trait.traitName]: {
-                                                                            colour: v === "none" ? "" : v,
-                                                                            splitTo: prev[trait.traitName]?.splitTo === v ? "" : prev[trait.traitName]?.splitTo ?? "",
-                                                                        }
-                                                                    }))
-                                                                }
-                                                            >
-                                                                <SelectTrigger className="h-8 text-xs">
-                                                                    <SelectValue placeholder="Select colour…" />
-                                                                </SelectTrigger>
-                                                                <SelectContent>
-                                                                    <SelectItem value="none" className="text-xs">— Not set —</SelectItem>
-                                                                    {trait.mutations.map(m => (
-                                                                        <SelectItem key={m.id} value={m.id} className="text-xs">{m.name}</SelectItem>
-                                                                    ))}
-                                                                </SelectContent>
-                                                            </Select>
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-xs font-medium text-muted-foreground mb-1">Split to</p>
-                                                            <Select
-                                                                value={sel.splitTo || "none"}
-                                                                onValueChange={(v) =>
-                                                                    setTraitSelections(prev => ({
-                                                                        ...prev,
-                                                                        [trait.traitName]: { ...prev[trait.traitName], splitTo: v === "none" ? "" : v }
-                                                                    }))
-                                                                }
-                                                            >
-                                                                <SelectTrigger className="h-8 text-xs">
-                                                                    <SelectValue placeholder="None" />
-                                                                </SelectTrigger>
-                                                                <SelectContent>
-                                                                    <SelectItem value="none" className="text-xs">None</SelectItem>
-                                                                    {splitOptions.map(m => (
-                                                                        <SelectItem key={m.id} value={m.id} className="text-xs">{m.name}</SelectItem>
-                                                                    ))}
-                                                                </SelectContent>
-                                                            </Select>
+                                                    <div key={trait.traitName} className="space-y-2">
+                                                        <p className="text-xs font-bold text-teal-800 uppercase tracking-wide">{trait.traitName}</p>
+                                                        <div className="grid grid-cols-2 gap-3">
+                                                            <div>
+                                                                <p className="text-xs font-medium text-muted-foreground mb-1">Colour</p>
+                                                                <Select
+                                                                    value={sel.colour || "none"}
+                                                                    onValueChange={(v) =>
+                                                                        setTraitSelections(prev => ({
+                                                                            ...prev,
+                                                                            [trait.traitName]: {
+                                                                                colour: v === "none" ? "" : v,
+                                                                                splitTo: prev[trait.traitName]?.splitTo === v ? "" : prev[trait.traitName]?.splitTo ?? "",
+                                                                            }
+                                                                        }))
+                                                                    }
+                                                                >
+                                                                    <SelectTrigger className="h-8 text-xs">
+                                                                        <SelectValue placeholder="Select colour…" />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="none" className="text-xs">— Not set —</SelectItem>
+                                                                        {trait.mutations.map(m => (
+                                                                            <SelectItem key={m.id} value={m.id} className="text-xs">{m.name}</SelectItem>
+                                                                        ))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-xs font-medium text-muted-foreground mb-1">Split to</p>
+                                                                <Select
+                                                                    value={sel.splitTo || "none"}
+                                                                    onValueChange={(v) =>
+                                                                        setTraitSelections(prev => ({
+                                                                            ...prev,
+                                                                            [trait.traitName]: { ...prev[trait.traitName], splitTo: v === "none" ? "" : v }
+                                                                        }))
+                                                                    }
+                                                                >
+                                                                    <SelectTrigger className="h-8 text-xs">
+                                                                        <SelectValue placeholder="None" />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="none" className="text-xs">None</SelectItem>
+                                                                        {splitOptions.map(m => (
+                                                                            <SelectItem key={m.id} value={m.id} className="text-xs">{m.name}</SelectItem>
+                                                                        ))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 );

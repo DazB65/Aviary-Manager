@@ -697,34 +697,37 @@ export default function BirdDetail() {
                         };
 
                         return (
-                          <div key={trait.traitName} className="grid grid-cols-2 gap-4">
-                            <div>
-                              <p className="text-xs font-medium text-muted-foreground mb-1">{trait.traitName}</p>
-                              <Select value={sel.colour || "none"} onValueChange={(v) => handleChange("colour", v)}>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select colour…" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="none">— Not set —</SelectItem>
-                                  {trait.mutations.map(m => (
-                                    <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div>
-                              <p className="text-xs font-medium text-muted-foreground mb-1">Split to</p>
-                              <Select value={sel.splitTo || "none"} onValueChange={(v) => handleChange("splitTo", v)}>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="None" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="none">None</SelectItem>
-                                  {splitOptions.map(m => (
-                                    <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                          <div key={trait.traitName} className="space-y-2">
+                            <p className="text-xs font-bold text-teal-800 uppercase tracking-wide">{trait.traitName}</p>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <p className="text-xs font-medium text-muted-foreground mb-1">Colour</p>
+                                <Select value={sel.colour || "none"} onValueChange={(v) => handleChange("colour", v)}>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select colour…" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">— Not set —</SelectItem>
+                                    {trait.mutations.map(m => (
+                                      <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <p className="text-xs font-medium text-muted-foreground mb-1">Split to</p>
+                                <Select value={sel.splitTo || "none"} onValueChange={(v) => handleChange("splitTo", v)}>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="None" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">None</SelectItem>
+                                    {splitOptions.map(m => (
+                                      <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
                             </div>
                           </div>
                         );
