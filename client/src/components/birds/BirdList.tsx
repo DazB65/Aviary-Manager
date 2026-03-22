@@ -6,6 +6,24 @@ import { format } from "date-fns";
 import type { SortCol } from "@/hooks/useBirds";
 import { GenderIcon } from "@/components/ui/GenderIcon";
 
+const TRAIT_LABELS = ["HEAD", "BODY", "BREAST"];
+
+function GeneticsMutationCell({ colorMutation }: { colorMutation: string | null }) {
+    if (!colorMutation) return <span>—</span>;
+    const parts = colorMutation.split(" / ");
+    if (parts.length < 2) return <span>{colorMutation}</span>;
+    return (
+        <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+            {parts.map((part, i) => (
+                <span key={i} className="whitespace-nowrap">
+                    <span className="text-[10px] font-bold tracking-wider text-muted-foreground mr-1">{TRAIT_LABELS[i]}</span>
+                    <span>{part}</span>
+                </span>
+            ))}
+        </div>
+    );
+}
+
 interface BirdListProps {
     birds: any[];
     speciesMap: Record<number, any>;
@@ -132,7 +150,7 @@ export function BirdList({
                                     {bird.cageNumber || "—"}
                                 </td>
                                 <td className="px-4 py-3 text-xs text-amber-600 hidden lg:table-cell">
-                                    {bird.colorMutation || "—"}
+                                    <GeneticsMutationCell colorMutation={bird.colorMutation} />
                                 </td>
                                 <td className="px-4 py-3 text-xs text-muted-foreground hidden md:table-cell">
                                     {dobStr}
