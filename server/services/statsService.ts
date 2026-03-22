@@ -1,6 +1,6 @@
 import { eq, and, inArray, gte, lte, count, sum, sql, isNotNull } from "drizzle-orm";
 import { getDb } from "../db";
-import { birds, breedingPairs, broods, events } from "../../drizzle/schema";
+import { birds, breedingPairs, broods, clutchEggs, events } from "../../drizzle/schema";
 
 export class StatsService {
     static async getDashboardStatsByUser(userId: number) {
@@ -37,11 +37,16 @@ export class StatsService {
                 .from(breedingPairs)
                 .where(and(eq(breedingPairs.userId, userId), eq(breedingPairs.status, "active"))),
 
-            // Sum of eggs across all incubating broods
+            // Count individual eggs still actively incubating (outcome unknown or fertile)
             db
-                .select({ total: sum(broods.eggsLaid) })
-                .from(broods)
-                .where(and(eq(broods.userId, userId), eq(broods.status, "incubating"))),
+                .select({ total: count() })
+                .from(clutchEggs)
+                .innerJoin(broods, eq(clutchEggs.broodId, broods.id))
+                .where(and(
+                    eq(clutchEggs.userId, userId),
+                    eq(broods.status, "incubating"),
+                    inArray(clutchEggs.outcome, ["unknown", "fertile"]),
+                )),
 
             // Incubating broods with a hatch date in the next 14 days
             db
@@ -92,7 +97,7 @@ export class StatsService {
             totalMales,
             totalFemales,
             activePairs: Number(activePairsResult[0]?.count ?? 0),
-            eggsIncubating: Number(eggsIncubatingResult[0]?.total ?? 0),
+            eggsIncubating: eggsIncubatingResult[0]?.total ?? 0,
             upcomingHatches: Number(upcomingHatchesResult[0]?.count ?? 0),
             upcomingEvents,
         };
