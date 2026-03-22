@@ -441,11 +441,32 @@ export default function BirdDetail() {
                   <p className="font-medium">{fledgedStr || "—"}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Dna className="h-4 w-4 text-muted-foreground" />
+              <div className="flex items-start gap-2 text-sm">
+                <Dna className="h-4 w-4 text-muted-foreground mt-0.5" />
                 <div>
-                  <p className="text-xs text-muted-foreground">Colour / Mutation</p>
-                  <p className="font-medium text-amber-600">{bird.colorMutation || "—"}</p>
+                  <p className="text-xs text-muted-foreground mb-1">Colour / Mutation</p>
+                  {showGeneticsTab ? (
+                    <div className="space-y-1.5">
+                      {gouldianFinchPack.traits.map((trait) => {
+                        const sel = traitSelections[trait.traitName] ?? { colour: "", splitTo: "" };
+                        const colourMutation = trait.mutations.find(m => m.id === sel.colour);
+                        const splitMutation = trait.mutations.find(m => m.id === sel.splitTo);
+                        if (!colourMutation) return null;
+                        const traitLabel = trait.traitName.replace(" Colour", "").toUpperCase();
+                        return (
+                          <div key={trait.traitName}>
+                            <p className="text-[10px] font-bold tracking-widest text-muted-foreground">{traitLabel}</p>
+                            <p className="font-medium text-amber-600 text-sm">
+                              {colourMutation.name}
+                              {splitMutation && <span className="text-amber-500"> (split to {splitMutation.name})</span>}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="font-medium text-amber-600">{bird.colorMutation || "—"}</p>
+                  )}
                 </div>
               </div>
             </div>
