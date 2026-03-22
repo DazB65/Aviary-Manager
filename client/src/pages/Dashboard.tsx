@@ -346,6 +346,7 @@ export default function Dashboard() {
                     { label: "Died", value: seasonStats?.died ?? 0 },
                     { label: "Cracked", value: seasonStats?.cracked ?? 0 },
                     { label: "Missing", value: seasonStats?.missing ?? 0 },
+                    { label: "Abandoned", value: seasonStats?.abandoned ?? 0 },
                   ].map(({ label, value }) => (
                     <div key={label} className="flex justify-between items-center">
                       <span className="text-[11px] text-red-400">{label}</span>

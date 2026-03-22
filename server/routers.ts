@@ -568,7 +568,7 @@ export const appRouter = router({
       .input(z.object({
         broodId: z.number(),
         eggNumber: z.number().int().min(1),
-        outcome: z.enum(["unknown", "fertile", "infertile", "cracked", "hatched", "died", "fledged", "missing"]),
+        outcome: z.enum(["unknown", "fertile", "infertile", "cracked", "hatched", "died", "fledged", "missing", "abandoned"]),
         outcomeDate: z.string().nullable().optional(),
         notes: z.string().nullable().optional(),
       }))
