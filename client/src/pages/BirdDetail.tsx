@@ -183,29 +183,46 @@ function PedigreeCard({
         </div>
       </div>
       {size !== "sm" && (() => {
+        // Try localStorage first
         const genotype = readBirdGenotype(bird.id);
         const traitRows = gouldianFinchPack.traits.flatMap((trait) => {
           const expressing = trait.mutations.find(m => genotype[m.id] === GenotypeState.EXPRESSING);
           const carrier = trait.mutations.find(m => genotype[m.id] === GenotypeState.CARRIER);
           if (!expressing) return [];
           const label = trait.traitName.replace(" Colour", "").toUpperCase();
-          return [{ label, expressing, carrier }];
+          return [{ label, value: expressing.name + (carrier ? ` (split to ${carrier.name})` : "") }];
         });
         if (traitRows.length > 0) {
           return (
             <div className="space-y-0.5 mb-0.5">
-              {traitRows.map(({ label, expressing, carrier }) => (
+              {traitRows.map(({ label, value }) => (
                 <div key={label}>
                   <p className="text-[9px] font-bold tracking-widest text-muted-foreground leading-none">{label}</p>
-                  <p className="text-xs text-amber-600 leading-tight">
-                    {expressing.name}{carrier && <span className="text-amber-500"> / {carrier.name}</span>}
-                  </p>
+                  <p className="text-xs text-amber-600 leading-tight">{value}</p>
                 </div>
               ))}
             </div>
           );
         }
-        return bird.colorMutation ? <p className="text-xs text-amber-600 truncate">{bird.colorMutation}</p> : null;
+        // Fall back to parsing colorMutation string (e.g. "Black Head / Green / Purple")
+        if (bird.colorMutation) {
+          const parts = bird.colorMutation.split(" / ");
+          const labels = ["HEAD", "BODY", "BREAST"];
+          if (parts.length > 1) {
+            return (
+              <div className="space-y-0.5 mb-0.5">
+                {parts.map((part, i) => (
+                  <div key={i}>
+                    <p className="text-[9px] font-bold tracking-widest text-muted-foreground leading-none">{labels[i] ?? ""}</p>
+                    <p className="text-xs text-amber-600 leading-tight">{part}</p>
+                  </div>
+                ))}
+              </div>
+            );
+          }
+          return <p className="text-xs text-amber-600 truncate">{bird.colorMutation}</p>;
+        }
+        return null;
       })()}
       <p className={`${textClasses[size]} ${genderColor} font-medium flex items-center gap-1.5`}><GenderIcon gender={bird.gender} className="w-3.5 h-3.5" /> {bird.gender === "male" ? "Male" : bird.gender === "female" ? "Female" : "?"}</p>
     </button>
@@ -285,6 +302,8 @@ export default function BirdDetail() {
   );
 
   const { data: bird, isLoading } = trpc.birds.get.useQuery({ id: birdId });
+  const utils = trpc.useUtils();
+  const updateBird = trpc.birds.update.useMutation({ onSuccess: () => utils.birds.get.invalidate({ id: birdId }) });
   const { data: speciesList = [] } = trpc.species.list.useQuery();
   const { data: pedigreeMap = {} } = trpc.birds.pedigree.useQuery({ id: birdId, generations: maxGenerations });
   const { data: descendants = [] } = trpc.birds.descendants.useQuery({ id: birdId });
@@ -748,6 +767,8 @@ export default function BirdDetail() {
                           const newGenotype = buildGenotypeFromSelections(next, gouldianFinchPack);
                           setBirdGenotype(newGenotype);
                           writeBirdGenotype(birdId, newGenotype);
+                          const display = formatGeneticsDisplay(next, gouldianFinchPack);
+                          if (display) updateBird.mutate({ id: birdId, colorMutation: display });
                         };
 
                         return (
