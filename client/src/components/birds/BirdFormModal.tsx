@@ -347,7 +347,12 @@ export function BirdFormModal({
                             </DialogTitle>
                         </DialogHeader>
 
-                        <form onSubmit={form.handleSubmit((data) => onSubmit(data, buildGenotypeFromSelections(traitSelections, gouldianFinchPack)))} className="space-y-4 py-2">
+                        <form onSubmit={form.handleSubmit((data) => {
+                            const genotype = buildGenotypeFromSelections(traitSelections, gouldianFinchPack);
+                            const geneticsDisplay = formatGeneticsDisplay(traitSelections, gouldianFinchPack);
+                            if (geneticsDisplay) data.colorMutation = geneticsDisplay;
+                            onSubmit(data, genotype);
+                        })} className="space-y-4 py-2">
                             {/* Photo */}
                             <div className="flex items-center gap-4">
                                 <div

@@ -21,7 +21,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { format } from "date-fns";
 import { GenderIcon } from "@/components/ui/GenderIcon";
-import { useState } from "react";
 
 type PedigreeBird = {
   id: number;
@@ -34,6 +33,8 @@ type PedigreeBird = {
   fatherId: number | null;
   motherId: number | null;
 };
+
+type GenotypeOption = { value: GenotypeState; label: string };
 
 const RECESSIVE_TYPES = new Set([
   InheritanceType.AUTOSOMAL_RECESSIVE,
@@ -181,7 +182,31 @@ function PedigreeCard({
           {size !== "sm" && <p className="text-xs text-muted-foreground truncate leading-tight">{speciesName ?? "—"}</p>}
         </div>
       </div>
-      {bird.colorMutation && size !== "sm" && <p className="text-xs text-amber-600 truncate">{bird.colorMutation}</p>}
+      {size !== "sm" && (() => {
+        const genotype = readBirdGenotype(bird.id);
+        const traitRows = gouldianFinchPack.traits.flatMap((trait) => {
+          const expressing = trait.mutations.find(m => genotype[m.id] === GenotypeState.EXPRESSING);
+          const carrier = trait.mutations.find(m => genotype[m.id] === GenotypeState.CARRIER);
+          if (!expressing) return [];
+          const label = trait.traitName.replace(" Colour", "").toUpperCase();
+          return [{ label, expressing, carrier }];
+        });
+        if (traitRows.length > 0) {
+          return (
+            <div className="space-y-0.5 mb-0.5">
+              {traitRows.map(({ label, expressing, carrier }) => (
+                <div key={label}>
+                  <p className="text-[9px] font-bold tracking-widest text-muted-foreground leading-none">{label}</p>
+                  <p className="text-xs text-amber-600 leading-tight">
+                    {expressing.name}{carrier && <span className="text-amber-500"> / {carrier.name}</span>}
+                  </p>
+                </div>
+              ))}
+            </div>
+          );
+        }
+        return bird.colorMutation ? <p className="text-xs text-amber-600 truncate">{bird.colorMutation}</p> : null;
+      })()}
       <p className={`${textClasses[size]} ${genderColor} font-medium flex items-center gap-1.5`}><GenderIcon gender={bird.gender} className="w-3.5 h-3.5" /> {bird.gender === "male" ? "Male" : bird.gender === "female" ? "Female" : "?"}</p>
     </button>
   );
@@ -446,24 +471,32 @@ export default function BirdDetail() {
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">Colour / Mutation</p>
                   {showGeneticsTab ? (
-                    <div className="space-y-1.5">
-                      {gouldianFinchPack.traits.map((trait) => {
+                    (() => {
+                      const traitRows = gouldianFinchPack.traits.flatMap((trait) => {
                         const sel = traitSelections[trait.traitName] ?? { colour: "", splitTo: "" };
                         const colourMutation = trait.mutations.find(m => m.id === sel.colour);
                         const splitMutation = trait.mutations.find(m => m.id === sel.splitTo);
-                        if (!colourMutation) return null;
+                        if (!colourMutation) return [];
                         const traitLabel = trait.traitName.replace(" Colour", "").toUpperCase();
-                        return (
-                          <div key={trait.traitName}>
-                            <p className="text-[10px] font-bold tracking-widest text-muted-foreground">{traitLabel}</p>
-                            <p className="font-medium text-amber-600 text-sm">
-                              {colourMutation.name}
-                              {splitMutation && <span className="text-amber-500"> (split to {splitMutation.name})</span>}
-                            </p>
-                          </div>
-                        );
-                      })}
-                    </div>
+                        return [{ traitLabel, colourMutation, splitMutation }];
+                      });
+                      if (traitRows.length === 0) {
+                        return <p className="font-medium text-amber-600">{bird.colorMutation || "—"}</p>;
+                      }
+                      return (
+                        <div className="space-y-1.5">
+                          {traitRows.map(({ traitLabel, colourMutation, splitMutation }) => (
+                            <div key={traitLabel}>
+                              <p className="text-[10px] font-bold tracking-widest text-muted-foreground">{traitLabel}</p>
+                              <p className="font-medium text-amber-600 text-sm">
+                                {colourMutation.name}
+                                {splitMutation && <span className="text-amber-500"> (split to {splitMutation.name})</span>}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()
                   ) : (
                     <p className="font-medium text-amber-600">{bird.colorMutation || "—"}</p>
                   )}
