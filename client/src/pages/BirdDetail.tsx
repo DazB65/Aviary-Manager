@@ -456,42 +456,42 @@ export default function BirdDetail() {
               </Badge>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5">
-              <div className="flex items-center gap-2 text-sm">
-                <Tag className="h-4 w-4 text-muted-foreground" />
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 mt-6">
+              <div className="flex items-center gap-3">
+                <Tag className="h-5 w-5 text-muted-foreground shrink-0" />
                 <div>
-                  <p className="text-xs text-muted-foreground">Ring ID</p>
-                  <p className="font-medium font-mono">{bird.ringId || "—"}</p>
+                  <p className="text-sm text-muted-foreground">Ring ID</p>
+                  <p className="text-base font-semibold font-mono">{bird.ringId || "—"}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Bird className="h-4 w-4 text-muted-foreground" />
+              <div className="flex items-center gap-3">
+                <Bird className="h-5 w-5 text-muted-foreground shrink-0" />
                 <div>
-                  <p className="text-xs text-muted-foreground">Gender</p>
-                  <p className="font-medium flex items-center gap-1.5">
+                  <p className="text-sm text-muted-foreground">Gender</p>
+                  <p className="text-base font-semibold flex items-center gap-1.5">
                     <GenderIcon gender={bird.gender} className="w-4 h-4" />
                     {bird.gender === "male" ? "Male" : bird.gender === "female" ? "Female" : "Unknown"}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
+              <div className="flex items-center gap-3">
+                <Calendar className="h-5 w-5 text-muted-foreground shrink-0" />
                 <div>
-                  <p className="text-xs text-muted-foreground">Date of Birth</p>
-                  <p className="font-medium">{dobStr || "—"}</p>
+                  <p className="text-sm text-muted-foreground">Date of Birth</p>
+                  <p className="text-base font-semibold">{dobStr || "—"}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
+              <div className="flex items-center gap-3">
+                <Calendar className="h-5 w-5 text-muted-foreground shrink-0" />
                 <div>
-                  <p className="text-xs text-muted-foreground">Fledged Date</p>
-                  <p className="font-medium">{fledgedStr || "—"}</p>
+                  <p className="text-sm text-muted-foreground">Fledged Date</p>
+                  <p className="text-base font-semibold">{fledgedStr || "—"}</p>
                 </div>
               </div>
-              <div className="flex items-start gap-2 text-sm">
-                <Dna className="h-4 w-4 text-muted-foreground mt-0.5" />
+              <div className="flex items-center gap-3 col-span-2 sm:col-span-4">
+                <Dna className="h-5 w-5 text-muted-foreground shrink-0" />
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1">Colour / Mutation</p>
+                  <p className="text-sm text-muted-foreground mb-0.5">Colour / Mutation</p>
                   {showGeneticsTab ? (
                     (() => {
                       const traitRows = gouldianFinchPack.traits.flatMap((trait) => {
@@ -499,28 +499,15 @@ export default function BirdDetail() {
                         const colourMutation = trait.mutations.find(m => m.id === sel.colour);
                         const splitMutation = trait.mutations.find(m => m.id === sel.splitTo);
                         if (!colourMutation) return [];
-                        const traitLabel = trait.traitName.replace(" Colour", "").toUpperCase();
-                        return [{ traitLabel, colourMutation, splitMutation }];
+                        return [`${colourMutation.name}${splitMutation ? ` (split to ${splitMutation.name})` : ""}`];
                       });
                       if (traitRows.length === 0) {
-                        return <p className="font-medium text-amber-600">{bird.colorMutation || "—"}</p>;
+                        return <p className="text-base font-semibold text-amber-600">{bird.colorMutation || "—"}</p>;
                       }
-                      return (
-                        <div className="space-y-1.5">
-                          {traitRows.map(({ traitLabel, colourMutation, splitMutation }) => (
-                            <div key={traitLabel}>
-                              <p className="text-[10px] font-bold tracking-widest text-muted-foreground">{traitLabel}</p>
-                              <p className="font-medium text-amber-600 text-sm">
-                                {colourMutation.name}
-                                {splitMutation && <span className="text-amber-500"> (split to {splitMutation.name})</span>}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      );
+                      return <p className="text-base font-semibold text-amber-600">{traitRows.join(" · ")}</p>;
                     })()
                   ) : (
-                    <p className="font-medium text-amber-600">{bird.colorMutation || "—"}</p>
+                    <p className="text-base font-semibold text-amber-600">{bird.colorMutation || "—"}</p>
                   )}
                 </div>
               </div>
@@ -537,14 +524,14 @@ export default function BirdDetail() {
               const totalOffspring = breedingHistory.reduce((s, h) =>
                 s + h.broods.reduce((bs, b) => bs + (b.eggCounts["hatched"] ?? 0) + (b.eggCounts["fledged"] ?? 0), 0), 0);
               return (
-                <div className="mt-4 flex items-center gap-4 flex-wrap">
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
-                    <Heart className="h-3.5 w-3.5" /> {breedingHistory.length} pair{breedingHistory.length !== 1 ? "s" : ""}
+                <div className="mt-5 flex items-center gap-3 flex-wrap">
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-sm font-semibold">
+                    <Heart className="h-4 w-4" /> {breedingHistory.length} pair{breedingHistory.length !== 1 ? "s" : ""}
                   </div>
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-xs font-medium">
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-sm font-semibold">
                     🥚 {totalClutches} clutch{totalClutches !== 1 ? "es" : ""}
                   </div>
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-teal-50 border border-teal-200 text-teal-700 text-xs font-medium">
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-teal-50 border border-teal-200 text-teal-700 text-sm font-semibold">
                     🐣 {totalOffspring} offspring
                   </div>
                 </div>
@@ -719,17 +706,17 @@ export default function BirdDetail() {
           <TabsContent value="breeding">
             <Card className="border border-border shadow-card">
               <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                  <Heart className="h-4 w-4 text-primary" />
+                <CardTitle className="flex items-center gap-2 text-lg font-bold">
+                  <Heart className="h-5 w-5 text-primary" />
                   Breeding History
                 </CardTitle>
-                <p className="text-xs text-muted-foreground">All clutches this bird has been involved in.</p>
+                <p className="text-sm text-muted-foreground">All clutches this bird has been involved in.</p>
               </CardHeader>
               <CardContent className="p-0">
                 {breedingHistory.length === 0 ? (
                   <div className="text-center py-14 text-muted-foreground">
                     <Heart className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                    <p className="text-xs font-bold tracking-widest uppercase">No breeding records yet.</p>
+                    <p className="text-sm font-bold tracking-widest uppercase">No breeding records yet.</p>
                   </div>
                 ) : (() => {
                   const allClutches = breedingHistory.flatMap(({ pair, broods: pairBroods }) =>
@@ -757,46 +744,50 @@ export default function BirdDetail() {
                         const statusLabel = s === "hatched" ? "🐣 Hatched" : s === "failed" ? "❌ Failed" : s === "abandoned" ? "🚫 Abandoned" : "🥚 Incubating";
 
                         return (
-                          <div key={brood.id} className="flex items-center gap-4 px-6 py-4 flex-wrap">
-                            {/* Clutch number */}
-                            <span className="text-xs font-bold tracking-widest text-amber-600 uppercase shrink-0 w-16">
-                              Clutch {idx + 1}
-                            </span>
-
-                            {/* Partner */}
-                            <button
-                              onClick={() => setLocation(`/birds/${pair.partnerId}`)}
-                              className="flex items-center gap-1.5 hover:underline shrink-0"
-                            >
-                              <div className={`w-5 h-5 rounded-full ${pair.partnerGender === "male" ? "bg-blue-100" : pair.partnerGender === "female" ? "bg-pink-100" : "bg-amber-100"} flex items-center justify-center overflow-hidden`}>
-                                {pair.partnerPhotoUrl
-                                  ? <img src={pair.partnerPhotoUrl} alt="" className="w-full h-full object-cover" />
-                                  : <GenderIcon gender={pair.partnerGender} className="w-3 h-3" />
-                                }
-                              </div>
-                              <span className="text-xs font-bold tracking-widest uppercase">{partnerLabel}</span>
-                            </button>
-
-                            <span className="text-xs text-muted-foreground shrink-0 font-bold tracking-widest uppercase">·</span>
-
-                            {/* Eggs laid */}
-                            <span className="text-xs font-bold tracking-widest uppercase text-muted-foreground shrink-0">
-                              {brood.eggsLaid ?? 0} egg{brood.eggsLaid !== 1 ? "s" : ""} laid
-                            </span>
-
-                            <span className="text-xs text-muted-foreground shrink-0 font-bold tracking-widest uppercase">·</span>
-
-                            {/* Outcome chips */}
-                            {outcomes.map(({ outcome, count, cfg }) => (
-                              <span key={outcome} className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold tracking-widest uppercase border ${cfg.bg} ${cfg.text} ${cfg.border} shrink-0`}>
-                                {cfg.emoji} {count} {cfg.label.toLowerCase()}
+                          <div key={brood.id} className="overflow-x-auto">
+                            <div className="flex items-center gap-5 px-6 py-5 min-w-0" style={{ minWidth: "max-content" }}>
+                              {/* Clutch number */}
+                              <span className="text-sm font-bold tracking-widest text-amber-600 uppercase shrink-0 w-20">
+                                Clutch {idx + 1}
                               </span>
-                            ))}
 
-                            {/* Result badge */}
-                            <Badge variant="outline" className={`text-xs font-bold tracking-widest uppercase ml-auto shrink-0 ${statusStyle}`}>
-                              {statusLabel}
-                            </Badge>
+                              {/* Partner */}
+                              <button
+                                onClick={() => setLocation(`/birds/${pair.partnerId}`)}
+                                className="flex items-center gap-2 hover:underline shrink-0"
+                              >
+                                <div className={`w-7 h-7 rounded-full ${pair.partnerGender === "male" ? "bg-blue-100" : pair.partnerGender === "female" ? "bg-pink-100" : "bg-amber-100"} flex items-center justify-center overflow-hidden`}>
+                                  {pair.partnerPhotoUrl
+                                    ? <img src={pair.partnerPhotoUrl} alt="" className="w-full h-full object-cover" />
+                                    : <GenderIcon gender={pair.partnerGender} className="w-4 h-4" />
+                                  }
+                                </div>
+                                <span className="text-sm font-bold tracking-widest uppercase">{partnerLabel}</span>
+                              </button>
+
+                              <span className="text-sm text-muted-foreground shrink-0">·</span>
+
+                              {/* Eggs laid */}
+                              <span className="text-sm font-bold tracking-widest uppercase text-muted-foreground shrink-0">
+                                {brood.eggsLaid ?? 0} eggs laid
+                              </span>
+
+                              <span className="text-sm text-muted-foreground shrink-0">·</span>
+
+                              {/* Outcome chips */}
+                              <div className="flex items-center gap-2 shrink-0">
+                                {outcomes.map(({ outcome, count, cfg }) => (
+                                  <span key={outcome} className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold tracking-widest uppercase border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
+                                    {cfg.emoji} {count} {cfg.label.toLowerCase()}
+                                  </span>
+                                ))}
+                              </div>
+
+                              {/* Result badge */}
+                              <Badge variant="outline" className={`text-sm font-bold tracking-widest uppercase ml-6 shrink-0 px-3 py-1 ${statusStyle}`}>
+                                {statusLabel}
+                              </Badge>
+                            </div>
                           </div>
                         );
                       })}
