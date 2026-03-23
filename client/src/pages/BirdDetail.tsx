@@ -504,7 +504,7 @@ export default function BirdDetail() {
                         return <p className="text-lg font-bold text-amber-600">{bird.colorMutation || "—"}</p>;
                       }
                       return (
-                        <div className="flex gap-6">
+                        <div className="flex flex-col gap-2">
                           {traitRows.map(({ label, value, split }) => (
                             <div key={label}>
                               <p className="text-xs font-bold tracking-widest text-muted-foreground uppercase">{label}</p>
@@ -523,7 +523,7 @@ export default function BirdDetail() {
                         const labels = ["HEAD", "BODY", "BREAST"];
                         if (parts.length > 1) {
                           return (
-                            <div className="flex gap-6">
+                            <div className="flex flex-col gap-2">
                               {parts.map((part, i) => (
                                 <div key={i}>
                                   <p className="text-xs font-bold tracking-widest text-muted-foreground uppercase">{labels[i] ?? ""}</p>
