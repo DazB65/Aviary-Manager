@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Heart, ChevronRight, Pencil, Trash2 } from "lucide-react";
+import { Heart, ChevronRight, Pencil, Trash2, Archive, RotateCcw } from "lucide-react";
 import { format } from "date-fns";
 import { STATUS_STYLES, STATUS_LABELS } from "./constants";
 import { PairInbreeding } from "./InbreedingUI";
@@ -16,6 +16,7 @@ interface PairCardProps {
     onNavigateToBroods: (pairId: number) => void;
     onEdit: (pair: any) => void;
     onDelete: (pairId: number) => void;
+    onStatusChange?: (pairId: number, status: "active" | "resting" | "retired") => void;
 }
 
 export function PairCard({
@@ -26,6 +27,7 @@ export function PairCard({
     onNavigateToBroods,
     onEdit,
     onDelete,
+    onStatusChange,
 }: PairCardProps) {
     const pairingDateStr = pair.pairingDate
         ? format(
@@ -113,6 +115,29 @@ export function PairCard({
                         >
                             <ChevronRight className="h-4 w-4" />
                         </Button>
+                        {onStatusChange && (
+                            pair.status === "retired" ? (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-emerald-600 hover:text-emerald-700"
+                                    title="Reactivate pair"
+                                    onClick={() => onStatusChange(pair.id, "active")}
+                                >
+                                    <RotateCcw className="h-3.5 w-3.5" />
+                                </Button>
+                            ) : (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                    title="Retire pair"
+                                    onClick={() => onStatusChange(pair.id, "retired")}
+                                >
+                                    <Archive className="h-3.5 w-3.5" />
+                                </Button>
+                            )
+                        )}
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(pair)}>
                             <Pencil className="h-3.5 w-3.5" />
                         </Button>

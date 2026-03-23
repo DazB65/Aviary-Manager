@@ -1,7 +1,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Heart, Plus, CalendarDays } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { usePairs } from "@/hooks/usePairs";
 import type { PairFormData } from "@/hooks/usePairForm";
@@ -13,6 +13,7 @@ export default function Pairs() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingPair, setEditingPair] = useState<any>(null);
+  const [showRetired, setShowRetired] = useState(false);
 
   const {
     pairs,
@@ -73,6 +74,20 @@ export default function Pairs() {
     deletePair.mutate({ id: pairId });
   };
 
+  const handleStatusChange = (pairId: number, status: "active" | "resting" | "retired") => {
+    updatePair.mutate({ id: pairId, status });
+  };
+
+  const filteredPairsByYear = useMemo(() =>
+    pairsByYear
+      .map(([year, yearPairs]) => [
+        year,
+        yearPairs.filter((p) => showRetired ? p.status === "retired" : p.status !== "retired"),
+      ] as [string, typeof yearPairs])
+      .filter(([, yearPairs]) => yearPairs.length > 0),
+    [pairsByYear, showRetired]
+  );
+
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-5xl mx-auto">
@@ -80,7 +95,10 @@ export default function Pairs() {
           <div>
             <h1 className="font-display text-3xl font-bold text-foreground">Breeding Pairs</h1>
             <p className="text-muted-foreground mt-1">
-              {pairs.length} pair{pairs.length !== 1 ? "s" : ""} registered
+              {showRetired
+                ? `${pairs.filter((p) => p.status === "retired").length} retired pair${pairs.filter((p) => p.status === "retired").length !== 1 ? "s" : ""}`
+                : `${pairs.filter((p) => p.status !== "retired").length} active pair${pairs.filter((p) => p.status !== "retired").length !== 1 ? "s" : ""}`
+              }
               {settingsBreedingYear && (
                 <span className="ml-2 inline-flex items-center gap-1 text-xs bg-teal-50 text-teal-700 border border-teal-200 px-2 py-0.5 rounded-full">
                   <CalendarDays className="h-3 w-3" /> Season {settingsBreedingYear}
@@ -93,23 +111,44 @@ export default function Pairs() {
           </Button>
         </div>
 
+        <div className="flex items-center rounded-lg border border-border p-1 gap-1 w-fit">
+          <Button
+            size="sm"
+            variant={!showRetired ? "default" : "ghost"}
+            className="h-7 text-xs"
+            onClick={() => setShowRetired(false)}
+          >
+            Active
+          </Button>
+          <Button
+            size="sm"
+            variant={showRetired ? "default" : "ghost"}
+            className="h-7 text-xs"
+            onClick={() => setShowRetired(true)}
+          >
+            Retired
+          </Button>
+        </div>
+
         {isLoading ? (
           <div className="space-y-3">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="h-28 rounded-xl bg-muted animate-pulse" />
             ))}
           </div>
-        ) : pairs.length === 0 ? (
+        ) : filteredPairsByYear.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground">
             <Heart className="h-12 w-12 mx-auto mb-3 opacity-30" />
-            <p className="font-medium">No breeding pairs yet</p>
-            <Button onClick={openAdd} variant="outline" className="mt-4 gap-2">
-              <Plus className="h-4 w-4" />Create your first pair
-            </Button>
+            <p className="font-medium">{showRetired ? "No retired pairs" : "No active pairs"}</p>
+            {!showRetired && (
+              <Button onClick={openAdd} variant="outline" className="mt-4 gap-2">
+                <Plus className="h-4 w-4" />Create your first pair
+              </Button>
+            )}
           </div>
         ) : (
           <div className="space-y-8">
-            {pairsByYear.map(([year, yearPairs]) => (
+            {filteredPairsByYear.map(([year, yearPairs]) => (
               <div key={year}>
                 {/* Year heading */}
                 <div className="flex items-center gap-2 mb-3">
@@ -133,6 +172,7 @@ export default function Pairs() {
                       onNavigateToBroods={navigateToBroods}
                       onEdit={openEdit}
                       onDelete={handleDelete}
+                      onStatusChange={handleStatusChange}
                     />
                   ))}
                 </div>
