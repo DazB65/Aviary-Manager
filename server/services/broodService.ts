@@ -140,6 +140,31 @@ export class BroodService {
                     birdId: existingBirdId ? sql`${clutchEggs.birdId}` : null,
                 },
             });
+
+        // Auto-transition brood status when all eggs are resolved
+        const [currentBrood] = await db
+            .select({ status: broods.status })
+            .from(broods)
+            .where(and(eq(broods.id, broodId), eq(broods.userId, userId)))
+            .limit(1);
+        if (!currentBrood || currentBrood.status !== "incubating") return;
+
+        const allEggs = await db
+            .select({ outcome: clutchEggs.outcome })
+            .from(clutchEggs)
+            .where(and(eq(clutchEggs.broodId, broodId), eq(clutchEggs.userId, userId)));
+        if (allEggs.length === 0) return;
+
+        const stillPending = allEggs.some(e => e.outcome === "unknown" || e.outcome === "fertile");
+        if (stillPending) return;
+
+        const hasSuccess = allEggs.some(e => e.outcome === "hatched" || e.outcome === "fledged");
+        const newStatus = hasSuccess ? "hatched" : "failed";
+
+        await db
+            .update(broods)
+            .set({ status: newStatus, updatedAt: new Date() })
+            .where(and(eq(broods.id, broodId), eq(broods.userId, userId), eq(broods.status, "incubating")));
     }
 
     static async deleteEggsByBrood(broodId: number, userId: number): Promise<void> {

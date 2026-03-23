@@ -159,6 +159,8 @@ export function ClutchEggGrid({
                 return s;
             });
             utils.clutchEggs.byBrood.invalidate({ broodId });
+            utils.broods.list.invalidate();
+            utils.dashboard.stats.invalidate();
         },
         onError: (e, { eggNumber }) => {
             setPendingEggs((prev) => {

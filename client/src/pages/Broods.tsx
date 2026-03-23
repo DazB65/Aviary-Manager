@@ -29,6 +29,7 @@ export default function Broods() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingBrood, setEditingBrood] = useState<any>(null);
   const [filterPairId, setFilterPairId] = useState("all");
+  const [showCompleted, setShowCompleted] = useState(false);
   const utils = trpc.useUtils();
 
   const [birdModalOpen, setBirdModalOpen] = useState(false);
@@ -178,7 +179,11 @@ export default function Broods() {
     return nums;
   }, [broods]);
 
-  const filtered = filterPairId === "all" ? broods : broods.filter((b) => String(b.pairId) === filterPairId);
+  const COMPLETED_STATUSES = ["hatched", "failed", "abandoned"];
+  const statusFiltered = showCompleted
+    ? broods.filter((b) => COMPLETED_STATUSES.includes(b.status))
+    : broods.filter((b) => b.status === "incubating");
+  const filtered = filterPairId === "all" ? statusFiltered : statusFiltered.filter((b) => String(b.pairId) === filterPairId);
 
   const pairGroups = useMemo(() => {
     const groups: Record<number, typeof broods> = {};
@@ -201,8 +206,10 @@ export default function Broods() {
           <div>
             <h1 className="font-display text-3xl font-bold text-foreground">Broods & Eggs</h1>
             <p className="text-muted-foreground mt-1">
-              {broods.filter((b) => b.status === "incubating").length} clutch
-              {broods.filter((b) => b.status === "incubating").length !== 1 ? "es" : ""} currently incubating
+              {showCompleted
+                ? `${broods.filter((b) => COMPLETED_STATUSES.includes(b.status)).length} completed clutch${broods.filter((b) => COMPLETED_STATUSES.includes(b.status)).length !== 1 ? "es" : ""}`
+                : `${broods.filter((b) => b.status === "incubating").length} clutch${broods.filter((b) => b.status === "incubating").length !== 1 ? "es" : ""} currently incubating`
+              }
             </p>
           </div>
           <Button id="tour-log-brood-btn" onClick={openAdd} className="bg-primary hover:bg-primary/90 shadow-md gap-2">
@@ -210,19 +217,39 @@ export default function Broods() {
           </Button>
         </div>
 
-        <Select value={filterPairId} onValueChange={setFilterPairId}>
-          <SelectTrigger id="tour-broods-filter" className="w-64">
-            <SelectValue placeholder="All pairs" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All pairs</SelectItem>
-            {pairs.map((p) => (
-              <SelectItem key={p.id} value={String(p.id)}>
-                {pairLabel(p)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center rounded-lg border border-border p-1 gap-1">
+            <Button
+              size="sm"
+              variant={!showCompleted ? "default" : "ghost"}
+              className="h-7 text-xs"
+              onClick={() => setShowCompleted(false)}
+            >
+              Active
+            </Button>
+            <Button
+              size="sm"
+              variant={showCompleted ? "default" : "ghost"}
+              className="h-7 text-xs"
+              onClick={() => setShowCompleted(true)}
+            >
+              Completed
+            </Button>
+          </div>
+          <Select value={filterPairId} onValueChange={setFilterPairId}>
+            <SelectTrigger id="tour-broods-filter" className="w-64">
+              <SelectValue placeholder="All pairs" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All pairs</SelectItem>
+              {pairs.map((p) => (
+                <SelectItem key={p.id} value={String(p.id)}>
+                  {pairLabel(p)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         {isLoading ? (
           <div className="space-y-3">
@@ -233,11 +260,13 @@ export default function Broods() {
         ) : pairGroups.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground">
             <Egg className="h-12 w-12 mx-auto mb-3 opacity-30" />
-            <p className="font-medium">No broods logged yet</p>
-            <Button onClick={openAdd} variant="outline" className="mt-4 gap-2">
-              <Plus className="h-4 w-4" />
-              Log your first brood
-            </Button>
+            <p className="font-medium">{showCompleted ? "No completed clutches yet" : "No active clutches"}</p>
+            {!showCompleted && (
+              <Button onClick={openAdd} variant="outline" className="mt-4 gap-2">
+                <Plus className="h-4 w-4" />
+                Log your first brood
+              </Button>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
