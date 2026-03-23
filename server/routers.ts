@@ -277,6 +277,9 @@ export const appRouter = router({
     siblings: activeProcedure
       .input(z.object({ id: z.number() }))
       .query(({ ctx, input }) => PedigreeService.getSiblings(input.id, ctx.user.id)),
+    breedingHistory: activeProcedure
+      .input(z.object({ id: z.number() }))
+      .query(({ ctx, input }) => BroodService.getBreedingHistoryByBird(input.id, ctx.user.id)),
     uploadPhoto: activeProcedure
       .input(z.object({
         filename: z.string(),

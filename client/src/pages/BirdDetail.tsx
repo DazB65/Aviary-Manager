@@ -16,7 +16,9 @@ import { readActiveGeneticsPacks, readBirdGenotype, writeBirdGenotype, formatGen
 import { GenotypeState, InheritanceType, type BirdGenotype } from "@/genetics/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Bird, Calendar, Tag, Dna, GitBranch, Users, CalendarDays, CheckCircle2, Circle } from "lucide-react";
+import { ArrowLeft, Bird, Calendar, Tag, Dna, GitBranch, Users, CalendarDays, CheckCircle2, Circle, Heart } from "lucide-react";
+import { EGG_OUTCOME_CONFIG } from "@/components/broods/constants";
+import { STATUS_STYLES, STATUS_LABELS } from "@/components/pairs/constants";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { format } from "date-fns";
@@ -309,6 +311,7 @@ export default function BirdDetail() {
   const { data: descendants = [] } = trpc.birds.descendants.useQuery({ id: birdId });
   const { data: siblings = [] } = trpc.birds.siblings.useQuery({ id: birdId });
   const { data: allEvents = [] } = trpc.events.list.useQuery();
+  const { data: breedingHistory = [] } = trpc.birds.breedingHistory.useQuery({ id: birdId });
 
   const speciesMap = Object.fromEntries(speciesList.map(s => [s.id, s]));
   const species = bird ? speciesMap[bird.speciesId] : undefined;
@@ -528,6 +531,25 @@ export default function BirdDetail() {
                 {bird.notes}
               </div>
             )}
+
+            {breedingHistory.length > 0 && (() => {
+              const totalClutches = breedingHistory.reduce((s, h) => s + h.broods.length, 0);
+              const totalOffspring = breedingHistory.reduce((s, h) =>
+                s + h.broods.reduce((bs, b) => bs + (b.eggCounts["hatched"] ?? 0) + (b.eggCounts["fledged"] ?? 0), 0), 0);
+              return (
+                <div className="mt-4 flex items-center gap-4 flex-wrap">
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+                    <Heart className="h-3.5 w-3.5" /> {breedingHistory.length} pair{breedingHistory.length !== 1 ? "s" : ""}
+                  </div>
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-xs font-medium">
+                    🥚 {totalClutches} clutch{totalClutches !== 1 ? "es" : ""}
+                  </div>
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-teal-50 border border-teal-200 text-teal-700 text-xs font-medium">
+                    🐣 {totalOffspring} offspring
+                  </div>
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
 
@@ -545,6 +567,10 @@ export default function BirdDetail() {
             <TabsTrigger value="siblings" className="gap-2">
               <Users className="h-4 w-4" /> Siblings
               {siblings.length > 0 && <Badge variant="secondary" className="ml-1 text-xs">{siblings.length}</Badge>}
+            </TabsTrigger>
+            <TabsTrigger value="breeding" className="gap-2">
+              <Heart className="h-4 w-4" /> Breeding
+              {breedingHistory.length > 0 && <Badge variant="secondary" className="ml-1 text-xs">{breedingHistory.length}</Badge>}
             </TabsTrigger>
             <TabsTrigger value="events" className="gap-2">
               <CalendarDays className="h-4 w-4" /> Events
@@ -681,6 +707,113 @@ export default function BirdDetail() {
                             </span>
                           </div>
                         </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Breeding History Tab */}
+          <TabsContent value="breeding">
+            <Card className="border border-border shadow-card">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                  <Heart className="h-4 w-4 text-primary" />
+                  Breeding History
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">All pairs this bird has been in and their clutch outcomes.</p>
+              </CardHeader>
+              <CardContent>
+                {breedingHistory.length === 0 ? (
+                  <div className="text-center py-10 text-muted-foreground">
+                    <Heart className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                    <p className="text-sm">No breeding records yet.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-5">
+                    {breedingHistory.map(({ pair, broods: pairBroods }) => {
+                      const totalEggs = pairBroods.reduce((s, b) => s + (b.eggsLaid ?? 0), 0);
+                      const totalHatched = pairBroods.reduce((s, b) => s + (b.eggCounts["hatched"] ?? 0) + (b.eggCounts["fledged"] ?? 0), 0);
+                      const hatchRate = totalEggs > 0 ? Math.round((totalHatched / totalEggs) * 100) : null;
+                      return (
+                        <div key={pair.id} className="rounded-xl border border-border bg-white overflow-hidden">
+                          {/* Partner header */}
+                          <div className="flex items-center gap-3 p-4 bg-muted/40 border-b border-border">
+                            <button
+                              onClick={() => setLocation(`/birds/${pair.partnerId}`)}
+                              className={`w-10 h-10 rounded-xl ${pair.partnerGender === "male" ? "bg-blue-50" : pair.partnerGender === "female" ? "bg-pink-50" : "bg-amber-50"} flex items-center justify-center shrink-0 overflow-hidden hover:opacity-80 transition-opacity`}
+                            >
+                              {pair.partnerPhotoUrl
+                                ? <img src={pair.partnerPhotoUrl} alt="" className="w-full h-full object-cover rounded-xl" />
+                                : <GenderIcon gender={pair.partnerGender} className="w-5 h-5" />
+                              }
+                            </button>
+                            <div className="flex-1 min-w-0">
+                              <button onClick={() => setLocation(`/birds/${pair.partnerId}`)} className="text-sm font-semibold hover:underline truncate text-left">
+                                {pair.partnerName || pair.partnerRingId || `Bird #${pair.partnerId}`}
+                              </button>
+                              <p className="text-xs text-muted-foreground">
+                                {pair.season ? `${pair.season} Season` : "No season"}
+                                {pair.pairingDate && ` · Paired ${new Date(String(pair.pairingDate)).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}`}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <Badge variant="outline" className={`text-xs ${STATUS_STYLES[pair.status] ?? ""}`}>
+                                {STATUS_LABELS[pair.status] ?? pair.status}
+                              </Badge>
+                              {hatchRate !== null && (
+                                <span className="text-xs text-muted-foreground">{totalHatched}/{totalEggs} eggs · {hatchRate}%</span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Clutches */}
+                          {pairBroods.length === 0 ? (
+                            <p className="text-xs text-muted-foreground p-4 italic">No clutches recorded for this pair.</p>
+                          ) : (
+                            <div className="divide-y divide-border">
+                              {pairBroods.map((brood, idx) => {
+                                const layDateStr = brood.layDate
+                                  ? new Date(String(brood.layDate)).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })
+                                  : null;
+                                const outcomes = Object.entries(brood.eggCounts)
+                                  .filter(([, count]) => count > 0)
+                                  .map(([outcome, count]) => ({ outcome, count, cfg: EGG_OUTCOME_CONFIG[outcome as keyof typeof EGG_OUTCOME_CONFIG] }))
+                                  .filter(({ cfg }) => cfg);
+                                const broodStatus = brood.status;
+                                const statusStyle = broodStatus === "hatched" ? "bg-teal-50 text-teal-700 border-teal-200" :
+                                  broodStatus === "failed" ? "bg-red-50 text-red-600 border-red-200" :
+                                  broodStatus === "abandoned" ? "bg-gray-50 text-gray-500 border-gray-200" :
+                                  "bg-amber-50 text-amber-700 border-amber-200";
+                                return (
+                                  <div key={brood.id} className="p-4 flex items-start gap-4">
+                                    <div className="shrink-0 w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">{idx + 1}</div>
+                                    <div className="flex-1 min-w-0 space-y-2">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        {layDateStr && <span className="text-sm font-medium">{layDateStr}</span>}
+                                        <Badge variant="outline" className={`text-xs ${statusStyle}`}>
+                                          {broodStatus === "incubating" ? "🥚 Incubating" : broodStatus === "hatched" ? "🐣 Hatched" : broodStatus === "failed" ? "❌ Failed" : "🚫 Abandoned"}
+                                        </Badge>
+                                        <span className="text-xs text-muted-foreground">{brood.eggsLaid} egg{brood.eggsLaid !== 1 ? "s" : ""}</span>
+                                      </div>
+                                      {outcomes.length > 0 && (
+                                        <div className="flex flex-wrap gap-1.5">
+                                          {outcomes.map(({ outcome, count, cfg }) => (
+                                            <span key={outcome} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
+                                              {cfg.emoji} {count} {cfg.label.toLowerCase()}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
                       );
                     })}
                   </div>

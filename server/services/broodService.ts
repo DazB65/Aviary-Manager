@@ -1,4 +1,4 @@
-import { eq, and, desc, asc, sql, inArray } from "drizzle-orm";
+import { eq, and, desc, asc, sql, inArray, or } from "drizzle-orm";
 import { getDb } from "../db";
 import {
     broods,
@@ -198,6 +198,80 @@ export class BroodService {
         if (toDelete.length > 0) {
             await db.delete(clutchEggs).where(inArray(clutchEggs.id, toDelete));
         }
+    }
+
+    static async getBreedingHistoryByBird(birdId: number, userId: number) {
+        const db = getDb();
+        if (!db) return [];
+
+        const pairs = await db
+            .select()
+            .from(breedingPairs)
+            .where(and(
+                eq(breedingPairs.userId, userId),
+                or(eq(breedingPairs.maleId, birdId), eq(breedingPairs.femaleId, birdId))
+            ))
+            .orderBy(desc(breedingPairs.season));
+
+        if (pairs.length === 0) return [];
+
+        const partnerIds = pairs.map(p => p.maleId === birdId ? p.femaleId : p.maleId);
+        const partnerBirds = await db
+            .select({ id: birds.id, ringId: birds.ringId, name: birds.name, photoUrl: birds.photoUrl, gender: birds.gender })
+            .from(birds)
+            .where(and(eq(birds.userId, userId), inArray(birds.id, partnerIds)));
+        const partnerMap = Object.fromEntries(partnerBirds.map(b => [b.id, b]));
+
+        const pairIds = pairs.map(p => p.id);
+        const allBroods = await db
+            .select()
+            .from(broods)
+            .where(and(eq(broods.userId, userId), inArray(broods.pairId, pairIds)))
+            .orderBy(desc(broods.layDate));
+
+        const broodIds = allBroods.map(b => b.id);
+        const eggCountsByBrood: Record<number, Record<string, number>> = {};
+        if (broodIds.length > 0) {
+            const eggRows = await db
+                .select({ broodId: clutchEggs.broodId, outcome: clutchEggs.outcome })
+                .from(clutchEggs)
+                .where(and(eq(clutchEggs.userId, userId), inArray(clutchEggs.broodId, broodIds)));
+            for (const row of eggRows) {
+                if (!eggCountsByBrood[row.broodId]) eggCountsByBrood[row.broodId] = {};
+                eggCountsByBrood[row.broodId][row.outcome] = (eggCountsByBrood[row.broodId][row.outcome] ?? 0) + 1;
+            }
+        }
+
+        return pairs.map(pair => {
+            const partnerId = pair.maleId === birdId ? pair.femaleId : pair.maleId;
+            const partner = partnerMap[partnerId];
+            const pairBroods = allBroods.filter(b => b.pairId === pair.id);
+            return {
+                pair: {
+                    id: pair.id,
+                    season: pair.season,
+                    pairingDate: pair.pairingDate,
+                    status: pair.status,
+                    notes: pair.notes,
+                    partnerId,
+                    partnerRingId: partner?.ringId ?? null,
+                    partnerName: partner?.name ?? null,
+                    partnerPhotoUrl: partner?.photoUrl ?? null,
+                    partnerGender: partner?.gender ?? "unknown",
+                },
+                broods: pairBroods.map(b => ({
+                    id: b.id,
+                    layDate: b.layDate,
+                    expectedHatchDate: b.expectedHatchDate,
+                    actualHatchDate: b.actualHatchDate,
+                    eggsLaid: b.eggsLaid,
+                    chicksSurvived: b.chicksSurvived,
+                    status: b.status,
+                    notes: b.notes,
+                    eggCounts: eggCountsByBrood[b.id] ?? {},
+                })),
+            };
+        });
     }
 
     static async convertToBird(broodId: number, userId: number, eggNumber: number): Promise<number> {

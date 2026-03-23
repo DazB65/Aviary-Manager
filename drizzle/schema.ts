@@ -19,7 +19,7 @@ export const birdStatusEnum = pgEnum("bird_status", ["alive", "breeding", "resti
 export const pairStatusEnum = pgEnum("pair_status", ["active", "resting", "retired"]);
 export const broodStatusEnum = pgEnum("brood_status", ["incubating", "hatched", "failed", "abandoned"]);
 export const eventTypeEnum = pgEnum("event_type", ["vet", "banding", "medication", "weaning", "sale", "supplements", "other"]);
-export const eggOutcomeEnum = pgEnum("egg_outcome", ["unknown", "fertile", "infertile", "cracked", "hatched", "died", "fledged", "missing"]);
+export const eggOutcomeEnum = pgEnum("egg_outcome", ["unknown", "fertile", "infertile", "cracked", "hatched", "died", "fledged", "missing", "abandoned"]);
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
