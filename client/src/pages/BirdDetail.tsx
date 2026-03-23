@@ -729,10 +729,9 @@ export default function BirdDetail() {
                 {breedingHistory.length === 0 ? (
                   <div className="text-center py-14 text-muted-foreground">
                     <Heart className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                    <p className="text-sm font-medium">No breeding records yet.</p>
+                    <p className="text-xs font-bold tracking-widest uppercase">No breeding records yet.</p>
                   </div>
                 ) : (() => {
-                  // Flatten all broods across pairs, tag with pair info, sort by layDate
                   const allClutches = breedingHistory.flatMap(({ pair, broods: pairBroods }) =>
                     pairBroods.map(brood => ({ brood, pair }))
                   ).sort((a, b) => {
@@ -746,9 +745,6 @@ export default function BirdDetail() {
                     <div className="divide-y divide-border">
                       {allClutches.map(({ brood, pair }, idx) => {
                         const partnerLabel = pair.partnerRingId || pair.partnerName || `Bird #${pair.partnerId}`;
-                        const layDateStr = brood.layDate
-                          ? new Date(String(brood.layDate)).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })
-                          : null;
                         const outcomes = Object.entries(brood.eggCounts)
                           .filter(([, count]) => count > 0)
                           .map(([outcome, count]) => ({ outcome, count, cfg: EGG_OUTCOME_CONFIG[outcome as keyof typeof EGG_OUTCOME_CONFIG] }))
@@ -761,55 +757,46 @@ export default function BirdDetail() {
                         const statusLabel = s === "hatched" ? "🐣 Hatched" : s === "failed" ? "❌ Failed" : s === "abandoned" ? "🚫 Abandoned" : "🥚 Incubating";
 
                         return (
-                          <div key={brood.id} className="flex items-start gap-5 px-6 py-5">
+                          <div key={brood.id} className="flex items-center gap-4 px-6 py-4 flex-wrap">
                             {/* Clutch number */}
-                            <div className="shrink-0 pt-0.5">
-                              <span className="text-xs font-bold tracking-widest text-amber-600 uppercase">Clutch {idx + 1}</span>
-                            </div>
+                            <span className="text-xs font-bold tracking-widest text-amber-600 uppercase shrink-0 w-16">
+                              Clutch {idx + 1}
+                            </span>
 
-                            {/* Main content */}
-                            <div className="flex-1 min-w-0 space-y-2.5">
-                              {/* Row 1: partner · eggs · result */}
-                              <div className="flex items-center gap-3 flex-wrap">
-                                <button
-                                  onClick={() => setLocation(`/birds/${pair.partnerId}`)}
-                                  className="flex items-center gap-1.5 hover:underline"
-                                >
-                                  <div className={`w-6 h-6 rounded-full ${pair.partnerGender === "male" ? "bg-blue-100" : pair.partnerGender === "female" ? "bg-pink-100" : "bg-amber-100"} flex items-center justify-center shrink-0 overflow-hidden`}>
-                                    {pair.partnerPhotoUrl
-                                      ? <img src={pair.partnerPhotoUrl} alt="" className="w-full h-full object-cover" />
-                                      : <GenderIcon gender={pair.partnerGender} className="w-3.5 h-3.5" />
-                                    }
-                                  </div>
-                                  <span className="text-sm font-semibold">{partnerLabel}</span>
-                                </button>
-
-                                <span className="text-muted-foreground text-sm">·</span>
-                                <span className="text-sm text-muted-foreground">{brood.eggsLaid ?? 0} egg{brood.eggsLaid !== 1 ? "s" : ""} laid</span>
-
-                                {layDateStr && (
-                                  <>
-                                    <span className="text-muted-foreground text-sm">·</span>
-                                    <span className="text-sm text-muted-foreground">{layDateStr}</span>
-                                  </>
-                                )}
-
-                                <Badge variant="outline" className={`text-xs ml-auto shrink-0 ${statusStyle}`}>
-                                  {statusLabel}
-                                </Badge>
+                            {/* Partner */}
+                            <button
+                              onClick={() => setLocation(`/birds/${pair.partnerId}`)}
+                              className="flex items-center gap-1.5 hover:underline shrink-0"
+                            >
+                              <div className={`w-5 h-5 rounded-full ${pair.partnerGender === "male" ? "bg-blue-100" : pair.partnerGender === "female" ? "bg-pink-100" : "bg-amber-100"} flex items-center justify-center overflow-hidden`}>
+                                {pair.partnerPhotoUrl
+                                  ? <img src={pair.partnerPhotoUrl} alt="" className="w-full h-full object-cover" />
+                                  : <GenderIcon gender={pair.partnerGender} className="w-3 h-3" />
+                                }
                               </div>
+                              <span className="text-xs font-bold tracking-widest uppercase">{partnerLabel}</span>
+                            </button>
 
-                              {/* Row 2: outcome chips */}
-                              {outcomes.length > 0 && (
-                                <div className="flex flex-wrap gap-2">
-                                  {outcomes.map(({ outcome, count, cfg }) => (
-                                    <span key={outcome} className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
-                                      {cfg.emoji} {count} {cfg.label.toLowerCase()}
-                                    </span>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
+                            <span className="text-xs text-muted-foreground shrink-0 font-bold tracking-widest uppercase">·</span>
+
+                            {/* Eggs laid */}
+                            <span className="text-xs font-bold tracking-widest uppercase text-muted-foreground shrink-0">
+                              {brood.eggsLaid ?? 0} egg{brood.eggsLaid !== 1 ? "s" : ""} laid
+                            </span>
+
+                            <span className="text-xs text-muted-foreground shrink-0 font-bold tracking-widest uppercase">·</span>
+
+                            {/* Outcome chips */}
+                            {outcomes.map(({ outcome, count, cfg }) => (
+                              <span key={outcome} className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold tracking-widest uppercase border ${cfg.bg} ${cfg.text} ${cfg.border} shrink-0`}>
+                                {cfg.emoji} {count} {cfg.label.toLowerCase()}
+                              </span>
+                            ))}
+
+                            {/* Result badge */}
+                            <Badge variant="outline" className={`text-xs font-bold tracking-widest uppercase ml-auto shrink-0 ${statusStyle}`}>
+                              {statusLabel}
+                            </Badge>
                           </div>
                         );
                       })}
