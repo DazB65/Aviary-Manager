@@ -489,7 +489,7 @@ export default function BirdDetail() {
 
                 {/* Colour / Mutation */}
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Colour / Mutation</p>
+                  <p className="text-sm text-muted-foreground mb-2">Colour / Mutation</p>
                   {showGeneticsTab ? (
                     (() => {
                       const traitRows = gouldianFinchPack.traits.flatMap((trait) => {
@@ -497,15 +497,45 @@ export default function BirdDetail() {
                         const colourMutation = trait.mutations.find(m => m.id === sel.colour);
                         const splitMutation = trait.mutations.find(m => m.id === sel.splitTo);
                         if (!colourMutation) return [];
-                        return [`${colourMutation.name}${splitMutation ? ` (split to ${splitMutation.name})` : ""}`];
+                        const label = trait.traitName.replace(" Colour", "").toUpperCase();
+                        return [{ label, value: colourMutation.name, split: splitMutation?.name }];
                       });
                       if (traitRows.length === 0) {
                         return <p className="text-lg font-bold text-amber-600">{bird.colorMutation || "—"}</p>;
                       }
-                      return <p className="text-lg font-bold text-amber-600">{traitRows.join(" · ")}</p>;
+                      return (
+                        <div className="flex gap-6">
+                          {traitRows.map(({ label, value, split }) => (
+                            <div key={label}>
+                              <p className="text-xs font-bold tracking-widest text-muted-foreground uppercase">{label}</p>
+                              <p className="text-lg font-bold text-amber-600 leading-tight">{value}</p>
+                              {split && <p className="text-xs text-amber-500">split to {split}</p>}
+                            </div>
+                          ))}
+                        </div>
+                      );
                     })()
                   ) : (
-                    <p className="text-lg font-bold text-amber-600">{bird.colorMutation || "—"}</p>
+                    (() => {
+                      // Parse "Black Head / Green / Purple" style strings into labelled rows
+                      if (bird.colorMutation) {
+                        const parts = bird.colorMutation.split(" / ");
+                        const labels = ["HEAD", "BODY", "BREAST"];
+                        if (parts.length > 1) {
+                          return (
+                            <div className="flex gap-6">
+                              {parts.map((part, i) => (
+                                <div key={i}>
+                                  <p className="text-xs font-bold tracking-widest text-muted-foreground uppercase">{labels[i] ?? ""}</p>
+                                  <p className="text-lg font-bold text-amber-600 leading-tight">{part}</p>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        }
+                      }
+                      return <p className="text-lg font-bold text-amber-600">{bird.colorMutation || "—"}</p>;
+                    })()
                   )}
                 </div>
 
