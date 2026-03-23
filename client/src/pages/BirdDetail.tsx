@@ -516,30 +516,6 @@ export default function BirdDetail() {
                   </div>
                 )}
 
-                {/* Breeding summary */}
-                {(() => {
-                  const totalClutches = breedingHistory.reduce((s, h) => s + h.broods.length, 0);
-                  const totalOffspring = breedingHistory.reduce((s, h) =>
-                    s + h.broods.reduce((bs, b) => bs + (b.eggCounts["hatched"] ?? 0) + (b.eggCounts["fledged"] ?? 0), 0), 0);
-                  return (
-                    <div className="flex items-center gap-6 pt-2 border-t border-border mt-auto">
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-rose-600">{breedingHistory.length}</p>
-                        <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold">Pair{breedingHistory.length !== 1 ? "s" : ""}</p>
-                      </div>
-                      <div className="w-px h-8 bg-border" />
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-amber-600">{totalClutches}</p>
-                        <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold">Clutch{totalClutches !== 1 ? "es" : ""}</p>
-                      </div>
-                      <div className="w-px h-8 bg-border" />
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-teal-600">{totalOffspring}</p>
-                        <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold">Offspring</p>
-                      </div>
-                    </div>
-                  );
-                })()}
               </div>
             </div>
           </CardContent>
@@ -752,7 +728,7 @@ export default function BirdDetail() {
                           <div key={brood.id} className="overflow-x-auto">
                             <div className="flex items-center gap-5 px-6 py-5 min-w-0" style={{ minWidth: "max-content" }}>
                               {/* Clutch number */}
-                              <span className="text-sm font-bold tracking-widest text-amber-600 uppercase shrink-0 w-20">
+                              <span className="text-sm font-bold tracking-widest text-amber-600 uppercase shrink-0 whitespace-nowrap">
                                 Clutch {idx + 1}
                               </span>
 
