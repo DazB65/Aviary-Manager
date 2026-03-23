@@ -498,18 +498,23 @@ export default function BirdDetail() {
                         const splitMutation = trait.mutations.find(m => m.id === sel.splitTo);
                         if (!colourMutation) return [];
                         const label = trait.traitName.replace(" Colour", "").toUpperCase();
-                        return [{ label, value: colourMutation.name, split: splitMutation?.name }];
+                        // Strip the trait name from the value (e.g. "Black Head" → "Black", "Green Body" → "Green")
+                        const traitWord = trait.traitName.replace(" Colour", "");
+                        const cleanValue = colourMutation.name.replace(new RegExp(`\\s*${traitWord}\\s*`, "i"), "").trim() || colourMutation.name;
+                        const displayValue = splitMutation
+                          ? `${cleanValue} split to ${splitMutation.name.replace(new RegExp(`\\s*${traitWord}\\s*`, "i"), "").trim() || splitMutation.name}`
+                          : cleanValue;
+                        return [{ label, value: displayValue }];
                       });
                       if (traitRows.length === 0) {
                         return <p className="text-lg font-bold text-amber-600">{bird.colorMutation || "—"}</p>;
                       }
                       return (
                         <div className="flex flex-col gap-2">
-                          {traitRows.map(({ label, value, split }) => (
+                          {traitRows.map(({ label, value }) => (
                             <div key={label}>
                               <p className="text-xs font-bold tracking-widest text-muted-foreground uppercase">{label}</p>
                               <p className="text-lg font-bold text-amber-600 leading-tight">{value}</p>
-                              {split && <p className="text-xs text-amber-500">split to {split}</p>}
                             </div>
                           ))}
                         </div>
@@ -521,15 +526,19 @@ export default function BirdDetail() {
                       if (bird.colorMutation) {
                         const parts = bird.colorMutation.split(" / ");
                         const labels = ["HEAD", "BODY", "BREAST"];
+                        const trailWords = ["Head", "Body", "Breast"];
                         if (parts.length > 1) {
                           return (
                             <div className="flex flex-col gap-2">
-                              {parts.map((part, i) => (
-                                <div key={i}>
-                                  <p className="text-xs font-bold tracking-widest text-muted-foreground uppercase">{labels[i] ?? ""}</p>
-                                  <p className="text-lg font-bold text-amber-600 leading-tight">{part}</p>
-                                </div>
-                              ))}
+                              {parts.map((part, i) => {
+                                const clean = part.replace(new RegExp(`\\s*${trailWords[i]}\\s*$`, "i"), "").trim() || part;
+                                return (
+                                  <div key={i}>
+                                    <p className="text-xs font-bold tracking-widest text-muted-foreground uppercase">{labels[i] ?? ""}</p>
+                                    <p className="text-lg font-bold text-amber-600 leading-tight">{clean}</p>
+                                  </div>
+                                );
+                              })}
                             </div>
                           );
                         }
