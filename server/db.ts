@@ -48,6 +48,7 @@ export async function runMigrations() {
     const client = postgres(process.env.DATABASE_URL!);
     try {
       await client`ALTER TYPE "public"."egg_outcome" ADD VALUE IF NOT EXISTS 'missing'`;
+      await client`ALTER TYPE "public"."egg_outcome" ADD VALUE IF NOT EXISTS 'abandoned'`;
       console.log("[DB] Enum patch applied.");
     } finally {
       await client.end();
