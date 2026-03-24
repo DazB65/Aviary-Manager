@@ -194,29 +194,62 @@ export default function Landing() {
 
       {/* Pricing */}
       <section className="px-6 py-20 bg-gradient-to-br from-gray-50 to-teal-50">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Simple, honest pricing</h2>
-            <p className="text-lg text-gray-500">Try free for 7 days — no card required.</p>
+            <p className="text-lg text-gray-500">Try Pro free for 7 days — no card required.</p>
           </div>
-          <div className="grid md:grid-cols-3 gap-6 items-stretch">
-            {/* Monthly */}
+          <div className="grid md:grid-cols-2 gap-6 items-stretch">
+            {/* Starter */}
+            <Card className="border-2 border-gray-200 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.08)] flex flex-col">
+              <CardContent className="pt-6 pb-8 px-6 flex flex-col flex-1">
+                <div className="flex items-start justify-between mb-4">
+                  <h3 className="text-xl font-bold text-gray-700">Starter</h3>
+                </div>
+                <p className="text-gray-500 text-sm mb-1">All the essentials</p>
+                <p className="text-gray-500 text-sm font-medium mb-6">From $4.99 USD / month</p>
+                <div className="mb-6">
+                  <span className="text-4xl font-extrabold text-gray-900">$49</span>
+                  <span className="text-gray-400 ml-1">USD / year</span>
+                  <div className="text-sm text-gray-500 font-medium mt-1">or $4.99 / month</div>
+                </div>
+                <ul className="space-y-3 mb-8 flex-1">
+                  {["Unlimited birds & pairs", "4-gen pedigree tree", "Inbreeding coefficient", "Sibling detection", "PDF pedigree export", "Photo uploads", "Priority support"].map(f => (
+                    <li key={f} className="flex items-center gap-2 text-sm text-gray-700">
+                      <Check className="w-4 h-4 text-teal-500 shrink-0" /> {f}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-auto">
+                  <Button
+                    variant="outline"
+                    className="w-full border-gray-300 transition-colors duration-200"
+                    onClick={() => setLocation("/register")}
+                  >
+                    Start 7-day free trial
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Pro */}
             <Card className="border-2 border-teal-500 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.08)] flex flex-col">
               <CardContent className="pt-6 pb-8 px-6 flex flex-col flex-1">
                 <div className="flex items-start justify-between mb-4">
-                  <h3 className="text-xl font-bold text-teal-700">Monthly</h3>
+                  <h3 className="text-xl font-bold text-teal-700">Pro</h3>
                   <span className="bg-teal-500 text-white text-xs font-bold px-3 py-1 rounded-full">
                     ⭐ Most Popular
                   </span>
                 </div>
-                <p className="text-gray-500 text-sm mb-1">For serious breeders</p>
+                <p className="text-gray-500 text-sm mb-1">Starter + AI Assistant</p>
                 <p className="text-teal-600 text-sm font-medium mb-6">7-day free trial included</p>
                 <div className="mb-6">
-                  <span className="text-4xl font-extrabold text-gray-900">$8.80</span>
-                  <span className="text-gray-400 ml-1">AUD / month</span>
+                  <span className="text-4xl font-extrabold text-gray-900">$129</span>
+                  <span className="text-gray-400 ml-1">USD / year</span>
+                  <div className="text-sm text-teal-600 font-medium mt-1">or $12.99 / month</div>
                 </div>
                 <ul className="space-y-3 mb-8 flex-1">
-                  {["Unlimited birds & pairs", "4-gen pedigree tree", "Inbreeding coefficient", "Sibling detection", "PDF pedigree export", "Photo uploads", "Priority support"].map(f => (
+                  {["Everything in Starter", "AI Assistant — pair by chat", "AI clutch & event management", "AI breeding recommendations", "Smart mutation advice"].map(f => (
                     <li key={f} className="flex items-center gap-2 text-sm text-gray-700">
                       <Check className="w-4 h-4 text-teal-500 shrink-0" /> {f}
                     </li>
@@ -229,74 +262,7 @@ export default function Landing() {
                   >
                     Start 7-day free trial
                   </Button>
-                  <p className="text-xs text-center text-gray-400 mt-3">Have a coupon? Apply it at checkout for a forever discount.</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Yearly */}
-            <Card className="border-2 border-indigo-400 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.08)] flex flex-col">
-              <CardContent className="pt-6 pb-8 px-6 flex flex-col flex-1">
-                <div className="flex items-start justify-between mb-4">
-                  <h3 className="text-xl font-bold text-indigo-700">Yearly</h3>
-                  <span className="bg-indigo-400 text-white text-xs font-bold px-3 py-1 rounded-full">
-                    💰 Save 2 Months
-                  </span>
-                </div>
-                <p className="text-gray-500 text-sm mb-1">Best recurring value</p>
-                <p className="text-indigo-600 text-sm font-medium mb-6">7-day free trial included</p>
-                <div className="mb-6">
-                  <span className="text-4xl font-extrabold text-gray-900">$88</span>
-                  <span className="text-gray-400 ml-1">AUD / year</span>
-                  <div className="text-sm text-indigo-600 font-medium mt-1">That's $7.33 / month</div>
-                </div>
-                <ul className="space-y-3 mb-8 flex-1">
-                  {["Unlimited birds & pairs", "4-gen pedigree tree", "Inbreeding coefficient", "Sibling detection", "PDF pedigree export", "Photo uploads", "Priority support"].map(f => (
-                    <li key={f} className="flex items-center gap-2 text-sm text-gray-700">
-                      <Check className="w-4 h-4 text-indigo-500 shrink-0" /> {f}
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-auto">
-                  <Button
-                    className="w-full bg-indigo-500 hover:bg-indigo-600 text-white transition-colors duration-200"
-                    onClick={() => setLocation("/register")}
-                  >
-                    Start 7-day free trial
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Lifetime */}
-            <Card className="border-2 border-amber-400 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.08)] flex flex-col">
-              <CardContent className="pt-6 pb-8 px-6 flex flex-col flex-1">
-                <div className="flex items-start justify-between mb-4">
-                  <h3 className="text-xl font-bold text-amber-700">Lifetime</h3>
-                  <span className="bg-amber-400 text-white text-xs font-bold px-3 py-1 rounded-full">
-                    🏆 Best Value
-                  </span>
-                </div>
-                <p className="text-gray-500 text-sm mb-6">Pay once, own it forever</p>
-                <div className="mb-6">
-                  <span className="text-4xl font-extrabold text-gray-900">$220</span>
-                  <span className="text-gray-400 ml-1">AUD / once</span>
-                  <div className="text-sm text-amber-600 font-medium mt-1">Never pay again</div>
-                </div>
-                <ul className="space-y-3 mb-8 flex-1">
-                  {["Everything in Pro", "Lifetime updates", "No recurring fees", "Priority support"].map(f => (
-                    <li key={f} className="flex items-center gap-2 text-sm text-gray-700">
-                      <Check className="w-4 h-4 text-amber-500 shrink-0" /> {f}
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-auto">
-                  <Button
-                    className="w-full bg-amber-500 hover:bg-amber-600 text-white transition-colors duration-200"
-                    onClick={() => setLocation("/register")}
-                  >
-                    Get lifetime access
-                  </Button>
+                  <p className="text-xs text-center text-gray-400 mt-3">Cancel anytime.</p>
                 </div>
               </CardContent>
             </Card>

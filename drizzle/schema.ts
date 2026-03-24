@@ -12,7 +12,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
-export const planEnum = pgEnum("plan", ["free", "pro"]);
+export const planEnum = pgEnum("plan", ["free", "starter", "pro"]);
 export const roleEnum = pgEnum("role", ["user", "admin"]);
 export const genderEnum = pgEnum("gender", ["male", "female", "unknown"]);
 export const birdStatusEnum = pgEnum("bird_status", ["alive", "breeding", "resting", "fledged", "deceased", "sold", "unknown"]);

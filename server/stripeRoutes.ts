@@ -55,15 +55,14 @@ export function registerStripeRoutes(app: Express) {
             const userId = parseInt(session.metadata?.user_id || "0", 10);
             if (!userId) break;
 
-            // If it's a subscription, we save both. If it's a lifetime payment, subscription is null
+            const planTier = (session.metadata?.plan_tier as "starter" | "pro") || "pro";
             await db.update(users).set({
-              plan: "pro",
+              plan: planTier,
               stripeCustomerId: (session.customer as string) || null,
               stripeSubscriptionId: (session.subscription as string) || null,
             }).where(eq(users.id, userId));
 
-            const isLifetime = session.mode === "payment";
-            console.log(`[Stripe] User ${userId} upgraded to Pro${isLifetime ? " (Lifetime)" : ""}`);
+            console.log(`[Stripe] User ${userId} subscribed to ${planTier}`);
             break;
           }
           case "customer.subscription.deleted":
@@ -71,8 +70,9 @@ export function registerStripeRoutes(app: Express) {
             const sub = event.data.object as Stripe.Subscription;
             const customerId = sub.customer as string;
             const isActive = sub.status === "active" || sub.status === "trialing";
+            const planTier = (sub.metadata?.plan_tier as "starter" | "pro") || "pro";
             await db.update(users).set({
-              plan: isActive ? "pro" : "free",
+              plan: isActive ? planTier : "free",
               stripeSubscriptionId: isActive ? sub.id : null,
             }).where(eq(users.stripeCustomerId, customerId));
             console.log(`[Stripe] Subscription ${sub.id} status: ${sub.status}`);
@@ -110,7 +110,10 @@ export function registerStripeRoutes(app: Express) {
       return;
     }
 
-    const { interval = "monthly" } = req.body as { interval?: "monthly" | "yearly" | "lifetime" };
+    const { interval = "monthly", plan = "pro" } = req.body as {
+      interval?: "monthly" | "yearly";
+      plan?: "starter" | "pro";
+    };
     const origin = req.headers.origin || "http://localhost:3000";
 
     let stripe: Stripe;
@@ -122,39 +125,38 @@ export function registerStripeRoutes(app: Express) {
       return;
     }
 
-    let priceData: Stripe.Checkout.SessionCreateParams.LineItem.PriceData;
+    const product = PRODUCTS[plan] ?? PRODUCTS.pro;
+    const unitAmount = interval === "yearly" ? product.priceYearlyUsd : product.priceMonthlyUsd;
 
-    if (interval === "lifetime") {
-      priceData = { currency: "aud", unit_amount: PRODUCTS.pro.priceLifetimeUsd };
-    } else if (interval === "yearly") {
-      priceData = { currency: "aud", unit_amount: PRODUCTS.pro.priceYearlyUsd, recurring: { interval: "year" as const } };
-    } else {
-      priceData = { currency: "aud", unit_amount: PRODUCTS.pro.priceMonthlyUsd, recurring: { interval: "month" as const } };
-    }
-
-    const isSubscription = interval !== "lifetime";
+    const priceData: Stripe.Checkout.SessionCreateParams.LineItem.PriceData = {
+      currency: "usd",
+      unit_amount: unitAmount,
+      recurring: { interval: interval === "yearly" ? "year" : "month" },
+    };
 
     let session;
     try {
       session = await stripe.checkout.sessions.create({
-        mode: isSubscription ? "subscription" : "payment",
+        mode: "subscription",
         payment_method_types: ["card"],
         customer_email: user.email || undefined,
-        // Always create a customer record so we can find them later via the billing portal fallback
-        ...(!isSubscription ? { customer_creation: "always" } : {}),
         allow_promotion_codes: true,
         client_reference_id: String(user.id),
         metadata: {
           user_id: String(user.id),
+          plan_tier: plan,
           customer_email: user.email || "",
           customer_name: user.name || "",
+        },
+        subscription_data: {
+          metadata: { plan_tier: plan },
         },
         line_items: [{
           price_data: {
             ...priceData,
             product_data: {
-              name: PRODUCTS.pro.name + (!isSubscription ? " (Lifetime)" : ""),
-              description: PRODUCTS.pro.description,
+              name: product.name,
+              description: product.description,
             },
           },
           quantity: 1,

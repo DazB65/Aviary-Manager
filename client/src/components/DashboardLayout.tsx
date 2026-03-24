@@ -74,7 +74,7 @@ export default function DashboardLayout({
       navigate("/login");
       return;
     }
-    if (!loading && user && user.plan !== "pro" && user.role !== "admin") {
+    if (!loading && user && user.plan !== "pro" && user.plan !== "starter" && user.role !== "admin") {
       const trialEnd = user.planExpiresAt
         ? new Date(user.planExpiresAt)
         : new Date(new Date(user.createdAt).getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -126,9 +126,11 @@ function DashboardLayoutContent({
   const breedingYear = settings?.breedingYear ?? new Date().getFullYear();
   const isAdmin = user?.role === "admin";
   const isPro = user?.plan === "pro";
+  const isStarter = user?.plan === "starter";
+  const hasAiAccess = isPro || isAdmin;
 
-  // Trial status
-  const trialEnd = user && !isPro && !isAdmin
+  // Trial status (free plan only — starter/pro users don't have a trial)
+  const trialEnd = user && !isPro && !isStarter && !isAdmin
     ? (user.planExpiresAt
         ? new Date(user.planExpiresAt)
         : new Date(new Date(user.createdAt).getTime() + 7 * 24 * 60 * 60 * 1000))
@@ -415,7 +417,23 @@ function DashboardLayoutContent({
             <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-primary/15 text-primary shrink-0">AI Powered</span>
           </div>
           <div className="flex-1 overflow-hidden">
-            {user && (
+            {user && isStarter ? (
+              <div className="flex flex-col items-center justify-center h-full p-8 text-center gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <img src="/logo-transparent.svg" alt="AI" className="h-10 w-10 object-contain opacity-50" />
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-800 text-lg">AI Assistant is a Pro feature</p>
+                  <p className="text-sm text-gray-500 mt-1">Upgrade to Pro to pair birds, record clutches, add events, and manage your aviary by chat.</p>
+                </div>
+                <button
+                  onClick={() => { setAiOpen(false); setLocation("/billing"); }}
+                  className="px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
+                >
+                  Upgrade to Pro
+                </button>
+              </div>
+            ) : user && (
               <AIChatBox
                 chatId={`assistant-global-${user.id}`}
                 initialMessages={EMPTY_MESSAGES}

@@ -741,6 +741,22 @@ export function registerChatRoutes(app: Express) {
         return;
       }
 
+      // AI is a Pro-only feature. Trial users (free plan within 7 days) get full access.
+      if (user.plan === "starter") {
+        res.status(403).json({ error: "PRO_REQUIRED" });
+        return;
+      }
+      if (user.plan === "free") {
+        const TRIAL_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+        const trialEnd = user.planExpiresAt
+          ? new Date(user.planExpiresAt)
+          : new Date(user.createdAt.getTime() + TRIAL_DAYS_MS);
+        if (trialEnd <= new Date()) {
+          res.status(403).json({ error: "PRO_REQUIRED" });
+          return;
+        }
+      }
+
       const limit = checkChatRateLimit(user.id);
       if (!limit.allowed) {
         const resetsIn = Math.ceil((limit.resetAt - Date.now()) / 1000 / 60 / 60);
