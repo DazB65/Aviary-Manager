@@ -386,10 +386,6 @@ export function AIChatBox({
     // Chat ID helps AI SDK track different conversations
     id: chatId,
 
-    // Initial messages from your data layer (React Query, etc.)
-    // Note: This makes it "controlled" - we sync via setMessages on changes
-    messages: initialMessages,
-
     // Transport configuration - how messages are sent to the server
     transport: new DefaultChatTransport({
       api,
@@ -418,11 +414,10 @@ export function AIChatBox({
   });
 
   // -------------------------------------------------------------------------
-  // Sync messages when chatId or initialMessages change (chat switching)
+  // Sync messages when chatId changes (chat switching)
   // -------------------------------------------------------------------------
-  useEffect(() => {
-    setMessages(initialMessages);
-  }, [chatId, initialMessages, setMessages]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { setMessages(initialMessages); }, [chatId]);
 
   // -------------------------------------------------------------------------
   // Fire onUIAction when a tool returns a uiAction result (e.g. openAddBirdModal)

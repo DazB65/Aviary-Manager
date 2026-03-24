@@ -108,6 +108,8 @@ type DashboardLayoutContentProps = {
   setSidebarWidth: (width: number) => void;
 };
 
+const EMPTY_MESSAGES: never[] = [];
+
 function DashboardLayoutContent({
   children,
   setSidebarWidth,
@@ -416,7 +418,7 @@ function DashboardLayoutContent({
             {user && (
               <AIChatBox
                 chatId={`assistant-global-${user.id}`}
-                initialMessages={[]}
+                initialMessages={EMPTY_MESSAGES}
                 api="/api/chat"
                 placeholder="Ask anything about your aviary..."
                 className="h-full border-0 rounded-none shadow-none"
