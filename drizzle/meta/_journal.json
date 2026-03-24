@@ -78,6 +78,13 @@
       "when": 1773500000000,
       "tag": "0010_add_abandoned_egg_outcome_fix",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1774335285679,
+      "tag": "0011_messy_serpent_society",
+      "breakpoints": true
     }
   ]
 }

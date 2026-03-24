@@ -473,6 +473,14 @@ export function BirdFormModal({
                                 </div>
 
                                 <div>
+                                    <Label>Name</Label>
+                                    <Input
+                                        className="mt-1"
+                                        placeholder="e.g. Bluey, Rio"
+                                        {...form.register("name")}
+                                    />
+                                </div>
+                                <div>
                                     <Label>Ring / Band ID</Label>
                                     <Input
                                         className="mt-1"

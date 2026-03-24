@@ -16,7 +16,7 @@ interface PairCardProps {
     onNavigateToBroods: (pairId: number) => void;
     onEdit: (pair: any) => void;
     onDelete: (pairId: number) => void;
-    onStatusChange?: (pairId: number, status: "active" | "resting" | "retired") => void;
+    onStatusChange?: (pairId: number, status: "active" | "breeding" | "resting" | "retired") => void;
 }
 
 export function PairCard({

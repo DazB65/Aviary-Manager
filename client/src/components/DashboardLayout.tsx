@@ -30,6 +30,9 @@ import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "./ui/sheet";
 import { AIChatBox } from "./AIChatBox";
+import { BirdFormModal } from "./birds/BirdFormModal";
+import { writeBirdGenotype } from "@/genetics/storage";
+import type { BirdGenotype } from "@/genetics/types";
 
 const mainMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
@@ -134,6 +137,46 @@ function DashboardLayoutContent({
     : 0;
   const { startTour, maybeStartTour, hasTourBeenSkipped } = useAppTour();
   const [aiOpen, setAiOpen] = useState(false);
+  const [aiAddBirdOpen, setAiAddBirdOpen] = useState(false);
+  const [aiAddBirdPrefill, setAiAddBirdPrefill] = useState<Record<string, any> | null>(null);
+
+  const utils = trpc.useUtils();
+  const { data: speciesList = [] } = trpc.species.list.useQuery();
+  const { data: birdsList = [] } = trpc.birds.list.useQuery();
+  const createBird = trpc.birds.create.useMutation({
+    onSuccess: () => utils.birds.list.invalidate(),
+  });
+
+  const handleUIAction = ({ type, data }: { type: string; data: Record<string, any> }) => {
+    if (type === "openAddBirdModal") {
+      setAiAddBirdPrefill(data);
+      setAiOpen(false); // close AI sheet first to avoid Radix modal conflict
+      setAiAddBirdOpen(true);
+    }
+  };
+
+  const handleAIBirdSubmit = (formData: any, genotype: BirdGenotype) => {
+    const payload = {
+      speciesId: Number(formData.speciesId),
+      ringId: formData.ringId || undefined,
+      name: formData.name || undefined,
+      gender: formData.gender,
+      dateOfBirth: formData.dateOfBirth || undefined,
+      fledgedDate: formData.fledgedDate || undefined,
+      cageNumber: formData.cageNumber || undefined,
+      colorMutation: formData.colorMutation || undefined,
+      notes: formData.notes || undefined,
+      status: formData.status,
+    };
+    createBird.mutate(payload, {
+      onSuccess: (created: any) => {
+        if (created?.id) writeBirdGenotype(created.id, genotype);
+        utils.birds.list.invalidate();
+        setAiAddBirdOpen(false);
+        setAiAddBirdPrefill(null);
+      },
+    });
+  };
 
   useEffect(() => {
     maybeStartTour();
@@ -380,17 +423,38 @@ function DashboardLayoutContent({
                 assistantAvatarUrl="/logo-transparent.svg"
                 emptyStateMessage="I'm your Aviary AI Assistant. Ask me about your birds, breeding pairs, upcoming events, hatch rates, and colour mutations."
                 suggestedPrompts={[
-                  "What's my total flock size?",
-                  "Which pairs have eggs incubating right now?",
-                  "Show my upcoming events this week",
+                  "Pair [male name] and [female name] together",
+                  "Record a clutch of 4 eggs for [pair name]",
+                  "What breeding pairs do I have?",
+                  "Add a vet appointment for next Monday",
                   "What's my hatch rate this season?",
-                  "Search for birds that are breeding",
+                  "Recommend a pairing based on my mutations",
                 ]}
+                onUIAction={handleUIAction}
+                onFinish={() => {
+                  utils.birds.list.invalidate();
+                  utils.pairs.list.invalidate();
+                  utils.events.list.invalidate();
+                  utils.broods.list?.invalidate?.();
+                }}
               />
             )}
           </div>
         </SheetContent>
       </Sheet>
+
+      <BirdFormModal
+        open={aiAddBirdOpen}
+        onOpenChange={(open) => { setAiAddBirdOpen(open); if (!open) setAiAddBirdPrefill(null); }}
+        editingId={null}
+        initialBird={aiAddBirdPrefill}
+        userSettings={settings}
+        speciesList={speciesList}
+        birdsList={birdsList}
+        onSubmit={handleAIBirdSubmit}
+        isSubmitting={createBird.isPending}
+        isPro={isPro || isAdmin}
+      />
     </>
   );
 }

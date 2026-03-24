@@ -31,11 +31,11 @@ export class StatsService {
                 .where(and(eq(birds.userId, userId), inArray(birds.status, ["alive", "breeding", "resting"])))
                 .groupBy(birds.gender),
 
-            // Active pairs count
+            // Active/breeding pairs count
             db
                 .select({ count: count() })
                 .from(breedingPairs)
-                .where(and(eq(breedingPairs.userId, userId), eq(breedingPairs.status, "active"))),
+                .where(and(eq(breedingPairs.userId, userId), inArray(breedingPairs.status, ["active", "breeding"]))),
 
             // Count individual eggs still actively incubating (outcome unknown or fertile)
             db

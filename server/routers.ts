@@ -325,7 +325,7 @@ export const appRouter = router({
         femaleId: z.number(),
         season: z.number().int().min(2000).max(2100).optional(),
         pairingDate: z.string().optional(),
-        status: z.enum(["active", "resting", "retired"]).default("active"),
+        status: z.enum(["active", "breeding", "resting", "retired"]).default("active"),
         notes: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -342,8 +342,8 @@ export const appRouter = router({
         }
 
         const pair = await PairService.createPair({ ...input, userId: ctx.user.id } as any);
-        // Auto-set bird status to "breeding" when an active pair is created
-        if ((input.status ?? "active") === "active") {
+        // Auto-set bird status to "breeding" when an active/breeding pair is created
+        if (["active", "breeding"].includes(input.status ?? "active")) {
           await Promise.all([
             BirdService.updateBird(input.maleId, ctx.user.id, { status: "breeding" }),
             BirdService.updateBird(input.femaleId, ctx.user.id, { status: "breeding" }),
@@ -359,7 +359,7 @@ export const appRouter = router({
         femaleId: z.number().optional(),
         season: z.number().int().min(2000).max(2100).nullable().optional(),
         pairingDate: z.string().optional(),
-        status: z.enum(["active", "resting", "retired"]).optional(),
+        status: z.enum(["active", "breeding", "resting", "retired"]).optional(),
         notes: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -375,7 +375,7 @@ export const appRouter = router({
         if (data.status !== undefined && existing) {
           const maleId = data.maleId ?? existing.maleId;
           const femaleId = data.femaleId ?? existing.femaleId;
-          const birdStatus = data.status === "active" ? "breeding" : "alive";
+          const birdStatus = ["active", "breeding"].includes(data.status!) ? "breeding" : "alive";
           await Promise.all([
             BirdService.updateBird(maleId, ctx.user.id, { status: birdStatus }),
             BirdService.updateBird(femaleId, ctx.user.id, { status: birdStatus }),

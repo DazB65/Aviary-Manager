@@ -9,7 +9,7 @@ export const pairSchema = z.object({
     femaleId: z.string().min(1, "Female bird is required"),
     season: z.string().optional(),
     pairingDate: z.string().optional(),
-    status: z.enum(["active", "resting", "retired"]),
+    status: z.enum(["active", "breeding", "resting", "retired"]),
     notes: z.string().optional(),
 });
 
@@ -44,7 +44,7 @@ export function usePairForm(pair?: any, settingsBreedingYear?: string) {
                         ? format(pair.pairingDate, "yyyy-MM-dd")
                         : String(pair.pairingDate).split('T')[0])
                     : "",
-                status: pair.status as "active" | "resting" | "retired",
+                status: pair.status as "active" | "breeding" | "resting" | "retired",
                 notes: pair.notes ?? "",
             });
         } else {

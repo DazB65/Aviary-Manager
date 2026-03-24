@@ -74,7 +74,7 @@ export default function Pairs() {
     deletePair.mutate({ id: pairId });
   };
 
-  const handleStatusChange = (pairId: number, status: "active" | "resting" | "retired") => {
+  const handleStatusChange = (pairId: number, status: "active" | "breeding" | "resting" | "retired") => {
     updatePair.mutate({ id: pairId, status });
   };
 

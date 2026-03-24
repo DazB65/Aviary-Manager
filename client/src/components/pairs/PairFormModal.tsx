@@ -145,6 +145,7 @@ export function PairFormModal({
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="active">🥚 Active</SelectItem>
+                                            <SelectItem value="breeding">🐣 Breeding</SelectItem>
                                             <SelectItem value="resting">💤 Resting</SelectItem>
                                             <SelectItem value="retired">🏁 Retired</SelectItem>
                                         </SelectContent>

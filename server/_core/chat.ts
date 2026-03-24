@@ -19,6 +19,12 @@ import { SpeciesService } from "../services/speciesService";
 import { EventService } from "../services/eventService";
 import { sdk } from "./sdk";
 
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split("T")[0];
+}
+
 /**
  * Creates an OpenAI-compatible provider with patched fetch.
  */
@@ -154,6 +160,541 @@ const tools = (userId: number) => ({
       });
     },
   }),
+
+  // ── Action tools ────────────────────────────────────────────────────────────
+
+  createBreedingPair: tool({
+    description: "Pair two birds together as a breeding pair. Always use searchBirds first to confirm the correct birds before calling this.",
+    inputSchema: z.object({
+      maleId: z.number().describe("ID of the male bird"),
+      femaleId: z.number().describe("ID of the female bird"),
+      season: z.number().int().optional().describe("The current breeding season year. ALWAYS default to the current calendar year unless the user explicitly specifies a different season. Never infer the season from bird names or ring IDs."),
+      notes: z.string().optional().describe("Optional notes about this pairing"),
+    }),
+    execute: async ({ maleId, femaleId, season, notes }) => {
+      try {
+        const male = await BirdService.getBirdById(maleId, userId);
+        if (!male) return { success: false, error: "Male bird not found" };
+        const female = await BirdService.getBirdById(femaleId, userId);
+        if (!female) return { success: false, error: "Female bird not found" };
+
+        const currentYear = new Date().getFullYear();
+        const pair = await PairService.createPair({
+          userId,
+          maleId,
+          femaleId,
+          season: season ?? currentYear,
+          status: "active",
+          pairingDate: new Date().toISOString().split("T")[0],
+          notes: notes ?? null,
+        });
+
+        const maleName = male.name || male.ringId || `#${male.id}`;
+        const femaleName = female.name || female.ringId || `#${female.id}`;
+        return { success: true, pairId: pair.id, maleName, femaleName, season: season ?? currentYear };
+      } catch (e: any) {
+        if (e?.message?.includes("already exists") || e?.code === "23505") {
+          return { success: false, error: "This pair already exists for that season." };
+        }
+        return { success: false, error: "Failed to create pair. Please try again." };
+      }
+    },
+  }),
+
+  updatePairStatus: tool({
+    description: "Update the status of a breeding pair (active, resting, or retired). Use getPairEggStats to find the pair ID first.",
+    inputSchema: z.object({
+      pairId: z.number().describe("ID of the breeding pair to update"),
+      status: z.enum(["active", "breeding", "resting", "retired"]).describe("New status for the pair"),
+      notes: z.string().optional().describe("Optional notes to append"),
+    }),
+    execute: async ({ pairId, status, notes }) => {
+      try {
+        const pair = await PairService.getPairById(pairId, userId);
+        if (!pair) return { success: false, error: "Pair not found" };
+
+        await PairService.updatePair(pairId, userId, {
+          status,
+          ...(notes !== undefined ? { notes } : {}),
+        });
+
+        return { success: true, pairId, status };
+      } catch {
+        return { success: false, error: "Failed to update pair status. Please try again." };
+      }
+    },
+  }),
+
+  recordClutch: tool({
+    description: "Record a new clutch (brood) for a breeding pair. This logs how many eggs were laid and auto-calculates fertility check and hatch dates.",
+    inputSchema: z.object({
+      pairId: z.number().describe("ID of the breeding pair"),
+      eggsLaid: z.number().int().min(1).describe("Number of eggs laid"),
+      layDate: z.string().optional().describe("Date eggs were laid in YYYY-MM-DD format. Defaults to today."),
+      incubationDays: z.number().int().min(1).optional().describe("Incubation period in days. Defaults to 14."),
+      notes: z.string().optional().describe("Optional notes about this clutch"),
+    }),
+    execute: async ({ pairId, eggsLaid, layDate, incubationDays, notes }) => {
+      try {
+        const pair = await PairService.getPairById(pairId, userId);
+        if (!pair) return { success: false, error: "Pair not found" };
+
+        const baseDate = layDate || new Date().toISOString().split("T")[0];
+        const days = incubationDays ?? 14;
+        const fertilityCheckDate = addDays(baseDate, 7);
+        const expectedHatchDate = addDays(baseDate, days);
+        const season = String(new Date(baseDate).getFullYear());
+
+        const brood = await BroodService.createBrood({
+          userId,
+          pairId,
+          season,
+          eggsLaid,
+          layDate: baseDate,
+          fertilityCheckDate,
+          expectedHatchDate,
+          status: "incubating",
+          notes: notes ?? null,
+        } as any);
+
+        await EventService.syncBroodEvents(userId, pairId, brood.id, fertilityCheckDate, expectedHatchDate);
+        await BroodService.syncClutchEggs(brood.id, userId, eggsLaid);
+
+        return {
+          success: true,
+          broodId: brood.id,
+          eggsLaid,
+          layDate: baseDate,
+          fertilityCheckDate,
+          expectedHatchDate,
+        };
+      } catch {
+        return { success: false, error: "Failed to record clutch. Please try again." };
+      }
+    },
+  }),
+
+  addEvent: tool({
+    description: "Add a reminder or event to the aviary calendar, such as a vet visit, banding, weaning, or medication.",
+    inputSchema: z.object({
+      title: z.string().describe("Title of the event"),
+      eventDate: z.string().describe("Date of the event in YYYY-MM-DD format"),
+      eventType: z.enum(["vet", "banding", "medication", "weaning", "sale", "other"]).describe("Type of event"),
+      notes: z.string().optional().describe("Optional notes about the event"),
+      birdId: z.number().optional().describe("Optional bird ID to link this event to a specific bird"),
+      pairId: z.number().optional().describe("Optional pair ID to link this event to a specific pair"),
+    }),
+    execute: async ({ title, eventDate, eventType, notes, birdId, pairId }) => {
+      try {
+        const event = await EventService.createEvent({
+          userId,
+          title,
+          eventDate,
+          eventType,
+          notes: notes ?? null,
+          birdId: birdId ?? null,
+          pairId: pairId ?? null,
+        } as any);
+
+        return { success: true, eventId: event.id, title, eventDate };
+      } catch {
+        return { success: false, error: "Failed to add event. Please try again." };
+      }
+    },
+  }),
+
+  updateBirdStatus: tool({
+    description: "Update the status of a bird (alive, breeding, resting, deceased, sold, unknown). Use searchBirds to find the bird ID first.",
+    inputSchema: z.object({
+      birdId: z.number().describe("ID of the bird to update"),
+      status: z.enum(["alive", "breeding", "resting", "deceased", "sold", "unknown"]).describe("New status for the bird"),
+    }),
+    execute: async ({ birdId, status }) => {
+      try {
+        const bird = await BirdService.getBirdById(birdId, userId);
+        if (!bird) return { success: false, error: "Bird not found" };
+
+        await BirdService.updateBird(birdId, userId, { status });
+
+        const birdName = bird.name || bird.ringId || `#${bird.id}`;
+        return { success: true, birdId, birdName, status };
+      } catch {
+        return { success: false, error: "Failed to update bird status. Please try again." };
+      }
+    },
+  }),
+
+  updateBird: tool({
+    description: "Update details of a bird such as cage number, name, notes, or ring ID. Use searchBirds to find the bird ID first.",
+    inputSchema: z.object({
+      birdId: z.number().describe("ID of the bird to update"),
+      cageNumber: z.string().optional().describe("Cage number or label, e.g. '5' or 'Cage A'"),
+      name: z.string().optional().describe("Bird's name"),
+      ringId: z.string().optional().describe("Ring or band ID"),
+      notes: z.string().optional().describe("Notes about the bird"),
+    }),
+    execute: async ({ birdId, cageNumber, name, ringId, notes }) => {
+      try {
+        const bird = await BirdService.getBirdById(birdId, userId);
+        if (!bird) return { success: false, error: "Bird not found" };
+
+        const updates: Record<string, string> = {};
+        if (cageNumber !== undefined) updates.cageNumber = cageNumber;
+        if (name !== undefined) updates.name = name;
+        if (ringId !== undefined) updates.ringId = ringId;
+        if (notes !== undefined) updates.notes = notes;
+
+        await BirdService.updateBird(birdId, userId, updates as any);
+
+        const birdName = bird.name || bird.ringId || `#${bird.id}`;
+        return { success: true, birdId, birdName, updated: updates };
+      } catch {
+        return { success: false, error: "Failed to update bird. Please try again." };
+      }
+    },
+  }),
+
+  addBird: tool({
+    description: "Open the Add Bird form pre-filled with the details the user has provided. Use this when the user wants to register a new bird — it opens the form for them to review and confirm before saving. Use searchBirds to find a speciesId from an existing bird of the same species first.",
+    inputSchema: z.object({
+      speciesId: z.number().describe("Species ID — get this from an existing bird of the same species using searchBirds"),
+      name: z.string().optional().describe("Bird's name"),
+      ringId: z.string().optional().describe("Ring or band ID"),
+      gender: z.enum(["male", "female", "unknown"]).optional().describe("Bird's gender"),
+      cageNumber: z.string().optional().describe("Cage number"),
+      colorMutation: z.string().optional().describe("Colour mutation, e.g. 'Lutino', 'Pied'"),
+      dateOfBirth: z.string().optional().describe("Date of birth in YYYY-MM-DD format"),
+      notes: z.string().optional().describe("Notes about the bird"),
+    }),
+    execute: async ({ speciesId, name, ringId, gender, cageNumber, colorMutation, dateOfBirth, notes }) => {
+      return {
+        uiAction: "openAddBirdModal",
+        prefill: { speciesId, name, ringId, gender, cageNumber, colorMutation, dateOfBirth, notes },
+      };
+    },
+  }),
+
+  deletePair: tool({
+    description: "PERMANENTLY delete an entire breeding pair AND all its clutches, eggs, and history. This is irreversible. Only use this if the user explicitly says 'delete the pair' or 'remove the pair'. If the user says 'remove a clutch', 'delete a clutch', or 'remove eggs', use deleteClutch instead.",
+    inputSchema: z.object({
+      pairId: z.number().describe("ID of the breeding pair to delete"),
+    }),
+    execute: async ({ pairId }) => {
+      try {
+        const pair = await PairService.getPairById(pairId, userId);
+        if (!pair) return { success: false, error: "Pair not found" };
+
+        await PairService.deletePair(pairId, userId);
+        return { success: true, pairId };
+      } catch {
+        return { success: false, error: "Failed to delete pair. Please try again." };
+      }
+    },
+  }),
+
+  updateClutch: tool({
+    description: "Update a clutch/brood — change egg count, status, hatch date, or chicks survived. Use getPairEggStats to find the brood ID first.",
+    inputSchema: z.object({
+      broodId: z.number().describe("ID of the brood/clutch to update"),
+      eggsLaid: z.number().int().min(0).optional().describe("Updated number of eggs laid"),
+      status: z.enum(["incubating", "hatched", "failed", "abandoned"]).optional().describe("Updated status"),
+      actualHatchDate: z.string().optional().describe("Actual hatch date in YYYY-MM-DD format"),
+      chicksSurvived: z.number().int().min(0).optional().describe("Number of chicks that survived"),
+      notes: z.string().optional().describe("Notes about the clutch"),
+    }),
+    execute: async ({ broodId, eggsLaid, status, actualHatchDate, chicksSurvived, notes }) => {
+      try {
+        const updates: Record<string, any> = {};
+        if (eggsLaid !== undefined) updates.eggsLaid = eggsLaid;
+        if (status !== undefined) updates.status = status;
+        if (actualHatchDate !== undefined) updates.actualHatchDate = actualHatchDate;
+        if (chicksSurvived !== undefined) updates.chicksSurvived = chicksSurvived;
+        if (notes !== undefined) updates.notes = notes;
+
+        await BroodService.updateBrood(broodId, userId, updates);
+
+        if (eggsLaid !== undefined) {
+          await BroodService.syncClutchEggs(broodId, userId, eggsLaid);
+        }
+
+        return { success: true, broodId, updated: updates };
+      } catch {
+        return { success: false, error: "Failed to update clutch. Please try again." };
+      }
+    },
+  }),
+
+  deleteClutch: tool({
+    description: "Delete a single clutch/brood record and its eggs. Use this when the user says 'remove a clutch', 'delete a clutch', or 'remove the eggs'. This does NOT delete the pair. Use getPairEggStats to find the brood ID first.",
+    inputSchema: z.object({
+      broodId: z.number().describe("ID of the brood/clutch to delete"),
+    }),
+    execute: async ({ broodId }) => {
+      try {
+        await BroodService.deleteBrood(broodId, userId);
+        return { success: true, broodId };
+      } catch {
+        return { success: false, error: "Failed to delete clutch. Please try again." };
+      }
+    },
+  }),
+
+  recordHatch: tool({
+    description: "Record that a clutch has hatched — set the hatch date, number of chicks survived, and mark the brood as hatched.",
+    inputSchema: z.object({
+      broodId: z.number().describe("ID of the brood/clutch that hatched"),
+      chicksSurvived: z.number().int().min(0).describe("Number of chicks that survived"),
+      actualHatchDate: z.string().optional().describe("Actual hatch date in YYYY-MM-DD format. Defaults to today."),
+    }),
+    execute: async ({ broodId, chicksSurvived, actualHatchDate }) => {
+      try {
+        const hatchDate = actualHatchDate || new Date().toISOString().split("T")[0];
+        await BroodService.updateBrood(broodId, userId, {
+          status: "hatched",
+          chicksSurvived,
+          actualHatchDate: hatchDate,
+        });
+        return { success: true, broodId, chicksSurvived, hatchDate };
+      } catch {
+        return { success: false, error: "Failed to record hatch. Please try again." };
+      }
+    },
+  }),
+
+  listPairs: tool({
+    description: "List all breeding pairs with their bird names, status, season, and cage. Use this when the user asks what pairs they have.",
+    inputSchema: z.object({
+      status: z.enum(["active", "breeding", "resting", "retired"]).optional().describe("Filter by status"),
+    }),
+    execute: async ({ status }) => {
+      try {
+        let pairs = await PairService.getPairsByUser(userId);
+        if (status) pairs = pairs.filter(p => p.status === status);
+
+        const allBirds = await BirdService.getBirdsByUser(userId);
+        const birdMap = Object.fromEntries(allBirds.map(b => [b.id, b]));
+
+        return pairs.map(p => {
+          const male = birdMap[p.maleId];
+          const female = birdMap[p.femaleId];
+          return {
+            pairId: p.id,
+            male: male ? (male.name || male.ringId || `#${male.id}`) : "Unknown",
+            female: female ? (female.name || female.ringId || `#${female.id}`) : "Unknown",
+            status: p.status,
+            season: p.season,
+            cage: male?.cageNumber || female?.cageNumber || "No cage set",
+            notes: p.notes,
+          };
+        });
+      } catch {
+        return { success: false, error: "Failed to list pairs." };
+      }
+    },
+  }),
+
+  getBirdDetails: tool({
+    description: "Get full details for a specific bird including status, cage, mutation, date of birth, and breeding history. Use searchBirds to find the bird ID first.",
+    inputSchema: z.object({
+      birdId: z.number().describe("ID of the bird"),
+    }),
+    execute: async ({ birdId }) => {
+      try {
+        const bird = await BirdService.getBirdById(birdId, userId);
+        if (!bird) return { success: false, error: "Bird not found." };
+        const history = await BroodService.getBreedingHistoryByBird(birdId, userId);
+        return {
+          id: bird.id,
+          name: bird.name,
+          ringId: bird.ringId,
+          gender: bird.gender,
+          status: bird.status,
+          cageNumber: bird.cageNumber,
+          colorMutation: bird.colorMutation,
+          dateOfBirth: bird.dateOfBirth,
+          notes: bird.notes,
+          breedingHistory: history.map((h: any) => ({
+            season: h.season,
+            partner: h.partnerName,
+            clutches: h.clutches?.length ?? 0,
+          })),
+        };
+      } catch {
+        return { success: false, error: "Failed to get bird details." };
+      }
+    },
+  }),
+
+  deleteBird: tool({
+    description: "Permanently delete a bird from the registry. Only do this if the user explicitly asks to delete a bird. Use searchBirds to confirm the bird ID first.",
+    inputSchema: z.object({
+      birdId: z.number().describe("ID of the bird to delete"),
+    }),
+    execute: async ({ birdId }) => {
+      try {
+        const bird = await BirdService.getBirdById(birdId, userId);
+        if (!bird) return { success: false, error: "Bird not found." };
+        const birdName = bird.name || bird.ringId || `#${bird.id}`;
+        await BirdService.deleteBird(birdId, userId);
+        return { success: true, birdId, birdName };
+      } catch {
+        return { success: false, error: "Failed to delete bird. Please try again." };
+      }
+    },
+  }),
+
+  updateEvent: tool({
+    description: "Update an existing event — change the title, date, notes, or type. Use getUpcomingEvents to find the event ID first.",
+    inputSchema: z.object({
+      eventId: z.number().describe("ID of the event to update"),
+      title: z.string().optional().describe("New title for the event"),
+      date: z.string().optional().describe("New date in YYYY-MM-DD format"),
+      notes: z.string().optional().describe("Notes about the event"),
+      type: z.enum(["vet", "medication", "weaning", "banding", "show", "other"]).optional().describe("Event type"),
+    }),
+    execute: async ({ eventId, title, date, notes, type }) => {
+      try {
+        const updates: Record<string, any> = {};
+        if (title !== undefined) updates.title = title;
+        if (date !== undefined) updates.date = date;
+        if (notes !== undefined) updates.notes = notes;
+        if (type !== undefined) updates.type = type;
+        await EventService.updateEvent(eventId, userId, updates);
+        return { success: true, eventId, updated: updates };
+      } catch {
+        return { success: false, error: "Failed to update event. Please try again." };
+      }
+    },
+  }),
+
+  deleteEvent: tool({
+    description: "Delete an event or reminder. Use getUpcomingEvents to find the event ID first. Only do this if the user explicitly asks to delete or cancel an event.",
+    inputSchema: z.object({
+      eventId: z.number().describe("ID of the event to delete"),
+    }),
+    execute: async ({ eventId }) => {
+      try {
+        await EventService.deleteEvent(eventId, userId);
+        return { success: true, eventId };
+      } catch {
+        return { success: false, error: "Failed to delete event. Please try again." };
+      }
+    },
+  }),
+
+  markEventComplete: tool({
+    description: "Mark an event or reminder as completed (or uncompleted). Use getUpcomingEvents to find the event ID first.",
+    inputSchema: z.object({
+      eventId: z.number().describe("ID of the event to toggle"),
+    }),
+    execute: async ({ eventId }) => {
+      try {
+        await EventService.toggleEventComplete(eventId, userId);
+        return { success: true, eventId };
+      } catch {
+        return { success: false, error: "Failed to update event. Please try again." };
+      }
+    },
+  }),
+
+  recordEggOutcome: tool({
+    description: "Record the outcome of a specific egg in a clutch — e.g. mark it as infertile, cracked, hatched, or died. Use getPairEggStats to find the brood ID first.",
+    inputSchema: z.object({
+      broodId: z.number().describe("ID of the brood/clutch"),
+      eggNumber: z.number().int().min(1).describe("Egg number within the clutch (1-based)"),
+      status: z.enum(["incubating", "hatched", "infertile", "cracked", "died", "missing", "abandoned"]).describe("Outcome for this egg"),
+    }),
+    execute: async ({ broodId, eggNumber, status }) => {
+      try {
+        await BroodService.upsertClutchEgg(broodId, userId, eggNumber, status as any);
+        return { success: true, broodId, eggNumber, status };
+      } catch {
+        return { success: false, error: "Failed to record egg outcome. Please try again." };
+      }
+    },
+  }),
+
+  getUpcomingHatches: tool({
+    description: "Get clutches with upcoming expected hatch dates. Use this when the user asks what hatches are due soon.",
+    inputSchema: z.object({
+      days: z.number().int().min(1).max(90).optional().describe("How many days ahead to look (default 14)"),
+    }),
+    execute: async ({ days = 14 }) => {
+      try {
+        const broods = await BroodService.getBroodsByUser(userId);
+        const allBirds = await BirdService.getBirdsByUser(userId);
+        const birdMap = Object.fromEntries(allBirds.map(b => [b.id, b]));
+        const allPairs = await PairService.getPairsByUser(userId);
+        const pairMap = Object.fromEntries(allPairs.map(p => [p.id, p]));
+
+        const today = new Date();
+        const cutoff = new Date(today.getTime() + days * 86400000);
+
+        return broods
+          .filter((b: any) => b.expectedHatchDate && b.status === "incubating")
+          .filter((b: any) => {
+            const d = new Date(b.expectedHatchDate);
+            return d >= today && d <= cutoff;
+          })
+          .map((b: any) => {
+            const pair = pairMap[b.pairId];
+            const male = pair ? birdMap[pair.maleId] : null;
+            const female = pair ? birdMap[pair.femaleId] : null;
+            return {
+              broodId: b.id,
+              pair: male && female
+                ? `${male.name || male.ringId} x ${female.name || female.ringId}`
+                : `Pair #${b.pairId}`,
+              eggsLaid: b.eggsLaid,
+              expectedHatchDate: b.expectedHatchDate,
+              daysUntilHatch: Math.ceil((new Date(b.expectedHatchDate).getTime() - today.getTime()) / 86400000),
+            };
+          })
+          .sort((a: any, b: any) => a.daysUntilHatch - b.daysUntilHatch);
+      } catch {
+        return { success: false, error: "Failed to get upcoming hatches." };
+      }
+    },
+  }),
+
+  getPairHistory: tool({
+    description: "Get full clutch history for a specific breeding pair including all broods, egg counts, and hatch results.",
+    inputSchema: z.object({
+      pairId: z.number().describe("ID of the breeding pair"),
+    }),
+    execute: async ({ pairId }) => {
+      try {
+        const pair = await PairService.getPairById(pairId, userId);
+        if (!pair) return { success: false, error: "Pair not found." };
+
+        const allBirds = await BirdService.getBirdsByUser(userId);
+        const birdMap = Object.fromEntries(allBirds.map(b => [b.id, b]));
+        const male = birdMap[pair.maleId];
+        const female = birdMap[pair.femaleId];
+
+        const broods = await BroodService.getBroodsByPair(pairId, userId);
+        return {
+          pairId,
+          male: male ? (male.name || male.ringId || `#${male.id}`) : "Unknown",
+          female: female ? (female.name || female.ringId || `#${female.id}`) : "Unknown",
+          status: pair.status,
+          season: pair.season,
+          clutches: broods.map((b: any) => ({
+            broodId: b.id,
+            clutchNumber: b.clutchNumber,
+            eggsLaid: b.eggsLaid,
+            status: b.status,
+            layDate: b.layDate,
+            expectedHatchDate: b.expectedHatchDate,
+            actualHatchDate: b.actualHatchDate,
+            chicksSurvived: b.chicksSurvived,
+          })),
+        };
+      } catch {
+        return { success: false, error: "Failed to get pair history." };
+      }
+    },
+  }),
 });
 
 /**
@@ -222,13 +763,20 @@ export function registerChatRoutes(app: Express) {
       const modelName = process.env.OPENAI_MODEL || "gpt-4o-mini";
       console.log(`[chat] userId=${user.id} model=${modelName} remaining=${limit.remaining}/${CHAT_MAX_PER_DAY}`);
 
+      const userDate = typeof req.body.userDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(req.body.userDate)
+        ? req.body.userDate
+        : new Date().toISOString().split("T")[0];
+      const today = userDate;
+      const todayMs = new Date(userDate + "T12:00:00Z").getTime();
+      const yesterday = new Date(todayMs - 86400000).toISOString().split("T")[0];
+
       const result = streamText({
         model: openai.chat(modelName),
         system:
-          "You are an expert aviculture assistant. You help the user manage their aviary, which is called 'Aviary Manager'. You have access to tools that can fetch their live bird stats, search their bird database, check upcoming care events, and retrieve a full mutation summary of all their birds.\n\nWhen recommending pairings or discussing colour mutations, use the getMutationSummary tool to see all birds and their mutations, then apply your expert knowledge of avian genetics (dominant, recessive, sex-linked mutations, split carriers, expected offspring ratios) to make accurate recommendations. Clearly state the expected offspring mutation probabilities.\n\nDo not make up data about their specific birds — always use the tools. But do use your own genetics knowledge to reason about mutation outcomes.\n\nCRITICAL RULE: Never output raw JSON, internal tool data structures, or code blocks containing data from tools. Always format your responses in natural, conversational language. Be concise and helpful.",
+          `You are an expert aviculture assistant with full control over the user's aviary. You help manage their aviary, called 'Aviary Manager'. You can both read data AND take actions on their behalf.\n\nToday's date is ${today}. Yesterday was ${yesterday}. Always use these exact dates when the user refers to 'today' or 'yesterday'.\n\nREAD TOOLS: getFlockStats, searchBirds, getUpcomingEvents, getMutationSummary, getPairEggStats, listPairs, getBirdDetails, getUpcomingHatches, getPairHistory\nACTION TOOLS: createBreedingPair, updatePairStatus, deletePair, recordClutch, updateClutch, recordHatch, addEvent, updateEvent, deleteEvent, markEventComplete, updateBirdStatus, updateBird, addBird, deleteBird, recordEggOutcome\n\nValid pair statuses are: active, breeding, resting, retired.\nIMPORTANT: When creating a breeding pair, always use the current calendar year as the season unless the user explicitly says otherwise. Never infer the season from bird names or ring IDs (a bird named '2024 Dad' was born in 2024, that is not the breeding season).\nValid bird statuses are: alive, breeding, resting, deceased, sold, unknown.\n\nWhen taking actions:\n1. Always use a read tool first to confirm you have the right bird(s) or pair before acting.\n2. If the user asks for something invalid (e.g. a status that doesn't exist), explain what the valid options are in plain language — never show raw error messages or JSON.\n3. If there is any ambiguity (multiple matches, wrong gender, etc.), ask the user to clarify rather than guessing.\n4. After a successful action, confirm what you did in plain language. For example: 'Done — I've paired Rio (male) and Blue (female) for the 2026 season.'\n5. To update a bird's cage number, name, or notes use the updateBird tool.\n6. When opening the Add Bird modal (openAddBirdModal), only fill in fields the user explicitly provided. Leave all other fields null/undefined — never fill optional fields with 'Unknown' or placeholder text.\n\nWhen recommending pairings or discussing colour mutations, use getMutationSummary then apply your expert genetics knowledge.\n\nDo not make up data about their specific birds — always use the tools.\n\nCRITICAL RULE: Never output raw JSON, error objects, or code blocks. Always respond in natural, conversational language. Be concise and helpful.`,
         messages: modelMessages,
         tools: tools(user.id),
-        stopWhen: stepCountIs(5),
+        stopWhen: stepCountIs(10),
       });
 
       result.pipeUIMessageStreamToResponse(res);

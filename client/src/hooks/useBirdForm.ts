@@ -54,7 +54,7 @@ export function useBirdForm(bird?: any, userSettings?: any) {
                 speciesId: String(bird.speciesId),
                 ringId: bird.ringId ?? "",
                 name: bird.name ?? "",
-                gender: bird.gender as any,
+                gender: (bird.gender ?? "unknown") as any,
                 dateOfBirth: bird.dateOfBirth ? String(bird.dateOfBirth).split("T")[0] : "",
                 fledgedDate: (bird as any).fledgedDate ? String((bird as any).fledgedDate).split("T")[0] : "",
                 cageNumber: (bird as any).cageNumber ?? "",
@@ -63,7 +63,7 @@ export function useBirdForm(bird?: any, userSettings?: any) {
                 notes: bird.notes ?? "",
                 fatherId: bird.fatherId ? String(bird.fatherId) : "",
                 motherId: bird.motherId ? String(bird.motherId) : "",
-                status: bird.status as any,
+                status: (bird.status ?? "alive") as any,
                 fromBroodId: bird.fromBroodId,
                 fromEggNumber: bird.fromEggNumber,
             });

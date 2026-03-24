@@ -55,7 +55,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Markdown } from "@/components/Markdown";
 import { cn } from "@/lib/utils";
 import { Loader2, Send, Sparkles, Trash2 } from "lucide-react";
-import { useState, useRef, useEffect, ReactNode } from "react";
+import { useState, useRef, useEffect, ReactNode, useCallback } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 
@@ -161,6 +161,12 @@ export interface AIChatBoxProps {
 
   /** URL for the assistant avatar image (shown next to assistant messages and in empty state) */
   assistantAvatarUrl?: string;
+
+  /**
+   * Called when a tool returns a UI action (e.g. openAddBirdModal).
+   * The parent component handles opening the relevant modal.
+   */
+  onUIAction?: (action: { type: string; data: Record<string, any> }) => void;
 }
 
 // ============================================================================
@@ -173,6 +179,25 @@ const TOOL_LOADING_LABELS: Record<string, string> = {
   getUpcomingEvents: "📅 Looking up upcoming events...",
   getMutationSummary: "🧬 Analysing colour mutations...",
   getPairEggStats: "🥚 Fetching breeding pair stats...",
+  createBreedingPair: "💑 Creating breeding pair...",
+  updatePairStatus: "🔄 Updating pair status...",
+  deletePair: "🗑️ Deleting pair...",
+  recordClutch: "🥚 Recording clutch...",
+  updateClutch: "✏️ Updating clutch...",
+  recordHatch: "🐣 Recording hatch...",
+  addEvent: "📅 Adding event...",
+  updateBirdStatus: "🐦 Updating bird status...",
+  updateBird: "✏️ Updating bird details...",
+  addBird: "🐦 Adding bird...",
+  listPairs: "💑 Looking up breeding pairs...",
+  getBirdDetails: "🐦 Looking up bird details...",
+  deleteBird: "🗑️ Deleting bird...",
+  updateEvent: "📅 Updating event...",
+  deleteEvent: "🗑️ Deleting event...",
+  markEventComplete: "✅ Marking event complete...",
+  recordEggOutcome: "🥚 Recording egg outcome...",
+  getUpcomingHatches: "🐣 Checking upcoming hatches...",
+  getPairHistory: "📋 Loading pair history...",
 };
 
 function DefaultToolPartRenderer({ toolName, state, errorText }: ToolPartRendererProps) {
@@ -348,6 +373,7 @@ export function AIChatBox({
   emptyStateMessage = "Start a conversation with AI",
   suggestedPrompts,
   assistantAvatarUrl,
+  onUIAction,
 }: AIChatBoxProps) {
   const [input, setInput] = useState("");
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -376,6 +402,7 @@ export function AIChatBox({
             messages,
             chatId: chatId || id,
             userId,
+            userDate: new Date().toLocaleDateString("en-CA"), // YYYY-MM-DD in user's local timezone
           },
         };
       },
@@ -396,6 +423,27 @@ export function AIChatBox({
   useEffect(() => {
     setMessages(initialMessages);
   }, [chatId, initialMessages, setMessages]);
+
+  // -------------------------------------------------------------------------
+  // Fire onUIAction when a tool returns a uiAction result (e.g. openAddBirdModal)
+  // -------------------------------------------------------------------------
+  const firedToolIds = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!onUIAction) return;
+    for (const message of messages) {
+      for (const part of message.parts) {
+        if (!part.type.startsWith("tool-")) continue;
+        const toolPart = part as any;
+        if (toolPart.state !== "output-available") continue;
+        if (firedToolIds.current.has(toolPart.toolCallId)) continue;
+        const output = toolPart.output;
+        if (output?.uiAction) {
+          firedToolIds.current.add(toolPart.toolCallId);
+          onUIAction({ type: output.uiAction, data: output.prefill ?? {} });
+        }
+      }
+    }
+  }, [messages, onUIAction]);
 
   // -------------------------------------------------------------------------
   // Derived state
