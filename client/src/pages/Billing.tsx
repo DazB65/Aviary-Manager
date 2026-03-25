@@ -36,7 +36,7 @@ export default function Billing() {
   const [, navigate] = useLocation();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [loadingPortal, setLoadingPortal] = useState(false);
-  const [billingInterval, setBillingInterval] = useState<"monthly" | "yearly">("yearly");
+  const [billingInterval, setBillingInterval] = useState<"monthly" | "yearly">("monthly");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [loadingDelete, setLoadingDelete] = useState(false);
 
