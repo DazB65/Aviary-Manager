@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useLocation } from "wouter";
 import {
   Bird, Egg, Heart, TreePine, CalendarDays, FileText,
-  Check, ChevronRight, Dna, Users, Menu, X
+  Check, ChevronRight, Dna, Users, Menu, X, Sparkles, Bot, Zap
 } from "lucide-react";
 
 // Item 8: All icons use teal brand palette (alternating two tints)
@@ -206,9 +206,8 @@ export default function Landing() {
                 <div className="flex items-start justify-between mb-4">
                   <h3 className="text-xl font-bold text-gray-700">Starter</h3>
                 </div>
-                <p className="text-gray-500 text-sm mb-1">All the essentials</p>
-                <p className="text-gray-500 text-sm font-medium mb-6">From $4.99 USD / month</p>
-                <div className="mb-6">
+                <p className="text-gray-500 text-sm mb-1">All the essentials for your aviary</p>
+                <div className="mb-6 mt-4">
                   <span className="text-4xl font-extrabold text-gray-900">$49</span>
                   <span className="text-gray-400 ml-1">USD / year</span>
                   <div className="text-sm text-gray-500 font-medium mt-1">or $4.99 / month</div>
@@ -233,36 +232,71 @@ export default function Landing() {
             </Card>
 
             {/* Pro */}
-            <Card className="border-2 border-teal-500 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.08)] flex flex-col">
-              <CardContent className="pt-6 pb-8 px-6 flex flex-col flex-1">
-                <div className="flex items-start justify-between mb-4">
-                  <h3 className="text-xl font-bold text-teal-700">Pro</h3>
-                  <span className="bg-teal-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                    ⭐ Most Popular
-                  </span>
+            <Card className="border-2 border-teal-500 rounded-2xl shadow-[0_4px_24px_rgba(13,148,136,0.18)] flex flex-col relative overflow-hidden">
+              {/* Glow effect */}
+              <div className="absolute inset-0 bg-gradient-to-br from-teal-50/60 to-transparent pointer-events-none" />
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-400 via-teal-500 to-emerald-400" />
+              <CardContent className="pt-6 pb-8 px-6 flex flex-col flex-1 relative">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xl font-bold text-teal-700">Pro</h3>
+                    <span className="inline-flex items-center gap-1 bg-teal-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                      <Sparkles className="w-3 h-3" /> Most Popular
+                    </span>
+                  </div>
                 </div>
-                <p className="text-gray-500 text-sm mb-1">Starter + AI Assistant</p>
-                <p className="text-teal-600 text-sm font-medium mb-6">7-day free trial included</p>
-                <div className="mb-6">
+
+                {/* AI highlight banner */}
+                <div className="flex items-center gap-2 bg-gradient-to-r from-teal-600 to-emerald-600 text-white rounded-xl px-4 py-3 mb-5">
+                  <Bot className="w-5 h-5 shrink-0" />
+                  <div>
+                    <p className="text-sm font-bold">Includes AI Assistant</p>
+                    <p className="text-xs text-teal-100">Manage your aviary by typing — no clicks needed</p>
+                  </div>
+                </div>
+
+                <div className="mb-5">
                   <span className="text-4xl font-extrabold text-gray-900">$129</span>
                   <span className="text-gray-400 ml-1">USD / year</span>
                   <div className="text-sm text-teal-600 font-medium mt-1">or $12.99 / month</div>
                 </div>
-                <ul className="space-y-3 mb-8 flex-1">
-                  {["Everything in Starter", "AI Assistant — pair by chat", "AI clutch & event management", "AI breeding recommendations", "Smart mutation advice"].map(f => (
-                    <li key={f} className="flex items-center gap-2 text-sm text-gray-700">
-                      <Check className="w-4 h-4 text-teal-500 shrink-0" /> {f}
+
+                {/* Starter features */}
+                <ul className="space-y-2.5 mb-4 flex-1">
+                  {["Everything in Starter"].map(f => (
+                    <li key={f} className="flex items-center gap-2 text-sm text-gray-600">
+                      <Check className="w-4 h-4 text-gray-400 shrink-0" /> {f}
                     </li>
                   ))}
                 </ul>
+
+                {/* AI features — highlighted */}
+                <div className="rounded-xl bg-teal-50 border border-teal-200 p-3 mb-6 space-y-2">
+                  <p className="text-xs font-semibold text-teal-700 uppercase tracking-wide flex items-center gap-1">
+                    <Zap className="w-3 h-3" /> AI-powered actions
+                  </p>
+                  {[
+                    "\"Pair Rio and Blue together\"",
+                    "\"Record 5 eggs for Cage A pair\"",
+                    "\"Add a vet check for next Monday\"",
+                    "\"Recommend pairings for my Lutinos\"",
+                    "\"What's hatching this week?\"",
+                  ].map(f => (
+                    <li key={f} className="flex items-center gap-2 text-sm text-teal-800 font-medium list-none">
+                      <Sparkles className="w-3.5 h-3.5 text-teal-500 shrink-0" /> {f}
+                    </li>
+                  ))}
+                </div>
+
                 <div className="mt-auto">
                   <Button
-                    className="w-full bg-teal-600 hover:bg-teal-700 text-white transition-colors duration-200"
+                    className="w-full bg-teal-600 hover:bg-teal-700 text-white text-base font-semibold py-6 transition-colors duration-200 shadow-md"
                     onClick={() => setLocation("/register")}
                   >
+                    <Sparkles className="w-4 h-4 mr-2" />
                     Start 7-day free trial
                   </Button>
-                  <p className="text-xs text-center text-gray-400 mt-3">Cancel anytime.</p>
+                  <p className="text-xs text-center text-gray-400 mt-3">Cancel anytime. No card required for trial.</p>
                 </div>
               </CardContent>
             </Card>

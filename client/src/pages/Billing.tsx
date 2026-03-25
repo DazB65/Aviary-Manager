@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import {
-  AlertTriangle, Bird, Check, CreditCard, Loader2, Sparkles, Star, Zap
+  AlertTriangle, Bird, Bot, Check, CreditCard, Loader2, Sparkles, Star, Zap
 } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
@@ -259,18 +259,25 @@ export default function Billing() {
 
               {/* Pro */}
               <Card className="border-2 border-teal-500 relative overflow-hidden shadow-lg">
-                <div className="absolute top-0 right-0 bg-teal-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg flex items-center gap-1">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-400 via-teal-500 to-emerald-400" />
+                <div className="absolute top-1 right-0 bg-teal-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg flex items-center gap-1">
                   <Sparkles className="w-3 h-3" /> Most Popular
                 </div>
                 {isOnTrial && (
-                  <div className="absolute top-0 left-0 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-br-lg flex items-center gap-1">
+                  <div className="absolute top-1 left-0 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-br-lg flex items-center gap-1">
                     <Star className="w-3 h-3" /> Trialling now
                   </div>
                 )}
-                <CardHeader>
+                <CardHeader className="pt-6">
                   <CardTitle className="text-lg text-teal-700">Pro</CardTitle>
-                  <CardDescription>Everything in Starter + AI Assistant</CardDescription>
-                  <div className="mt-2">
+                  <div className="flex items-center gap-2 bg-gradient-to-r from-teal-600 to-emerald-600 text-white rounded-xl px-3 py-2 mt-2">
+                    <Bot className="w-4 h-4 shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold">Includes AI Assistant</p>
+                      <p className="text-[11px] text-teal-100">Manage your aviary by chat</p>
+                    </div>
+                  </div>
+                  <div className="mt-3">
                     {billingInterval === "yearly" ? (
                       <>
                         <span className="text-3xl font-bold text-gray-900">{proYearly}</span>
@@ -287,25 +294,30 @@ export default function Billing() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {STARTER_FEATURES.map(f => (
-                    <div key={f} className="flex items-center gap-2 text-sm text-gray-700">
-                      <Check className="w-4 h-4 text-teal-500 shrink-0" />
+                    <div key={f} className="flex items-center gap-2 text-sm text-gray-600">
+                      <Check className="w-4 h-4 text-gray-400 shrink-0" />
                       {f}
                     </div>
                   ))}
                   <Separator className="my-1" />
-                  {PRO_EXTRAS.map(f => (
-                    <div key={f} className="flex items-center gap-2 text-sm text-teal-700 font-medium">
-                      <Sparkles className="w-4 h-4 text-teal-500 shrink-0" />
-                      {f}
-                    </div>
-                  ))}
+                  <div className="rounded-xl bg-teal-50 border border-teal-200 p-3 space-y-2">
+                    <p className="text-xs font-semibold text-teal-700 uppercase tracking-wide flex items-center gap-1">
+                      <Zap className="w-3 h-3" /> AI-powered actions
+                    </p>
+                    {PRO_EXTRAS.map(f => (
+                      <div key={f} className="flex items-center gap-2 text-sm text-teal-800 font-medium">
+                        <Sparkles className="w-3.5 h-3.5 text-teal-500 shrink-0" />
+                        {f}
+                      </div>
+                    ))}
+                  </div>
                   <Separator className="my-2" />
                   <Button
-                    className="w-full bg-teal-600 hover:bg-teal-700 text-white"
+                    className="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold"
                     onClick={() => handleCheckout("pro")}
                     disabled={loadingPlan !== null}
                   >
-                    {loadingPlan === `pro-${billingInterval}` && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                    {loadingPlan === `pro-${billingInterval}` ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
                     Subscribe to Pro
                   </Button>
                   <p className="text-xs text-center text-gray-400">Cancel anytime. Have a coupon? Apply it at checkout.</p>
