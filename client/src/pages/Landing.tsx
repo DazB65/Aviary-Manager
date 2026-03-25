@@ -208,9 +208,9 @@ export default function Landing() {
                 </div>
                 <p className="text-gray-500 text-sm mb-1">All the essentials for your aviary</p>
                 <div className="mb-6 mt-4">
-                  <span className="text-4xl font-extrabold text-gray-900">$49</span>
-                  <span className="text-gray-400 ml-1">USD / year</span>
-                  <div className="text-sm text-gray-500 font-medium mt-1">or $4.99 / month</div>
+                  <span className="text-4xl font-extrabold text-gray-900">$4.99</span>
+                  <span className="text-gray-400 ml-1">USD / month</span>
+                  <div className="text-sm text-gray-500 font-medium mt-1">or $49 / year (save 2 months)</div>
                 </div>
                 <ul className="space-y-3 mb-8 flex-1">
                   {["Unlimited birds & pairs", "4-gen pedigree tree", "Inbreeding coefficient", "Sibling detection", "PDF pedigree export", "Photo uploads", "Priority support"].map(f => (
@@ -256,9 +256,9 @@ export default function Landing() {
                 </div>
 
                 <div className="mb-5">
-                  <span className="text-4xl font-extrabold text-gray-900">$129</span>
-                  <span className="text-gray-400 ml-1">USD / year</span>
-                  <div className="text-sm text-teal-600 font-medium mt-1">or $12.99 / month</div>
+                  <span className="text-4xl font-extrabold text-gray-900">$12.99</span>
+                  <span className="text-gray-400 ml-1">USD / month</span>
+                  <div className="text-sm text-teal-600 font-medium mt-1">or $129 / year (save 2 months)</div>
                 </div>
 
                 {/* Starter features */}
