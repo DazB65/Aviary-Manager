@@ -50,6 +50,18 @@ export async function runMigrations() {
       await client`ALTER TYPE "public"."egg_outcome" ADD VALUE IF NOT EXISTS 'missing'`;
       await client`ALTER TYPE "public"."egg_outcome" ADD VALUE IF NOT EXISTS 'abandoned'`;
       console.log("[DB] Enum patch applied.");
+
+      // Data fix: broods that were prematurely marked 'hatched' while chicks are still
+      // alive but unfledged should revert to 'incubating' so they appear in Active.
+      await client`
+        UPDATE broods
+        SET status = 'incubating', updated_at = NOW()
+        WHERE status = 'hatched'
+          AND id IN (
+            SELECT DISTINCT brood_id FROM clutch_eggs WHERE outcome = 'hatched'
+          )
+      `;
+      console.log("[DB] Brood status backfill applied.");
     } finally {
       await client.end();
     }
