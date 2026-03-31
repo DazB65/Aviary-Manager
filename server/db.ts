@@ -55,10 +55,10 @@ export async function runMigrations() {
       // alive but unfledged should revert to 'incubating' so they appear in Active.
       await client`
         UPDATE broods
-        SET status = 'incubating', updated_at = NOW()
+        SET status = 'incubating', "updatedAt" = NOW()
         WHERE status = 'hatched'
           AND id IN (
-            SELECT DISTINCT brood_id FROM clutch_eggs WHERE outcome = 'hatched'
+            SELECT DISTINCT "broodId" FROM "clutchEggs" WHERE outcome = 'hatched'
           )
       `;
       console.log("[DB] Brood status backfill applied.");
