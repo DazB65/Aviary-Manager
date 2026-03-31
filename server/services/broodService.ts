@@ -155,10 +155,19 @@ export class BroodService {
             .where(and(eq(clutchEggs.broodId, broodId), eq(clutchEggs.userId, userId)));
         if (allEggs.length === 0) return;
 
-        const stillPending = allEggs.some(e => e.outcome === "unknown" || e.outcome === "fertile");
+        // Auto-update chicksSurvived: count eggs that are hatched or fledged
+        const survived = allEggs.filter(e => e.outcome === "hatched" || e.outcome === "fledged").length;
+        await db
+            .update(broods)
+            .set({ chicksSurvived: survived, updatedAt: new Date() })
+            .where(and(eq(broods.id, broodId), eq(broods.userId, userId)));
+
+        // "hatched" eggs still have live chicks that haven't fledged yet — keep the clutch
+        // active (incubating) until every chick either fledges or dies
+        const stillPending = allEggs.some(e => e.outcome === "unknown" || e.outcome === "fertile" || e.outcome === "hatched");
         if (stillPending) return;
 
-        const hasSuccess = allEggs.some(e => e.outcome === "hatched" || e.outcome === "fledged");
+        const hasSuccess = allEggs.some(e => e.outcome === "fledged");
         const newStatus = hasSuccess ? "hatched" : "failed";
 
         await db
