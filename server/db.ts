@@ -61,7 +61,18 @@ export async function runMigrations() {
             SELECT DISTINCT "broodId" FROM "clutchEggs" WHERE outcome = 'hatched'
           )
       `;
-      console.log("[DB] Brood status backfill applied.");
+
+      // Data fix: sync chicksSurvived from actual egg outcomes (hatched + fledged count).
+      await client`
+        UPDATE broods b
+        SET "chicksSurvived" = (
+          SELECT COUNT(*) FROM "clutchEggs"
+          WHERE "broodId" = b.id AND outcome IN ('hatched', 'fledged')
+        ),
+        "updatedAt" = NOW()
+        WHERE EXISTS (SELECT 1 FROM "clutchEggs" WHERE "broodId" = b.id)
+      `;
+      console.log("[DB] Brood status and chicksSurvived backfill applied.");
     } finally {
       await client.end();
     }
