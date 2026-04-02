@@ -91,8 +91,21 @@ export default function Dashboard() {
     setGettingStartedDismissed(true);
   }
 
+  const todayMidnight = new Date();
+  todayMidnight.setHours(0, 0, 0, 0);
+
   const upcomingBroods = (broods ?? [])
-    .filter(b => b.status === "incubating")
+    .filter(b => {
+      if (b.status !== "incubating") return false;
+      // Exclude broods whose expected hatch date has already passed — eggs have
+      // already hatched (chicks pending fledge) so there's nothing "upcoming".
+      if (b.expectedHatchDate) {
+        const hatchDate = new Date(String(b.expectedHatchDate));
+        hatchDate.setHours(0, 0, 0, 0);
+        if (hatchDate < todayMidnight) return false;
+      }
+      return true;
+    })
     .sort((a, b) => {
       if (!a.expectedHatchDate && !b.expectedHatchDate) return 0;
       if (!a.expectedHatchDate) return 1; // push unknown to bottom
