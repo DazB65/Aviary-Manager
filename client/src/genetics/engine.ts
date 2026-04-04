@@ -102,7 +102,7 @@ function calculateTraitOutcomes(
 
   return collapseOutcomes(
     combined.map((outcome) => ({
-      value: `${trait.traitName}: ${outcome.value.length > 0 ? outcome.value.join(" + ") : defaultMutation.name}`,
+      value: `${trait.traitName}: ${outcome.value.length > 0 ? applyComposites(outcome.value, trait.composites) : defaultMutation.name}`,
       probability: outcome.probability,
     }))
   );
@@ -308,6 +308,19 @@ function renderSexLinkedMutation(
     default:
       return null;
   }
+}
+
+/** Replace known mutation combos with their composite name (e.g. Blue + Australian Yellow → AVB) */
+function applyComposites(names: string[], composites?: { components: string[]; name: string }[]): string {
+  if (!composites || names.length < 2) return names.join(" + ");
+  for (const composite of composites) {
+    if (composite.components.every(c => names.includes(c))) {
+      const remaining = names.filter(n => !composite.components.includes(n));
+      remaining.push(composite.name);
+      return remaining.join(" + ");
+    }
+  }
+  return names.join(" + ");
 }
 
 function collapseOutcomes<T>(outcomes: ProbabilityOutcome<T>[]): ProbabilityOutcome<T>[] {

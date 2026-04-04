@@ -21,9 +21,18 @@ export type Mutation = {
   inheritanceType: InheritanceType;
 };
 
+export type TraitComposite = {
+  /** Mutation names that, when expressed together, form this composite */
+  components: string[];
+  /** Display name for the combination */
+  name: string;
+};
+
 export type GeneticsTrait = {
   traitName: string;
   mutations: Mutation[];
+  /** Named combinations of mutations (e.g. Blue + Australian Yellow = AVB) */
+  composites?: TraitComposite[];
 };
 
 export type GeneticsPack = {

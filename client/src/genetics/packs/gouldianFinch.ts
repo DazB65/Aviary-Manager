@@ -30,6 +30,9 @@ export const gouldianFinchPack: GeneticsPack = {
           inheritanceType: InheritanceType.AUTOSOMAL_RECESSIVE,
         },
       ],
+      composites: [
+        { components: ["Blue", "Australian Yellow"], name: "AVB" },
+      ],
     },
     {
       traitName: "Breast Colour",
