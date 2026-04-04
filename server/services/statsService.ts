@@ -108,7 +108,7 @@ export class StatsService {
         if (!db) return { pairs: 0, broods: 0, incubating: 0, totalEggs: 0, hatched: 0, fledged: 0, infertile: 0, died: 0, cracked: 0, missing: 0, losses: 0, hatchRate: 0 };
 
         const yearStr = String(year);
-        const [seasonPairs, seasonBroods, eggOutcomes] = await Promise.all([
+        const [seasonPairs, seasonBroods, eggOutcomes, incubatingEggsResult] = await Promise.all([
             db.select().from(breedingPairs).where(and(eq(breedingPairs.userId, userId), eq(breedingPairs.season, year))),
             db.select().from(broods).where(and(eq(broods.userId, userId), eq(broods.season, yearStr))),
             db.select({ outcome: clutchEggs.outcome, total: count() })
@@ -116,11 +116,20 @@ export class StatsService {
                 .innerJoin(broods, eq(clutchEggs.broodId, broods.id))
                 .where(and(eq(clutchEggs.userId, userId), eq(broods.season, yearStr)))
                 .groupBy(clutchEggs.outcome),
+            db.select({ total: count() })
+                .from(clutchEggs)
+                .innerJoin(broods, eq(clutchEggs.broodId, broods.id))
+                .where(and(
+                    eq(clutchEggs.userId, userId),
+                    eq(broods.season, yearStr),
+                    eq(broods.status, "incubating"),
+                    inArray(clutchEggs.outcome, ["unknown", "fertile"]),
+                )),
         ]);
 
         const pairs = seasonPairs.length;
         const broodsCount = seasonBroods.length;
-        const incubating = seasonBroods.filter(b => b.status === "incubating").length;
+        const incubating = incubatingEggsResult[0]?.total ?? 0;
 
         // Build outcome map from individual egg records
         const outcomeMap: Record<string, number> = {};
