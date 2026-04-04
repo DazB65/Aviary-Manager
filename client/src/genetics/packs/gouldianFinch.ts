@@ -24,6 +24,11 @@ export const gouldianFinchPack: GeneticsPack = {
           name: "Australian Yellow",
           inheritanceType: InheritanceType.AUTOSOMAL_RECESSIVE,
         },
+        {
+          id: "avb-body",
+          name: "AVB",
+          inheritanceType: InheritanceType.AUTOSOMAL_RECESSIVE,
+        },
       ],
     },
     {
