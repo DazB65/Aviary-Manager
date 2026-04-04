@@ -82,6 +82,7 @@ export const birds = pgTable("birds", {
   fledgedDate: date("fledgedDate"),
   cageNumber: varchar("cageNumber", { length: 64 }),
   colorMutation: varchar("colorMutation", { length: 128 }),
+  genotype: text("genotype"),   // JSON-serialized BirdGenotype for genetics predictor
   photoUrl: text("photoUrl"),
   notes: text("notes"),
   fatherId: integer("fatherId"), // self-referential for pedigree

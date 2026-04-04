@@ -25,6 +25,17 @@ import { gouldianFinchPack } from "@/genetics/packs/gouldianFinch";
 import { GenotypeState, InheritanceType, type BirdGenotype } from "@/genetics/types";
 import { readBirdGenotype, formatGeneticsDisplay } from "@/genetics/storage";
 
+/** Read genotype from bird DB field first, fall back to localStorage */
+function getBirdGenotype(bird?: any, birdId?: number | null): BirdGenotype {
+    if (bird?.genotype) {
+        try {
+            const parsed = JSON.parse(bird.genotype);
+            if (parsed && typeof parsed === "object" && Object.keys(parsed).length > 0) return parsed;
+        } catch { /* fall through */ }
+    }
+    return birdId ? readBirdGenotype(birdId) : {};
+}
+
 const RECESSIVE_TYPES = new Set([
     InheritanceType.AUTOSOMAL_RECESSIVE,
     InheritanceType.SEX_LINKED_RECESSIVE,
@@ -100,13 +111,13 @@ export function BirdFormModal({
     const fileRef = useRef<HTMLInputElement>(null);
     const [showAllSpecies, setShowAllSpecies] = useState(!!editingId);
     const [traitSelections, setTraitSelections] = useState<Record<string, { colour: string; splitTo: string }>>(() =>
-        parseSelectionsFromGenotype(editingId ? readBirdGenotype(editingId) : {}, gouldianFinchPack)
+        parseSelectionsFromGenotype(getBirdGenotype(initialBird, editingId), gouldianFinchPack)
     );
 
     // Reset selections when dialog opens/closes or editing target changes
     useEffect(() => {
-        setTraitSelections(parseSelectionsFromGenotype(editingId ? readBirdGenotype(editingId) : {}, gouldianFinchPack));
-    }, [editingId, open]);
+        setTraitSelections(parseSelectionsFromGenotype(getBirdGenotype(initialBird, editingId), gouldianFinchPack));
+    }, [editingId, open, initialBird]);
 
     // ── Crop state ────────────────────────────────────────────────────────────
     const [cropSrc, setCropSrc] = useState<string | null>(null);

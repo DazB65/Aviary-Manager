@@ -6,7 +6,7 @@ import { readActiveGeneticsPacks } from "@/genetics/useGeneticsPacks";
 import { Dna } from "lucide-react";
 import { useMemo } from "react";
 
-type PairBird = { id: number } | undefined;
+type PairBird = { id: number; genotype?: string | null } | undefined;
 
 type TraitPrediction = {
   traitName: string;
@@ -58,15 +58,24 @@ function formatProbability(probabilityPercentage: number): string {
   return `${probabilityPercentage.toLocaleString(undefined, { maximumFractionDigits: 2 })}%`;
 }
 
-function readStoredBirdGenotype(birdId?: number): BirdGenotype | null {
-  if (typeof window === "undefined" || !birdId) return null;
+function parseBirdGenotype(bird?: PairBird): BirdGenotype | null {
+  if (!bird) return null;
 
-  const storedValue = window.localStorage.getItem(`birdGenetics_${birdId}`);
+  // Read from DB genotype field first
+  if (bird.genotype) {
+    try {
+      const parsed = JSON.parse(bird.genotype);
+      if (parsed && typeof parsed === "object" && Object.keys(parsed).length > 0) return parsed as BirdGenotype;
+    } catch { /* fall through */ }
+  }
+
+  // Fall back to localStorage for legacy data
+  if (typeof window === "undefined") return null;
+  const storedValue = window.localStorage.getItem(`birdGenetics_${bird.id}`);
   if (!storedValue) return null;
-
   try {
-    const parsedValue = JSON.parse(storedValue);
-    return parsedValue && typeof parsedValue === "object" ? (parsedValue as BirdGenotype) : null;
+    const parsed = JSON.parse(storedValue);
+    return parsed && typeof parsed === "object" ? (parsed as BirdGenotype) : null;
   } catch {
     return null;
   }
@@ -80,8 +89,8 @@ export function PredictedOffspringSection({ male, female }: { male?: PairBird; f
     [isPro]
   );
 
-  const maleGenotype = useMemo(() => readStoredBirdGenotype(male?.id), [male?.id]);
-  const femaleGenotype = useMemo(() => readStoredBirdGenotype(female?.id), [female?.id]);
+  const maleGenotype = useMemo(() => parseBirdGenotype(male), [male?.id, male?.genotype]);
+  const femaleGenotype = useMemo(() => parseBirdGenotype(female), [female?.id, female?.genotype]);
 
   const groupedPredictions = useMemo(() => {
     if (!maleGenotype || !femaleGenotype) return [];

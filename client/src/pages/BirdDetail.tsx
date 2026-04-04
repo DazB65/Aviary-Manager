@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { describeVisualPhenotype } from "@/genetics/engine";
 import { gouldianFinchPack } from "@/genetics/packs/gouldianFinch";
-import { readActiveGeneticsPacks, readBirdGenotype, writeBirdGenotype, formatGeneticsDisplay } from "@/genetics/storage";
+import { readActiveGeneticsPacks, readBirdGenotype, formatGeneticsDisplay } from "@/genetics/storage";
 import { GenotypeState, InheritanceType, type BirdGenotype } from "@/genetics/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
@@ -34,6 +34,7 @@ type PedigreeBird = {
   speciesId: number;
   fatherId: number | null;
   motherId: number | null;
+  genotype?: string | null;
 };
 
 type GenotypeOption = { value: GenotypeState; label: string };
@@ -185,8 +186,12 @@ function PedigreeCard({
         </div>
       </div>
       {size !== "sm" && (() => {
-        // Try localStorage first
-        const genotype = readBirdGenotype(bird.id);
+        // Try DB genotype first, fall back to localStorage
+        let genotype: BirdGenotype = {};
+        if (bird.genotype) {
+          try { genotype = JSON.parse(bird.genotype); } catch { /* fall through */ }
+        }
+        if (!Object.keys(genotype).length) genotype = readBirdGenotype(bird.id);
         const traitRows = gouldianFinchPack.traits.flatMap((trait) => {
           const expressing = trait.mutations.find(m => genotype[m.id] === GenotypeState.EXPRESSING);
           const carrier = trait.mutations.find(m => genotype[m.id] === GenotypeState.CARRIER);
@@ -298,10 +303,8 @@ export default function BirdDetail() {
   const isPro = user?.plan === "pro" || isAdmin;
   const maxGenerations = 4;
   const [activeGeneticsPacks] = useState<string[]>(() => readActiveGeneticsPacks());
-  const [birdGenotype, setBirdGenotype] = useState<BirdGenotype>(() => readBirdGenotype(birdId));
-  const [traitSelections, setTraitSelections] = useState(() =>
-    parseSelectionsFromGenotype(readBirdGenotype(birdId), gouldianFinchPack)
-  );
+  const [birdGenotype, setBirdGenotype] = useState<BirdGenotype>({});
+  const [traitSelections, setTraitSelections] = useState<Record<string, { colour: string; splitTo: string }>>({});
 
   const { data: bird, isLoading } = trpc.birds.get.useQuery({ id: birdId });
   const utils = trpc.useUtils();
@@ -321,10 +324,14 @@ export default function BirdDetail() {
     /gouldian/i.test(species?.commonName ?? "");
 
   useEffect(() => {
-    const g = readBirdGenotype(birdId);
+    let g: BirdGenotype = {};
+    if (bird?.genotype) {
+      try { g = JSON.parse(bird.genotype); } catch { /* ignore */ }
+    }
+    if (!Object.keys(g).length) g = readBirdGenotype(birdId);
     setBirdGenotype(g);
     setTraitSelections(parseSelectionsFromGenotype(g, gouldianFinchPack));
-  }, [birdId]);
+  }, [birdId, bird?.genotype]);
 
   const phenotypeSummary = useMemo(
     () => bird && showGeneticsTab ? describeVisualPhenotype(bird.gender, birdGenotype, gouldianFinchPack) : [],
@@ -397,7 +404,7 @@ export default function BirdDetail() {
         [mutationId]: nextState,
       };
 
-      writeBirdGenotype(birdId, nextGenotype);
+      updateBird.mutate({ id: birdId, genotype: JSON.stringify(nextGenotype) });
       return nextGenotype;
     });
   };
@@ -914,9 +921,12 @@ export default function BirdDetail() {
                           setTraitSelections(next);
                           const newGenotype = buildGenotypeFromSelections(next, gouldianFinchPack);
                           setBirdGenotype(newGenotype);
-                          writeBirdGenotype(birdId, newGenotype);
                           const display = formatGeneticsDisplay(next, gouldianFinchPack);
-                          if (display) updateBird.mutate({ id: birdId, colorMutation: display });
+                          updateBird.mutate({
+                            id: birdId,
+                            genotype: JSON.stringify(newGenotype),
+                            ...(display ? { colorMutation: display } : {}),
+                          });
                         };
 
                         return (

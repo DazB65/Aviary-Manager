@@ -18,7 +18,7 @@ import { BirdFormModal } from "@/components/birds/BirdFormModal";
 import type { BroodFormData } from "@/hooks/useBroodForm";
 import type { BirdFormData } from "@/hooks/useBirdForm";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { writeBirdGenotype, readActiveGeneticsPacks } from "@/genetics/storage";
+import { readActiveGeneticsPacks } from "@/genetics/storage";
 import type { BirdGenotype } from "@/genetics/types";
 
 export default function Broods() {
@@ -153,11 +153,11 @@ export default function Broods() {
       motherId: data.motherId ? Number(data.motherId) : undefined,
       fromBroodId: birdFromEgg?.fromBroodId,
       fromEggNumber: birdFromEgg?.fromEggNumber,
+      genotype: Object.keys(genotype).length > 0 ? JSON.stringify(genotype) : undefined,
     };
 
     createBird.mutate(payload, {
-      onSuccess: (created: any) => {
-        if (created?.id) writeBirdGenotype(created.id, genotype);
+      onSuccess: () => {
         setBirdModalOpen(false);
         if (birdFromEgg?.fromBroodId) {
           utils.clutchEggs.byBrood.invalidate({ broodId: birdFromEgg.fromBroodId });

@@ -31,7 +31,6 @@ import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "./ui/sheet";
 import { AIChatBox } from "./AIChatBox";
 import { BirdFormModal } from "./birds/BirdFormModal";
-import { writeBirdGenotype } from "@/genetics/storage";
 import type { BirdGenotype } from "@/genetics/types";
 
 const mainMenuItems = [
@@ -171,10 +170,10 @@ function DashboardLayoutContent({
       colorMutation: formData.colorMutation || undefined,
       notes: formData.notes || undefined,
       status: formData.status,
+      genotype: Object.keys(genotype).length > 0 ? JSON.stringify(genotype) : undefined,
     };
     createBird.mutate(payload, {
-      onSuccess: (created: any) => {
-        if (created?.id) writeBirdGenotype(created.id, genotype);
+      onSuccess: () => {
         utils.birds.list.invalidate();
         setAiAddBirdOpen(false);
         setAiAddBirdPrefill(null);

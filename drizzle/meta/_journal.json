@@ -99,6 +99,13 @@
       "when": 1775342386800,
       "tag": "0013_add_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1775343791350,
+      "tag": "0014_add_bird_genotype",
+      "breakpoints": true
     }
   ]
 }

@@ -13,7 +13,7 @@ import { BirdList } from "@/components/birds/BirdList";
 import { BirdFormModal } from "@/components/birds/BirdFormModal";
 import { GenderIcon } from "@/components/ui/GenderIcon";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { writeBirdGenotype, readActiveGeneticsPacks } from "@/genetics/storage";
+import { readActiveGeneticsPacks } from "@/genetics/storage";
 import type { BirdGenotype } from "@/genetics/types";
 
 export default function Birds() {
@@ -66,6 +66,7 @@ export default function Birds() {
   };
 
   const handleSubmit = (data: BirdFormData, genotype: BirdGenotype) => {
+    const genotypeStr = Object.keys(genotype).length > 0 ? JSON.stringify(genotype) : undefined;
     const payload = {
       speciesId: Number(data.speciesId),
       ringId: data.ringId || undefined,
@@ -75,6 +76,7 @@ export default function Birds() {
       fledgedDate: data.fledgedDate || undefined,
       cageNumber: data.cageNumber || undefined,
       colorMutation: data.colorMutation || undefined,
+      genotype: genotypeStr,
       photoUrl: data.photoUrl || undefined,
       notes: data.notes || undefined,
       fatherId: data.fatherId ? Number(data.fatherId) : undefined,
@@ -83,17 +85,11 @@ export default function Birds() {
     };
     if (editingId) {
       updateBird.mutate({ id: editingId, ...payload }, {
-        onSuccess: () => {
-          writeBirdGenotype(editingId, genotype);
-          setDialogOpen(false);
-        }
+        onSuccess: () => setDialogOpen(false),
       });
     } else {
       createBird.mutate(payload, {
-        onSuccess: (created: any) => {
-          if (created?.id) writeBirdGenotype(created.id, genotype);
-          setDialogOpen(false);
-        }
+        onSuccess: () => setDialogOpen(false),
       });
     }
   };

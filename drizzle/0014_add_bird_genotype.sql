@@ -1,0 +1,1 @@
+ALTER TABLE "birds" ADD COLUMN "genotype" text;
