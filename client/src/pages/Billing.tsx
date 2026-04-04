@@ -119,8 +119,8 @@ export default function Billing() {
 
   const starterMonthly = "$4.99";
   const starterYearly = "$49";
-  const proMonthly = "$12.99";
-  const proYearly = "$129";
+  const proMonthly = "$9.99";
+  const proYearly = "$99";
 
   return (
     <DashboardLayout>

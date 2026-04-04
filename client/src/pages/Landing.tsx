@@ -256,9 +256,9 @@ export default function Landing() {
                 </div>
 
                 <div className="mb-5">
-                  <span className="text-4xl font-extrabold text-gray-900">$12.99</span>
+                  <span className="text-4xl font-extrabold text-gray-900">$9.99</span>
                   <span className="text-gray-400 ml-1">USD / month</span>
-                  <div className="text-sm text-teal-600 font-medium mt-1">or $129 / year (save 2 months)</div>
+                  <div className="text-sm text-teal-600 font-medium mt-1">or $99 / year (save 2 months)</div>
                 </div>
 
                 {/* Starter features */}

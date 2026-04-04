@@ -13,7 +13,7 @@ export const PRODUCTS = {
   pro: {
     name: "Aviary Manager Pro",
     description: "Everything in Starter plus AI Assistant — pair birds, record clutches, and manage your aviary by chat.",
-    priceMonthlyUsd: 1299,  // $12.99 / month in cents
-    priceYearlyUsd: 12900,  // $129.00 / year in cents (~2 months free)
+    priceMonthlyUsd: 999,  // $9.99 / month in cents
+    priceYearlyUsd: 9900,  // $99.00 / year in cents (~2 months free)
   },
 } as const;
