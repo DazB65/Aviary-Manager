@@ -53,6 +53,7 @@ export default function Pairs() {
       season: seasonNum,
       pairingDate: data.pairingDate || undefined,
       status: data.status,
+      cageNumber: data.cageNumber ?? undefined,
       notes: data.notes || undefined,
     };
     if (editingId) {
@@ -191,6 +192,7 @@ export default function Pairs() {
         maleBirds={maleBirds}
         femaleBirds={femaleBirds}
         speciesMap={speciesMap}
+        birdMap={birdMap}
         onSubmit={handleSubmit}
         isSubmitting={createPair.isPending || updatePair.isPending}
       />

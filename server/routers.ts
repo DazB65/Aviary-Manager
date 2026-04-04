@@ -326,6 +326,7 @@ export const appRouter = router({
         season: z.number().int().min(2000).max(2100).optional(),
         pairingDate: z.string().optional(),
         status: z.enum(["active", "breeding", "resting", "retired"]).default("active"),
+        cageNumber: z.string().optional(),
         notes: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -341,12 +342,20 @@ export const appRouter = router({
           throw new TRPCError({ code: "CONFLICT", message: `This pair already exists${yearStr}. You can pair the same birds in a different year.` });
         }
 
-        const pair = await PairService.createPair({ ...input, userId: ctx.user.id } as any);
+        const { cageNumber, ...pairData } = input;
+        const pair = await PairService.createPair({ ...pairData, userId: ctx.user.id } as any);
         // Auto-set bird status to "breeding" when an active/breeding pair is created
+        const birdUpdate: Record<string, any> = {};
         if (["active", "breeding"].includes(input.status ?? "active")) {
+          birdUpdate.status = "breeding";
+        }
+        if (cageNumber !== undefined) {
+          birdUpdate.cageNumber = cageNumber || null;
+        }
+        if (Object.keys(birdUpdate).length > 0) {
           await Promise.all([
-            BirdService.updateBird(input.maleId, ctx.user.id, { status: "breeding" }),
-            BirdService.updateBird(input.femaleId, ctx.user.id, { status: "breeding" }),
+            BirdService.updateBird(input.maleId, ctx.user.id, birdUpdate),
+            BirdService.updateBird(input.femaleId, ctx.user.id, birdUpdate),
           ]);
         }
         return pair;
@@ -360,10 +369,11 @@ export const appRouter = router({
         season: z.number().int().min(2000).max(2100).nullable().optional(),
         pairingDate: z.string().optional(),
         status: z.enum(["active", "breeding", "resting", "retired"]).optional(),
+        cageNumber: z.string().optional(),
         notes: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        const { id, ...data } = input;
+        const { id, cageNumber, ...data } = input;
 
         // Fetch pair first to get maleId/femaleId (may not be in update payload)
         const allPairs = await PairService.getPairsByUser(ctx.user.id);
@@ -371,15 +381,23 @@ export const appRouter = router({
 
         await PairService.updatePair(id, ctx.user.id, data as any);
 
-        // Sync bird statuses when pair status changes
-        if (data.status !== undefined && existing) {
+        if (existing) {
           const maleId = data.maleId ?? existing.maleId;
           const femaleId = data.femaleId ?? existing.femaleId;
-          const birdStatus = ["active", "breeding"].includes(data.status!) ? "breeding" : "alive";
-          await Promise.all([
-            BirdService.updateBird(maleId, ctx.user.id, { status: birdStatus }),
-            BirdService.updateBird(femaleId, ctx.user.id, { status: birdStatus }),
-          ]);
+
+          const birdUpdate: Record<string, any> = {};
+          if (data.status !== undefined) {
+            birdUpdate.status = ["active", "breeding"].includes(data.status!) ? "breeding" : "alive";
+          }
+          if (cageNumber !== undefined) {
+            birdUpdate.cageNumber = cageNumber || null;
+          }
+          if (Object.keys(birdUpdate).length > 0) {
+            await Promise.all([
+              BirdService.updateBird(maleId, ctx.user.id, birdUpdate),
+              BirdService.updateBird(femaleId, ctx.user.id, birdUpdate),
+            ]);
+          }
         }
       }),
 

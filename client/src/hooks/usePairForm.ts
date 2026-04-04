@@ -10,6 +10,7 @@ export const pairSchema = z.object({
     season: z.string().optional(),
     pairingDate: z.string().optional(),
     status: z.enum(["active", "breeding", "resting", "retired"]),
+    cageNumber: z.string().optional(),
     notes: z.string().optional(),
 });
 
@@ -21,10 +22,11 @@ export const defaultPairForm: PairFormData = {
     season: String(new Date().getFullYear()),
     pairingDate: "",
     status: "active",
+    cageNumber: "",
     notes: "",
 };
 
-export function usePairForm(pair?: any, settingsBreedingYear?: string) {
+export function usePairForm(pair?: any, settingsBreedingYear?: string, birdMap?: Record<number, any>) {
     const form = useForm<PairFormData>({
         resolver: zodResolver(pairSchema),
         defaultValues: {
@@ -35,6 +37,8 @@ export function usePairForm(pair?: any, settingsBreedingYear?: string) {
 
     useEffect(() => {
         if (pair) {
+            const male = birdMap?.[pair.maleId];
+            const female = birdMap?.[pair.femaleId];
             form.reset({
                 maleId: String(pair.maleId),
                 femaleId: String(pair.femaleId),
@@ -45,6 +49,7 @@ export function usePairForm(pair?: any, settingsBreedingYear?: string) {
                         : String(pair.pairingDate).split('T')[0])
                     : "",
                 status: pair.status as "active" | "breeding" | "resting" | "retired",
+                cageNumber: male?.cageNumber || female?.cageNumber || "",
                 notes: pair.notes ?? "",
             });
         } else {
@@ -53,7 +58,7 @@ export function usePairForm(pair?: any, settingsBreedingYear?: string) {
                 season: settingsBreedingYear || String(new Date().getFullYear()),
             });
         }
-    }, [pair, settingsBreedingYear, form]);
+    }, [pair, settingsBreedingYear, birdMap, form]);
 
     return form;
 }

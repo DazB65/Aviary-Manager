@@ -22,6 +22,7 @@ interface PairFormModalProps {
     maleBirds: any[];
     femaleBirds: any[];
     speciesMap: Record<number, any>;
+    birdMap: Record<number, any>;
     onSubmit: (data: PairFormData) => void;
     isSubmitting: boolean;
 }
@@ -35,10 +36,11 @@ export function PairFormModal({
     maleBirds,
     femaleBirds,
     speciesMap,
+    birdMap,
     onSubmit,
     isSubmitting,
 }: PairFormModalProps) {
-    const form = usePairForm(initialPair, settingsBreedingYear);
+    const form = usePairForm(initialPair, settingsBreedingYear, birdMap);
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -127,6 +129,18 @@ export function PairFormModal({
 
                     {/* Live inbreeding check */}
                     <InbreedingCheck maleId={form.watch("maleId")} femaleId={form.watch("femaleId")} />
+
+                    <div>
+                        <Label>Cage Number</Label>
+                        <Input
+                            className="mt-1"
+                            placeholder="e.g. 1, A3, Breeding-1"
+                            {...form.register("cageNumber")}
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                            Sets the cage for both birds in this pair.
+                        </p>
+                    </div>
 
                     <div className="grid grid-cols-2 gap-3">
                         <div>
