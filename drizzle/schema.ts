@@ -9,6 +9,7 @@ import {
   date,
   boolean,
   uniqueIndex,
+  index,
 } from "drizzle-orm/pg-core";
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
@@ -88,7 +89,10 @@ export const birds = pgTable("birds", {
   status: birdStatusEnum("status").default("alive").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
-});
+}, (table) => ({
+  userIdIdx: index("birds_userId_idx").on(table.userId),
+  speciesIdIdx: index("birds_speciesId_idx").on(table.speciesId),
+}));
 
 export type Bird = typeof birds.$inferSelect;
 export type InsertBird = typeof birds.$inferInsert;
@@ -129,7 +133,10 @@ export const broods = pgTable("broods", {
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
-});
+}, (table) => ({
+  userIdIdx: index("broods_userId_idx").on(table.userId),
+  pairIdIdx: index("broods_pairId_idx").on(table.pairId),
+}));
 
 export type Brood = typeof broods.$inferSelect;
 export type InsertBrood = typeof broods.$inferInsert;
@@ -152,7 +159,11 @@ export const events = pgTable("events", {
   completed: boolean("completed").default(false),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
-});
+}, (table) => ({
+  userIdIdx: index("events_userId_idx").on(table.userId),
+  birdIdIdx: index("events_birdId_idx").on(table.birdId),
+  pairIdIdx: index("events_pairId_idx").on(table.pairId),
+}));
 
 export type Event = typeof events.$inferSelect;
 export type InsertEvent = typeof events.$inferInsert;
@@ -170,6 +181,7 @@ export const clutchEggs = pgTable("clutchEggs", {
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 }, (table) => ({
   broodEggUnique: uniqueIndex("clutchEggs_broodId_eggNumber_unique").on(table.broodId, table.eggNumber),
+  userIdIdx: index("clutchEggs_userId_idx").on(table.userId),
 }));
 
 export type ClutchEgg = typeof clutchEggs.$inferSelect;

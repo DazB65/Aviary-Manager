@@ -47,7 +47,7 @@ export class EventService {
         const [updated] = await getDb()
             .update(events)
             .set({ completed: !ev.completed, updatedAt: new Date() })
-            .where(eq(events.id, id))
+            .where(and(eq(events.id, id), eq(events.userId, userId)))
             .returning();
 
         return updated;
@@ -66,8 +66,10 @@ export class EventService {
         if (pairId) {
             const [pair] = await db.select().from(breedingPairs).where(eq(breedingPairs.id, pairId)).limit(1);
             if (pair) {
-                const [male] = await db.select().from(birds).where(eq(birds.id, pair.maleId)).limit(1);
-                const [female] = await db.select().from(birds).where(eq(birds.id, pair.femaleId)).limit(1);
+                const [[male], [female]] = await Promise.all([
+                    db.select().from(birds).where(eq(birds.id, pair.maleId)).limit(1),
+                    db.select().from(birds).where(eq(birds.id, pair.femaleId)).limit(1),
+                ]);
                 const maleName = male?.name || male?.ringId || `Bird #${pair.maleId}`;
                 const femaleName = female?.name || female?.ringId || `Bird #${pair.femaleId}`;
                 pairLabel = `${maleName} x ${femaleName}`;

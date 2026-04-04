@@ -19,16 +19,7 @@ export function registerStripeRoutes(app: Express) {
   // ── POST /api/stripe/webhook ──────────────────────────────────────────────
   // MUST be registered before express.json() body parser — uses raw body
   app.post("/api/stripe/webhook",
-    (req, res, next) => {
-      // Parse raw body for signature verification
-      let data = "";
-      req.setEncoding("utf8");
-      req.on("data", chunk => { data += chunk; });
-      req.on("end", () => {
-        (req as any).rawBody = data;
-        next();
-      });
-    },
+    express.raw({ type: "application/json", limit: "1mb" }),
     async (req: Request, res: Response) => {
       const stripe = getStripe();
       const sig = req.headers["stripe-signature"] as string;
@@ -36,7 +27,7 @@ export function registerStripeRoutes(app: Express) {
 
       let event: Stripe.Event;
       try {
-        event = stripe.webhooks.constructEvent((req as any).rawBody, sig, webhookSecret!);
+        event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret!);
       } catch (err) {
         console.error("[Stripe Webhook] Signature verification failed:", err);
         res.status(400).json({ error: "Webhook signature verification failed" });

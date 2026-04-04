@@ -314,10 +314,7 @@ export const appRouter = router({
 
     get: activeProcedure
       .input(z.object({ id: z.number() }))
-      .query(async ({ ctx, input }) => {
-        const pairs = await PairService.getPairsByUser(ctx.user.id);
-        return pairs.find((p: any) => p.id === input.id);
-      }),
+      .query(({ ctx, input }) => PairService.getPairById(input.id, ctx.user.id)),
 
     create: activeProcedure
       .input(z.object({
@@ -330,20 +327,18 @@ export const appRouter = router({
         notes: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        // Fetch all pairs once — used for duplicate detection
-        const existing = await PairService.getPairsByUser(ctx.user.id);
-
-        const duplicate = existing.find(
-          (p: any) => p.maleId === input.maleId && p.femaleId === input.femaleId &&
-            (p.season ?? null) === (input.season ?? null)
-        );
-        if (duplicate) {
-          const yearStr = input.season ? ` in ${input.season}` : "";
-          throw new TRPCError({ code: "CONFLICT", message: `This pair already exists${yearStr}. You can pair the same birds in a different year.` });
-        }
-
         const { cageNumber, ...pairData } = input;
-        const pair = await PairService.createPair({ ...pairData, userId: ctx.user.id } as any);
+        let pair;
+        try {
+          pair = await PairService.createPair({ ...pairData, userId: ctx.user.id } as any);
+        } catch (err: any) {
+          // Unique constraint on (userId, maleId, femaleId, season) catches duplicates
+          if (err?.code === "23505" || err?.constraint) {
+            const yearStr = input.season ? ` in ${input.season}` : "";
+            throw new TRPCError({ code: "CONFLICT", message: `This pair already exists${yearStr}. You can pair the same birds in a different year.` });
+          }
+          throw err;
+        }
         // Auto-set bird status to "breeding" when an active/breeding pair is created
         const birdUpdate: Record<string, any> = {};
         if (["active", "breeding"].includes(input.status ?? "active")) {
@@ -375,9 +370,8 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const { id, cageNumber, ...data } = input;
 
-        // Fetch pair first to get maleId/femaleId (may not be in update payload)
-        const allPairs = await PairService.getPairsByUser(ctx.user.id);
-        const existing = allPairs.find(p => p.id === id);
+        // Fetch pair to get maleId/femaleId for bird status sync
+        const existing = await PairService.getPairById(id, ctx.user.id);
 
         await PairService.updatePair(id, ctx.user.id, data as any);
 
@@ -405,8 +399,7 @@ export const appRouter = router({
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
         // Revert bird statuses to "alive" before removing the pair
-        const allPairs = await PairService.getPairsByUser(ctx.user.id);
-        const pair = allPairs.find(p => p.id === input.id);
+        const pair = await PairService.getPairById(input.id, ctx.user.id);
 
         await PairService.deletePair(input.id, ctx.user.id);
 
@@ -435,10 +428,7 @@ export const appRouter = router({
 
     byPair: activeProcedure
       .input(z.object({ pairId: z.number() }))
-      .query(async ({ ctx, input }) => {
-        const broods = await BroodService.getBroodsByUser(ctx.user.id);
-        return broods.filter(b => b.pairId === input.pairId);
-      }),
+      .query(({ ctx, input }) => BroodService.getBroodsByPair(input.pairId, ctx.user.id)),
 
     create: activeProcedure
       .input(z.object({

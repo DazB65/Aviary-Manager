@@ -85,6 +85,20 @@
       "when": 1774335285679,
       "tag": "0011_messy_serpent_society",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1775342386700,
+      "tag": "0012_add_starter_plan",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1775342386800,
+      "tag": "0013_add_indexes",
+      "breakpoints": true
     }
   ]
 }
