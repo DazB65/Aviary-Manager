@@ -37,7 +37,9 @@ export function formatGeneticsDisplay(
     const colourMutation = trait.mutations.find(m => m.id === sel.colour);
     if (!colourMutation) continue;
     let part = colourMutation.name;
-    if (sel.splitTo) {
+    if (sel.splitTo === "double-split") {
+      part += " (Double Split)";
+    } else if (sel.splitTo) {
       const splitMutation = trait.mutations.find(m => m.id === sel.splitTo);
       if (splitMutation) part += ` split to ${splitMutation.name}`;
     }

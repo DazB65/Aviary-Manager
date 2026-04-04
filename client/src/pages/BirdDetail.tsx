@@ -44,6 +44,8 @@ const RECESSIVE_TYPES = new Set([
   InheritanceType.SEX_LINKED_RECESSIVE,
 ]);
 
+const DOUBLE_SPLIT_IDS = ["blue-body", "australian-yellow-body"];
+
 function buildGenotypeFromSelections(
   selections: Record<string, { colour: string; splitTo: string }>,
   pack: typeof gouldianFinchPack,
@@ -51,8 +53,10 @@ function buildGenotypeFromSelections(
   const g: BirdGenotype = {};
   for (const trait of pack.traits) {
     const sel = selections[trait.traitName] ?? { colour: "", splitTo: "" };
+    const isDoubleSplit = sel.splitTo === "double-split";
     for (const m of trait.mutations) {
       if (m.id === sel.colour) g[m.id] = GenotypeState.EXPRESSING;
+      else if (isDoubleSplit && DOUBLE_SPLIT_IDS.includes(m.id)) g[m.id] = GenotypeState.CARRIER;
       else if (m.id === sel.splitTo) g[m.id] = GenotypeState.CARRIER;
       else g[m.id] = GenotypeState.WILD_TYPE;
     }
@@ -67,13 +71,15 @@ function parseSelectionsFromGenotype(
   const result: Record<string, { colour: string; splitTo: string }> = {};
   for (const trait of pack.traits) {
     let colour = "";
-    let splitTo = "";
+    const carriers: string[] = [];
     for (const m of trait.mutations) {
       const state = genotype[m.id];
       if (state === GenotypeState.EXPRESSING) colour = m.id;
-      else if (state === GenotypeState.CARRIER) splitTo = m.id;
+      else if (state === GenotypeState.CARRIER) carriers.push(m.id);
     }
-    result[trait.traitName] = { colour, splitTo };
+    // Detect double split: carrying both Blue and Australian Yellow
+    const isDoubleSplit = DOUBLE_SPLIT_IDS.every(id => carriers.includes(id));
+    result[trait.traitName] = { colour, splitTo: isDoubleSplit ? "double-split" : (carriers[0] ?? "") };
   }
   return result;
 }
@@ -958,6 +964,9 @@ export default function BirdDetail() {
                                     {splitOptions.map(m => (
                                       <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
                                     ))}
+                                    {trait.traitName === "Body Colour" && DOUBLE_SPLIT_IDS.every(id => splitOptions.some(m => m.id === id)) && (
+                                      <SelectItem value="double-split">Double Split (Blue + Aus. Yellow)</SelectItem>
+                                    )}
                                   </SelectContent>
                                 </Select>
                               </div>
