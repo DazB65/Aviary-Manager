@@ -49,6 +49,7 @@ export function calculateOffspringProbabilities(
 
     for (const trait of pack.traits) {
       const traitOutcomes = calculateTraitOutcomes(sex, maleGenotype, femaleGenotype, trait);
+      if (traitOutcomes.length === 0) continue; // no genotype data for this trait
       combined = combined.flatMap((base) =>
         traitOutcomes.map((traitOutcome) => ({
           descriptions: [...base.descriptions, traitOutcome.value],
@@ -78,6 +79,15 @@ function calculateTraitOutcomes(
   trait: GeneticsTrait
 ): ProbabilityOutcome<string>[] {
   const [defaultMutation, ...variableMutations] = trait.mutations;
+
+  // If neither parent has data for any mutation in this trait, skip it
+  const hasData = variableMutations.some(
+    (m) =>
+      (maleGenotype[m.id] ?? GenotypeState.WILD_TYPE) !== GenotypeState.WILD_TYPE ||
+      (femaleGenotype[m.id] ?? GenotypeState.WILD_TYPE) !== GenotypeState.WILD_TYPE
+  );
+  if (!hasData) return [];
+
   let combined: ProbabilityOutcome<string[]>[] = [{ value: [], probability: 1 }];
 
   for (const mutation of variableMutations) {
