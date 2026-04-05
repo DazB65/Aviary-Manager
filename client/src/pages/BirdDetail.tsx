@@ -314,7 +314,7 @@ export default function BirdDetail() {
 
   const { data: bird, isLoading } = trpc.birds.get.useQuery({ id: birdId });
   const utils = trpc.useUtils();
-  const updateBird = trpc.birds.update.useMutation({ onSuccess: () => utils.birds.get.invalidate({ id: birdId }) });
+  const updateBird = trpc.birds.update.useMutation({ onSuccess: () => { utils.birds.get.invalidate({ id: birdId }); utils.birds.list.invalidate(); } });
   const { data: speciesList = [] } = trpc.species.list.useQuery();
   const { data: pedigreeMap = {} } = trpc.birds.pedigree.useQuery({ id: birdId, generations: maxGenerations });
   const { data: descendants = [] } = trpc.birds.descendants.useQuery({ id: birdId });
