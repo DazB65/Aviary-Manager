@@ -31,7 +31,7 @@ export const gouldianFinchPack: GeneticsPack = {
         },
       ],
       composites: [
-        { components: ["Blue", "Australian Yellow"], name: "AVB" },
+        { components: ["Blue", "Australian Yellow"], name: "AVB", carrierName: "Double Split" },
       ],
     },
     {

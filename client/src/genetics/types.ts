@@ -24,8 +24,10 @@ export type Mutation = {
 export type TraitComposite = {
   /** Mutation names that, when expressed together, form this composite */
   components: string[];
-  /** Display name for the combination */
+  /** Display name when expressing (e.g. "AVB") */
   name: string;
+  /** Display name when carrying (e.g. "Double Split") */
+  carrierName?: string;
 };
 
 export type GeneticsTrait = {

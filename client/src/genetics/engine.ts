@@ -2,6 +2,7 @@ import {
   type BirdGenotype,
   type GeneticsPack,
   type GeneticsTrait,
+  type TraitComposite,
   GenotypeState,
   type Mutation,
   type OffspringProbability,
@@ -344,19 +345,32 @@ function buildSplitAnnotation(
   }
 
   const parts: string[] = [];
-  if (splits.length > 0) parts.push(`split to ${applyComposites(splits, composites)}`);
-  if (possSplits.length > 0) parts.push(`poss. split to ${applyComposites(possSplits, composites)}`);
+  if (splits.length > 0) parts.push(formatCarrierLabel(splits, composites, "split to"));
+  if (possSplits.length > 0) parts.push(formatCarrierLabel(possSplits, composites, "poss. split to"));
 
   return parts.length > 0 ? `(${parts.join(", ")})` : null;
 }
 
+/**
+ * Format carrier label: if a composite has a carrierName (e.g. "Double Split"),
+ * use it directly. Otherwise use "split to X" / "poss. split to X".
+ */
+function formatCarrierLabel(names: string[], composites: TraitComposite[] | undefined, prefix: string): string {
+  const carrierName = applyComposites(names, composites, true);
+  const expressingName = applyComposites(names, composites, false);
+  // If carrier name differs from expressing name, it's a standalone label (e.g. "Double Split")
+  if (carrierName !== expressingName) return carrierName;
+  return `${prefix} ${expressingName}`;
+}
+
 /** Replace known mutation combos with their composite name (e.g. Blue + Australian Yellow → AVB) */
-function applyComposites(names: string[], composites?: { components: string[]; name: string }[]): string {
+function applyComposites(names: string[], composites?: TraitComposite[], useCarrierName = false): string {
   if (!composites || names.length < 2) return names.join(" + ");
   for (const composite of composites) {
     if (composite.components.every(c => names.includes(c))) {
+      const label = (useCarrierName && composite.carrierName) ? composite.carrierName : composite.name;
       const remaining = names.filter(n => !composite.components.includes(n));
-      remaining.push(composite.name);
+      remaining.push(label);
       return remaining.join(" + ");
     }
   }
