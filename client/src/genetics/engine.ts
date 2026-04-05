@@ -100,11 +100,17 @@ function calculateTraitOutcomes(
     );
   }
 
+  // Build split annotation for offspring showing the default phenotype
+  const splitAnnotation = buildSplitAnnotation(maleGenotype, femaleGenotype, variableMutations, trait.composites);
+
   return collapseOutcomes(
-    combined.map((outcome) => ({
-      value: `${trait.traitName}: ${outcome.value.length > 0 ? applyComposites(outcome.value, trait.composites) : defaultMutation.name}`,
-      probability: outcome.probability,
-    }))
+    combined.map((outcome) => {
+      if (outcome.value.length > 0) {
+        return { value: `${trait.traitName}: ${applyComposites(outcome.value, trait.composites)}`, probability: outcome.probability };
+      }
+      const label = splitAnnotation ? `${defaultMutation.name} ${splitAnnotation}` : defaultMutation.name;
+      return { value: `${trait.traitName}: ${label}`, probability: outcome.probability };
+    })
   );
 }
 
@@ -308,6 +314,40 @@ function renderSexLinkedMutation(
     default:
       return null;
   }
+}
+
+/**
+ * Build split annotation for default-phenotype offspring based on what parents carry.
+ * - Both parents carry a recessive → "split to X"
+ * - Only one parent carries it → "poss. split to X"
+ */
+function buildSplitAnnotation(
+  maleGenotype: BirdGenotype,
+  femaleGenotype: BirdGenotype,
+  mutations: Mutation[],
+  composites?: { components: string[]; name: string }[]
+): string | null {
+  const recessiveTypes = new Set([
+    InheritanceType.AUTOSOMAL_RECESSIVE,
+    InheritanceType.SEX_LINKED_RECESSIVE,
+  ]);
+
+  const splits: string[] = [];
+  const possSplits: string[] = [];
+
+  for (const m of mutations) {
+    if (!recessiveTypes.has(m.inheritanceType)) continue;
+    const maleCarries = (maleGenotype[m.id] ?? GenotypeState.WILD_TYPE) !== GenotypeState.WILD_TYPE;
+    const femaleCarries = (femaleGenotype[m.id] ?? GenotypeState.WILD_TYPE) !== GenotypeState.WILD_TYPE;
+    if (maleCarries && femaleCarries) splits.push(m.name);
+    else if (maleCarries || femaleCarries) possSplits.push(m.name);
+  }
+
+  const parts: string[] = [];
+  if (splits.length > 0) parts.push(`split to ${applyComposites(splits, composites)}`);
+  if (possSplits.length > 0) parts.push(`poss. split to ${applyComposites(possSplits, composites)}`);
+
+  return parts.length > 0 ? `(${parts.join(", ")})` : null;
 }
 
 /** Replace known mutation combos with their composite name (e.g. Blue + Australian Yellow → AVB) */
