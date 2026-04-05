@@ -101,15 +101,17 @@ function calculateTraitOutcomes(
     );
   }
 
-  // Build split annotation for offspring showing the default phenotype
-  const splitAnnotation = buildSplitAnnotation(maleGenotype, femaleGenotype, variableMutations, trait.composites);
-
   return collapseOutcomes(
     combined.map((outcome) => {
-      if (outcome.value.length > 0) {
-        return { value: `${trait.traitName}: ${applyComposites(outcome.value, trait.composites)}`, probability: outcome.probability };
-      }
-      const label = splitAnnotation ? `${defaultMutation.name} ${splitAnnotation}` : defaultMutation.name;
+      // Build split annotation excluding mutations that are already expressing in this outcome
+      const expressingNames = new Set(outcome.value);
+      const nonExpressingMutations = variableMutations.filter(m => !expressingNames.has(m.name));
+      const annotation = buildSplitAnnotation(maleGenotype, femaleGenotype, nonExpressingMutations, trait.composites);
+
+      const phenotype = outcome.value.length > 0
+        ? applyComposites(outcome.value, trait.composites)
+        : defaultMutation.name;
+      const label = annotation ? `${phenotype} ${annotation}` : phenotype;
       return { value: `${trait.traitName}: ${label}`, probability: outcome.probability };
     })
   );
