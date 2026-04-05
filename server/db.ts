@@ -77,6 +77,10 @@ export async function runMigrations() {
       await client.end();
     }
 
+    // Backfill genotype JSON from colorMutation text for birds missing genotype data
+    const { BirdService } = await import("./services/birdService");
+    await BirdService.backfillGenotypes();
+
     console.log("[DB] Migrations complete.");
   } catch (err) {
     console.error("[DB] Migration failed:", err);

@@ -1,4 +1,4 @@
-import { eq, and, asc, or, ilike, count, ne, inArray, desc } from "drizzle-orm";
+import { eq, and, asc, or, ilike, count, ne, inArray, desc, isNull, isNotNull } from "drizzle-orm";
 import { getDb } from "../db";
 import {
     birds,
@@ -106,6 +106,29 @@ export class BirdService {
         });
     }
 
+    /**
+     * Backfill: parse colorMutation text into genotype JSON for birds missing genotype data.
+     * Runs once on startup — only updates birds that have colorMutation but no genotype.
+     */
+    static async backfillGenotypes() {
+        const db = getDb();
+        const birdsToFix = await db.select({ id: birds.id, colorMutation: birds.colorMutation })
+            .from(birds)
+            .where(and(isNotNull(birds.colorMutation), isNull(birds.genotype)));
+
+        if (birdsToFix.length === 0) return;
+
+        let updated = 0;
+        for (const bird of birdsToFix) {
+            const genotype = parseColorMutationToGenotype(bird.colorMutation!);
+            if (Object.keys(genotype).length > 0) {
+                await db.update(birds).set({ genotype: JSON.stringify(genotype) }).where(eq(birds.id, bird.id));
+                updated++;
+            }
+        }
+        if (updated > 0) console.log(`[backfill] Populated genotype for ${updated} birds from colorMutation text`);
+    }
+
     static async getBirdsPaginated(
         userId: number,
         page: number,
@@ -138,4 +161,92 @@ export class BirdService {
             currentPage: page,
         };
     }
+}
+
+// ── colorMutation → genotype parser ──────────────────────────────────────────
+
+const EXPRESSING = "EXPRESSING";
+const CARRIER = "CARRIER";
+const WILD_TYPE = "WILD_TYPE";
+
+const HEAD_COLOURS: Record<string, string> = {
+    "black head": "black-head",
+    "yellow head": "yellow-head",
+    // "red head" is the default — set others to WILD_TYPE
+};
+
+const BODY_COLOURS: Record<string, string> = {
+    "blue": "blue-body",
+    "pastel": "pastel-body",
+    "dilute": "dilute-body",
+    "australian yellow": "australian-yellow-body",
+    "avb": "avb-body",
+    // "green" is the default
+};
+
+const BREAST_COLOURS: Record<string, string> = {
+    "white": "white-breast",
+    "lilac": "lilac-breast",
+    // "purple" is the default
+};
+
+/**
+ * Format is always: "Head / Body / Breast" — positional parsing.
+ * Examples:
+ *   "Black Head / Green (split to Blue) / White"
+ *   "Black Head / Australian Yellow / White"
+ *   "Black Head / Green (Double Split) / Purple"
+ *   "Red Head / AVB / Lilac"
+ */
+function parseColorMutationToGenotype(colorMutation: string): Record<string, string> {
+    const g: Record<string, string> = {};
+    const parts = colorMutation.split("/").map(s => s.trim());
+
+    // Trait definitions: [colourMap, allMutationIds] in order: head, body, breast
+    const traits: [Record<string, string>, string[]][] = [
+        [HEAD_COLOURS, ["black-head", "yellow-head"]],
+        [BODY_COLOURS, ["blue-body", "pastel-body", "dilute-body", "australian-yellow-body", "avb-body"]],
+        [BREAST_COLOURS, ["white-breast", "lilac-breast"]],
+    ];
+
+    for (let i = 0; i < Math.min(parts.length, traits.length); i++) {
+        const lower = parts[i].toLowerCase();
+        const [colourMap, allIds] = traits[i];
+
+        // Set all mutations in this category to WILD_TYPE first
+        for (const id of allIds) g[id] = WILD_TYPE;
+
+        // Parse the main colour (text before any parentheses or "split to")
+        const mainMatch = lower.replace(/\(.*?\)/g, "").replace(/split to.*/, "").trim();
+
+        // Find which mutation is expressing
+        for (const [name, id] of Object.entries(colourMap)) {
+            if (mainMatch.includes(name)) {
+                g[id] = EXPRESSING;
+                break;
+            }
+        }
+
+        // Parse split info
+        if (lower.includes("double split")) {
+            g["blue-body"] = CARRIER;
+            g["australian-yellow-body"] = CARRIER;
+        } else {
+            // Check for "split to X" patterns (with or without parens)
+            const splitMatch = lower.match(/split\s+to\s+(.+?)(?:\)|$)/);
+            if (splitMatch) {
+                const splitText = splitMatch[1].trim();
+                // Check body colours for splits (most common)
+                for (const [name, id] of Object.entries(BODY_COLOURS)) {
+                    if (splitText.includes(name)) g[id] = CARRIER;
+                }
+                // Check breast colours for splits
+                for (const [name, id] of Object.entries(BREAST_COLOURS)) {
+                    if (splitText.includes(name)) g[id] = CARRIER;
+                }
+            }
+        }
+    }
+
+    return g;
 }
