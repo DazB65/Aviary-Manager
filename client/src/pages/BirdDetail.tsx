@@ -16,7 +16,8 @@ import { readActiveGeneticsPacks, readBirdGenotype, formatGeneticsDisplay } from
 import { GenotypeState, InheritanceType, type BirdGenotype } from "@/genetics/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Bird, Calendar, Tag, Dna, GitBranch, Users, CalendarDays, CheckCircle2, Circle, Heart } from "lucide-react";
+import { ArrowLeft, Bird, Calendar, Tag, Dna, GitBranch, Users, CalendarDays, CheckCircle2, Circle, Heart, Pencil } from "lucide-react";
+import { BirdFormModal } from "@/components/birds/BirdFormModal";
 import { EGG_OUTCOME_CONFIG } from "@/components/broods/constants";
 import { STATUS_STYLES, STATUS_LABELS } from "@/components/pairs/constants";
 import { useEffect, useMemo, useState } from "react";
@@ -304,6 +305,7 @@ export default function BirdDetail() {
   const [, setLocation] = useLocation();
   const birdId = Number(params.id);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
   const isPro = user?.plan === "pro" || isAdmin;
@@ -316,6 +318,8 @@ export default function BirdDetail() {
   const utils = trpc.useUtils();
   const updateBird = trpc.birds.update.useMutation({ onSuccess: () => { utils.birds.get.invalidate({ id: birdId }); utils.birds.list.invalidate(); } });
   const { data: speciesList = [] } = trpc.species.list.useQuery();
+  const { data: birdsList = [] } = trpc.birds.list.useQuery();
+  const { data: settings } = trpc.settings.get.useQuery();
   const { data: pedigreeMap = {} } = trpc.birds.pedigree.useQuery({ id: birdId, generations: maxGenerations });
   const { data: descendants = [] } = trpc.birds.descendants.useQuery({ id: birdId });
   const { data: siblings = [] } = trpc.birds.siblings.useQuery({ id: birdId });
@@ -423,20 +427,30 @@ export default function BirdDetail() {
           <Button variant="ghost" size="sm" onClick={() => setLocation("/birds")} className="gap-1">
             <ArrowLeft className="h-4 w-4" /> Birds
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2 text-teal-700 border-teal-200 hover:bg-teal-50"
-            onClick={() => {
-              const a = document.createElement("a");
-              a.href = `/api/pdf/pedigree/${birdId}`;
-              a.download = `pedigree-${bird.name || bird.ringId || birdId}.pdf`;
-              a.click();
-            }}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="12" y1="18" x2="12" y2="12" /><line x1="9" y1="15" x2="15" y2="15" /></svg>
-            Export Pedigree PDF
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={() => setEditOpen(true)}
+            >
+              <Pencil className="h-4 w-4" /> Edit
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 text-teal-700 border-teal-200 hover:bg-teal-50"
+              onClick={() => {
+                const a = document.createElement("a");
+                a.href = `/api/pdf/pedigree/${birdId}`;
+                a.download = `pedigree-${bird.name || bird.ringId || birdId}.pdf`;
+                a.click();
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="12" y1="18" x2="12" y2="12" /><line x1="9" y1="15" x2="15" y2="15" /></svg>
+              Export Pedigree PDF
+            </Button>
+          </div>
         </div>
 
         {/* Profile Header */}
@@ -984,6 +998,40 @@ export default function BirdDetail() {
 
       </div>
     </DashboardLayout>
+
+    {/* Edit modal */}
+    <BirdFormModal
+      open={editOpen}
+      onOpenChange={setEditOpen}
+      editingId={birdId}
+      initialBird={bird}
+      userSettings={settings}
+      speciesList={speciesList}
+      birdsList={birdsList}
+      isPro={isPro}
+      activeGeneticsPacks={activeGeneticsPacks}
+      isSubmitting={updateBird.isPending}
+      onSubmit={(data, genotype) => {
+        const genotypeStr = Object.keys(genotype).length > 0 ? JSON.stringify(genotype) : undefined;
+        updateBird.mutate({
+          id: birdId,
+          speciesId: Number(data.speciesId),
+          ringId: data.ringId || undefined,
+          name: data.name || undefined,
+          gender: data.gender,
+          dateOfBirth: data.dateOfBirth || undefined,
+          fledgedDate: data.fledgedDate || undefined,
+          cageNumber: data.cageNumber || undefined,
+          colorMutation: data.colorMutation || undefined,
+          genotype: genotypeStr,
+          photoUrl: data.photoUrl || undefined,
+          notes: data.notes || undefined,
+          fatherId: data.fatherId ? Number(data.fatherId) : undefined,
+          motherId: data.motherId ? Number(data.motherId) : undefined,
+          status: data.status,
+        }, { onSuccess: () => setEditOpen(false) });
+      }}
+    />
 
     {/* Lightbox */}
     {lightboxSrc && (
