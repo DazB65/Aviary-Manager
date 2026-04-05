@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { Eye, Pencil, Trash2, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
+import { Pencil, Trash2, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { STATUS_COLORS, STATUS_LABELS, GENDER_LABELS } from "./constants";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
@@ -100,10 +100,11 @@ export function BirdList({
                         return (
                             <tr
                                 key={bird.id}
-                                className={`hover:bg-muted/30 transition-colors group ${inactiveStatuses.includes(bird.status)
+                                className={`hover:bg-muted/30 transition-colors group cursor-pointer ${inactiveStatuses.includes(bird.status)
                                     ? "bg-muted/20 opacity-60"
                                     : "bg-white"
                                     }`}
+                                onClick={() => setLocation(`/birds/${bird.id}`)}
                             >
                                 <td className="px-4 py-3">
                                     <div className="flex items-center gap-3">
@@ -166,21 +167,15 @@ export function BirdList({
                                 <td className="px-4 py-3">
                                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button
-                                            onClick={() => setLocation(`/birds/${bird.id}`)}
-                                            className="p-1.5 rounded-lg hover:bg-muted"
-                                            title="View"
-                                        >
-                                            <Eye className="h-3.5 w-3.5" />
-                                        </button>
-                                        <button
-                                            onClick={() => onEdit(bird)}
+                                            onClick={(e) => { e.stopPropagation(); onEdit(bird); }}
                                             className="p-1.5 rounded-lg hover:bg-muted"
                                             title="Edit"
                                         >
                                             <Pencil className="h-3.5 w-3.5" />
                                         </button>
                                         <button
-                                            onClick={() => {
+                                            onClick={(e) => {
+                                                e.stopPropagation();
                                                 if (confirm("Delete this bird?")) onDelete(bird.id);
                                             }}
                                             className="p-1.5 rounded-lg hover:bg-muted text-destructive"

@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle2, Circle, Pencil, Trash2 } from "lucide-react";
+import { Link } from "wouter";
 import { EVENT_TYPE_STYLES } from "./constants";
 
 export interface EventCardProps {
@@ -67,7 +68,7 @@ export function EventCard({
                         {!ev.allBirds && (linkedBird || linkedPair) && (
                             <p className="text-sm text-muted-foreground mt-1">
                                 {linkedBird
-                                    ? `🐦 ${linkedBird.name || linkedBird.ringId || `#${linkedBird.id}`}`
+                                    ? <Link href={`/birds/${linkedBird.id}`} className="hover:text-foreground transition-colors">🐦 {linkedBird.name || linkedBird.ringId || `#${linkedBird.id}`}</Link>
                                     : ""}
                                 {linkedPair ? `💑 ${pairLabel(linkedPair)}` : ""}
                             </p>

@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { STATUS_COLORS, STATUS_LABELS, GENDER_LABELS } from "./constants";
 import { useLocation } from "wouter";
 import { GenderIcon } from "@/components/ui/GenderIcon";
@@ -23,8 +23,9 @@ export function BirdGrid({ birds, speciesMap, inactiveStatuses, onEdit, onDelete
                 return (
                     <Card
                         key={bird.id}
-                        className={`group border border-border shadow-card hover:shadow-elevated transition-all duration-200 overflow-hidden ${inactiveStatuses.includes(bird.status) ? "opacity-60" : ""
+                        className={`group border border-border shadow-card hover:shadow-elevated transition-all duration-200 overflow-hidden cursor-pointer ${inactiveStatuses.includes(bird.status) ? "opacity-60" : ""
                             }`}
+                        onClick={() => setLocation(`/birds/${bird.id}`)}
                     >
                         <div className="relative">
                             {bird.photoUrl ? (
@@ -47,21 +48,15 @@ export function BirdGrid({ birds, speciesMap, inactiveStatuses, onEdit, onDelete
                             )}
                             <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button
-                                    onClick={() => setLocation(`/birds/${bird.id}`)}
-                                    className="bg-white/90 hover:bg-white rounded-lg p-1.5 shadow-sm"
-                                    title="View"
-                                >
-                                    <Eye className="h-3.5 w-3.5 text-foreground" />
-                                </button>
-                                <button
-                                    onClick={() => onEdit(bird)}
+                                    onClick={(e) => { e.stopPropagation(); onEdit(bird); }}
                                     className="bg-white/90 hover:bg-white rounded-lg p-1.5 shadow-sm"
                                     title="Edit"
                                 >
                                     <Pencil className="h-3.5 w-3.5 text-foreground" />
                                 </button>
                                 <button
-                                    onClick={() => {
+                                    onClick={(e) => {
+                                        e.stopPropagation();
                                         if (confirm("Delete this bird?")) onDelete(bird.id);
                                     }}
                                     className="bg-white/90 hover:bg-white rounded-lg p-1.5 shadow-sm"

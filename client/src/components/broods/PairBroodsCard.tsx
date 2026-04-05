@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, Pencil, Trash2, Plus } from "lucide-react";
 import { format, parseISO, differenceInDays } from "date-fns";
+import { Link } from "wouter";
 import { STATUS_STYLES, STATUS_ICONS } from "./constants";
 import { ClutchEggGrid } from "./EggGrid";
 
@@ -53,9 +54,9 @@ export function PairBroodsCard({ pairId, broods, pairLabel, male, female, onEdit
                     <span className="inline-flex items-center gap-1.5 text-sm font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                         🔗 {male || female ? (
                             <>
-                                <span className="text-blue-600">{male ? male.name || male.ringId || `#${male.id}` : "?"}</span>
+                                {male ? <Link href={`/birds/${male.id}`} className="text-blue-600 hover:underline">{male.name || male.ringId || `#${male.id}`}</Link> : <span className="text-blue-600">?</span>}
                                 <span className="text-slate-500 font-normal mx-0.5">×</span>
-                                <span className="text-rose-500">{female ? female.name || female.ringId || `#${female.id}` : "?"}</span>
+                                {female ? <Link href={`/birds/${female.id}`} className="text-rose-500 hover:underline">{female.name || female.ringId || `#${female.id}`}</Link> : <span className="text-rose-500">?</span>}
                             </>
                         ) : pairLabel}
                     </span>

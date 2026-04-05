@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Heart, ChevronRight, Pencil, Trash2, Archive, RotateCcw } from "lucide-react";
 import { format } from "date-fns";
+import { Link } from "wouter";
 import { STATUS_STYLES, STATUS_LABELS } from "./constants";
 import { PairInbreeding } from "./InbreedingUI";
 import { GenderIcon } from "@/components/ui/GenderIcon";
@@ -58,7 +59,7 @@ export function PairCard({
                 )}
                 <div className="flex items-center gap-4">
                     {/* Male */}
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <Link href={male ? `/birds/${male.id}` : "#"} className="flex items-center gap-2 flex-1 min-w-0 hover:opacity-80 transition-opacity">
                         <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center shrink-0 overflow-hidden">
                             {male?.photoUrl ? (
                                 <img src={male.photoUrl} alt="" className="w-full h-full object-cover rounded-lg" />
@@ -73,7 +74,7 @@ export function PairCard({
                                 <p className="text-sm text-amber-600 truncate">{male.colorMutation}</p>
                             )}
                         </div>
-                    </div>
+                    </Link>
                     {/* Heart */}
                     <div className="flex flex-col items-center gap-1 shrink-0">
                         <Heart className="h-5 w-5 text-rose-400 fill-rose-400" />
@@ -82,7 +83,7 @@ export function PairCard({
                         )}
                     </div>
                     {/* Female */}
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <Link href={female ? `/birds/${female.id}` : "#"} className="flex items-center gap-2 flex-1 min-w-0 hover:opacity-80 transition-opacity">
                         <div className="w-10 h-10 rounded-lg bg-pink-50 flex items-center justify-center shrink-0 overflow-hidden">
                             {female?.photoUrl ? (
                                 <img
@@ -101,7 +102,7 @@ export function PairCard({
                                 <p className="text-sm text-amber-600 truncate">{female.colorMutation}</p>
                             )}
                         </div>
-                    </div>
+                    </Link>
                     {/* Status & Actions */}
                     <div className="flex items-center gap-2 shrink-0">
                         <Badge variant="outline" className={`text-sm ${STATUS_STYLES[pair.status]}`}>
