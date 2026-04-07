@@ -180,24 +180,36 @@ export default function Broods() {
   }, [broods]);
 
   const COMPLETED_STATUSES = ["hatched", "failed", "abandoned"];
-  const statusFiltered = showCompleted
-    ? broods.filter((b) => COMPLETED_STATUSES.includes(b.status))
-    : broods.filter((b) => b.status === "incubating");
-  const filtered = filterPairId === "all" ? statusFiltered : statusFiltered.filter((b) => String(b.pairId) === filterPairId);
 
+  // Group ALL broods by pair first, then classify the PAIR as active/completed.
+  // A pair is "active" if it has ANY incubating brood — all its history stays together.
   const pairGroups = useMemo(() => {
-    const groups: Record<number, typeof broods> = {};
-    filtered.forEach(b => {
-      if (!groups[b.pairId]) groups[b.pairId] = [];
-      groups[b.pairId].push(b);
+    const allGroups: Record<number, typeof broods> = {};
+    broods.forEach(b => {
+      if (!allGroups[b.pairId]) allGroups[b.pairId] = [];
+      allGroups[b.pairId].push(b);
     });
-    // Sort the groups by the most recent clutch creation date (or lay date) descending
-    return Object.values(groups).sort((a, b) => {
+
+    const entries = Object.values(allGroups);
+
+    // Filter by active/completed at the PAIR level
+    const statusFiltered = entries.filter(group => {
+      const hasActive = group.some(b => b.status === "incubating");
+      return showCompleted ? !hasActive : hasActive;
+    });
+
+    // Apply pair filter
+    const pairFiltered = filterPairId === "all"
+      ? statusFiltered
+      : statusFiltered.filter(group => String(group[0].pairId) === filterPairId);
+
+    // Sort by most recent clutch date descending
+    return pairFiltered.sort((a, b) => {
       const aLatest = Math.max(...a.map(brood => new Date(brood.layDate || brood.createdAt).getTime()));
       const bLatest = Math.max(...b.map(brood => new Date(brood.layDate || brood.createdAt).getTime()));
       return bLatest - aLatest;
     });
-  }, [filtered]);
+  }, [broods, showCompleted, filterPairId]);
 
   return (
     <DashboardLayout>
@@ -207,8 +219,8 @@ export default function Broods() {
             <h1 className="font-display text-3xl font-bold text-foreground">Broods & Eggs</h1>
             <p className="text-muted-foreground mt-1">
               {showCompleted
-                ? `${broods.filter((b) => COMPLETED_STATUSES.includes(b.status)).length} completed clutch${broods.filter((b) => COMPLETED_STATUSES.includes(b.status)).length !== 1 ? "es" : ""}`
-                : `${broods.filter((b) => b.status === "incubating").length} clutch${broods.filter((b) => b.status === "incubating").length !== 1 ? "es" : ""} currently incubating`
+                ? `${pairGroups.length} completed pair${pairGroups.length !== 1 ? "s" : ""}`
+                : `${pairGroups.length} active pair${pairGroups.length !== 1 ? "s" : ""}`
               }
             </p>
           </div>
