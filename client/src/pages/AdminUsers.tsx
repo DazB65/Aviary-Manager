@@ -21,6 +21,10 @@ export default function AdminUsers() {
     onSuccess: () => { utils.admin.users.invalidate(); toast.success("User deleted."); },
     onError: (e) => toast.error(e.message),
   });
+  const setRole = trpc.admin.setRole.useMutation({
+    onSuccess: () => { utils.admin.users.invalidate(); toast.success("Role updated!"); },
+    onError: (e) => toast.error(e.message),
+  });
 
   function handleDelete(userId: number, email: string) {
     if (!confirm(`Delete user "${email}" and all their data? This cannot be undone.`)) return;
@@ -177,21 +181,32 @@ export default function AdminUsers() {
                                 size="sm"
                                 variant="outline"
                                 className="text-xs h-7"
-                                disabled={setPlan.isPending || deleteUser.isPending}
+                                disabled={setPlan.isPending || deleteUser.isPending || setRole.isPending}
                                 onClick={() => setPlan.mutate({ userId: u.id, plan: u.plan === "pro" ? "free" : "pro" })}
                               >
                                 {u.plan === "pro" ? "Downgrade to Free" : "Upgrade to Pro"}
                               </Button>
                               {u.id !== me?.id && (
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="text-xs h-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                  disabled={deleteUser.isPending}
-                                  onClick={() => handleDelete(u.id, u.email ?? "")}
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className={`text-xs h-7 ${u.role === "admin" ? "border-primary/40 text-primary hover:bg-primary/10" : ""}`}
+                                    disabled={setRole.isPending || deleteUser.isPending}
+                                    onClick={() => setRole.mutate({ userId: u.id, role: u.role === "admin" ? "user" : "admin" })}
+                                  >
+                                    {u.role === "admin" ? "Demote to User" : "Make Admin"}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="text-xs h-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                    disabled={deleteUser.isPending}
+                                    onClick={() => handleDelete(u.id, u.email ?? "")}
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </>
                               )}
                             </div>
                           </td>

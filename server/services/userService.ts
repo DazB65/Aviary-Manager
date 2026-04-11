@@ -86,4 +86,10 @@ export class UserService {
         if (!db) throw new Error("DB unavailable");
         await db.update(users).set({ plan }).where(eq(users.id, userId));
     }
+
+    static async setUserRole(userId: number, role: "user" | "admin") {
+        const db = getDb();
+        if (!db) throw new Error("DB unavailable");
+        await db.update(users).set({ role }).where(eq(users.id, userId));
+    }
 }

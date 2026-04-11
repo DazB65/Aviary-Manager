@@ -622,6 +622,14 @@ export const appRouter = router({
         }
         return UserService.deleteUser(input.userId);
       }),
+    setRole: adminProcedure
+      .input(z.object({ userId: z.number(), role: z.enum(["user", "admin"]) }))
+      .mutation(({ ctx, input }) => {
+        if (input.userId === ctx.user.id) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "You cannot change your own role" });
+        }
+        return UserService.setUserRole(input.userId, input.role);
+      }),
   }),
   // ─── Marketing ────────────────────────────────────────────────────────────
   // Content idea generator for social media content based on user's aviary data
