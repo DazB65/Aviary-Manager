@@ -121,15 +121,15 @@ export default function AdminUsers() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border bg-muted/40">
-                      <th className="text-left font-medium text-muted-foreground px-4 py-3">Name</th>
-                      <th className="text-left font-medium text-muted-foreground px-4 py-3">Email</th>
-                      <th className="text-left font-medium text-muted-foreground px-4 py-3">Plan</th>
-                      <th className="text-left font-medium text-muted-foreground px-4 py-3">Role</th>
-                      <th className="text-left font-medium text-muted-foreground px-4 py-3">Joined</th>
-                      <th className="text-left font-medium text-muted-foreground px-4 py-3">Last Seen</th>
-                      <th className="text-left font-medium text-muted-foreground px-4 py-3">Chat Today</th>
-                      <th className="text-left font-medium text-muted-foreground px-4 py-3">Model</th>
-                      <th className="text-left font-medium text-muted-foreground px-4 py-3">Actions</th>
+                      <th className="text-left font-medium text-muted-foreground px-3 py-2 whitespace-nowrap">Name</th>
+                      <th className="text-left font-medium text-muted-foreground px-3 py-2 whitespace-nowrap">Email</th>
+                      <th className="text-left font-medium text-muted-foreground px-3 py-2 whitespace-nowrap">Plan</th>
+                      <th className="text-left font-medium text-muted-foreground px-3 py-2 whitespace-nowrap">Role</th>
+                      <th className="text-left font-medium text-muted-foreground px-3 py-2 whitespace-nowrap">Joined</th>
+                      <th className="text-left font-medium text-muted-foreground px-3 py-2 whitespace-nowrap">Last Seen</th>
+                      <th className="text-left font-medium text-muted-foreground px-3 py-2 whitespace-nowrap">Chat Today</th>
+                      <th className="text-left font-medium text-muted-foreground px-3 py-2 whitespace-nowrap">Model</th>
+                      <th className="text-left font-medium text-muted-foreground px-3 py-2 whitespace-nowrap">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -137,31 +137,31 @@ export default function AdminUsers() {
                       const chatEntry = chatStats?.topUsers.find(c => c.userId === u.id);
                       return (
                         <tr key={u.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
-                          <td className="px-4 py-3 font-medium">{u.name || "—"}</td>
-                          <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
-                          <td className="px-4 py-3">
+                          <td className="px-3 py-2 font-medium whitespace-nowrap">{u.name || "—"}</td>
+                          <td className="px-3 py-2 text-muted-foreground max-w-[160px] truncate">{u.email}</td>
+                          <td className="px-3 py-2">
                             {u.plan === "pro" ? (
                               <Badge className="text-xs bg-yellow-400 text-yellow-900 hover:bg-yellow-400">Pro</Badge>
                             ) : (
                               <Badge variant="outline" className="text-xs">Free</Badge>
                             )}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-3 py-2">
                             {u.role === "admin" ? (
                               <Badge className="text-xs bg-primary text-primary-foreground">Admin</Badge>
                             ) : (
                               <Badge variant="secondary" className="text-xs">User</Badge>
                             )}
                           </td>
-                          <td className="px-4 py-3 text-muted-foreground">
-                            {u.createdAt ? format(new Date(u.createdAt), "dd MMM yyyy") : "—"}
+                          <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                            {u.createdAt ? format(new Date(u.createdAt), "d MMM yy") : "—"}
                           </td>
-                          <td className="px-4 py-3 text-muted-foreground">
-                            {u.lastSignedIn ? format(new Date(u.lastSignedIn), "dd MMM yyyy") : "Never"}
+                          <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                            {u.lastSignedIn ? format(new Date(u.lastSignedIn), "d MMM yy") : "Never"}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-3 py-2">
                             {chatEntry ? (
-                              <div className="flex items-center gap-1.5">
+                              <div className="flex items-center gap-1.5 whitespace-nowrap">
                                 <span className="font-medium">{chatEntry.count}</span>
                                 <span className="text-muted-foreground">/ {chatStats?.maxPerDay}</span>
                                 {chatEntry.remaining === 0 && (
@@ -172,30 +172,30 @@ export default function AdminUsers() {
                               <span className="text-muted-foreground">—</span>
                             )}
                           </td>
-                          <td className="px-4 py-3 text-muted-foreground font-mono text-xs">
+                          <td className="px-3 py-2 text-muted-foreground font-mono text-xs whitespace-nowrap">
                             {chatEntry ? chatStats?.model : "—"}
                           </td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2">
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            <div className="flex items-center gap-1.5">
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="text-xs h-7"
+                                className="text-xs h-7 whitespace-nowrap"
                                 disabled={setPlan.isPending || deleteUser.isPending || setRole.isPending}
                                 onClick={() => setPlan.mutate({ userId: u.id, plan: u.plan === "pro" ? "free" : "pro" })}
                               >
-                                {u.plan === "pro" ? "Downgrade to Free" : "Upgrade to Pro"}
+                                {u.plan === "pro" ? "→ Free" : "→ Pro"}
                               </Button>
                               {u.id !== me?.id && (
                                 <>
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    className={`text-xs h-7 ${u.role === "admin" ? "border-primary/40 text-primary hover:bg-primary/10" : ""}`}
+                                    className={`text-xs h-7 whitespace-nowrap ${u.role === "admin" ? "border-primary/40 text-primary hover:bg-primary/10" : ""}`}
                                     disabled={setRole.isPending || deleteUser.isPending}
                                     onClick={() => setRole.mutate({ userId: u.id, role: u.role === "admin" ? "user" : "admin" })}
                                   >
-                                    {u.role === "admin" ? "Demote to User" : "Make Admin"}
+                                    {u.role === "admin" ? "→ User" : "→ Admin"}
                                   </Button>
                                   <Button
                                     size="sm"
