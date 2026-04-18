@@ -490,7 +490,7 @@ export function BirdFormModal({
                                 </div>
 
                                 <div>
-                                    <Label>Name</Label>
+                                    <Label>Type</Label>
                                     <Input
                                         className="mt-1"
                                         placeholder="e.g. Bluey, Rio"
