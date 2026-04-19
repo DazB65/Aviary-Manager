@@ -48,7 +48,7 @@ export function usePairs(editingId?: number | null) {
     const pairedBirdIds = useMemo(() => {
         const ids = new Set<number>();
         for (const p of pairs) {
-            if (p.status === "active" && p.id !== editingId) {
+            if (p.status !== "retired" && p.id !== editingId) {
                 ids.add(p.maleId);
                 ids.add(p.femaleId);
             }

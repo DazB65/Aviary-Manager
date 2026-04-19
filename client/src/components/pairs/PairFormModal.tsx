@@ -86,7 +86,9 @@ export function PairFormModal({
                                     <SelectContent>
                                         {maleBirds.map((b) => (
                                             <SelectItem key={b.id} value={String(b.id)}>
-                                                {b.name || b.ringId || `#${b.id}`} — {speciesMap[b.speciesId]?.commonName ?? "Unknown"}
+                                                {b.name || `#${b.id}`}
+                                                {b.ringId ? ` · Ring ${b.ringId}` : ""}
+                                                {" — "}{speciesMap[b.speciesId]?.commonName ?? "Unknown"}
                                                 {b.cageNumber ? ` · Cage ${b.cageNumber}` : ""}
                                                 {b.status !== "alive" ? ` (${b.status})` : ""}
                                             </SelectItem>
@@ -113,7 +115,9 @@ export function PairFormModal({
                                     <SelectContent>
                                         {femaleBirds.map((b) => (
                                             <SelectItem key={b.id} value={String(b.id)}>
-                                                {b.name || b.ringId || `#${b.id}`} — {speciesMap[b.speciesId]?.commonName ?? "Unknown"}
+                                                {b.name || `#${b.id}`}
+                                                {b.ringId ? ` · Ring ${b.ringId}` : ""}
+                                                {" — "}{speciesMap[b.speciesId]?.commonName ?? "Unknown"}
                                                 {b.cageNumber ? ` · Cage ${b.cageNumber}` : ""}
                                                 {b.status !== "alive" ? ` (${b.status})` : ""}
                                             </SelectItem>
