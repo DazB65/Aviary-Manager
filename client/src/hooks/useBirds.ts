@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
-export type SortCol = "name" | "species" | "gender" | "cage" | "mutation" | "dob" | "status";
+export type SortCol = "name" | "ring" | "species" | "gender" | "cage" | "mutation" | "dob" | "status";
 
 export function useBirds() {
     const utils = trpc.useUtils();
@@ -56,7 +56,8 @@ export function useBirds() {
             const sp = (id: number) => speciesMap[id]?.commonName ?? "";
             let aVal = "";
             let bVal = "";
-            if (sortCol === "name") { aVal = a.name || a.ringId || ""; bVal = b.name || b.ringId || ""; }
+            if (sortCol === "name") { aVal = a.name || ""; bVal = b.name || ""; }
+            else if (sortCol === "ring") { aVal = a.ringId || ""; bVal = b.ringId || ""; }
             else if (sortCol === "species") { aVal = sp(a.speciesId); bVal = sp(b.speciesId); }
             else if (sortCol === "gender") { aVal = a.gender; bVal = b.gender; }
 else if (sortCol === "cage") { aVal = (a as any).cageNumber ?? ""; bVal = (b as any).cageNumber ?? ""; }

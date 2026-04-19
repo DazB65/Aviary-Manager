@@ -36,7 +36,8 @@ interface BirdListProps {
 }
 
 const tableHeaders: { id: SortCol; label: string; className: string }[] = [
-    { id: "name", label: "Bird", className: "" },
+    { id: "name", label: "Type", className: "" },
+    { id: "ring", label: "Ring", className: "" },
     { id: "species", label: "Species", className: "hidden sm:table-cell" },
     { id: "gender", label: "Gender", className: "" },
     { id: "cage", label: "Cage", className: "hidden lg:table-cell" },
@@ -127,9 +128,12 @@ export function BirdList({
                                             )}
                                         </div>
                                         <span className="font-semibold truncate max-w-32">
-                                            {bird.name || bird.ringId || `#${bird.id}`}
+                                            {bird.name || `#${bird.id}`}
                                         </span>
                                     </div>
+                                </td>
+                                <td className="px-4 py-3 text-muted-foreground">
+                                    {bird.ringId || "—"}
                                 </td>
                                 <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
                                     {sp?.commonName ?? "—"}
