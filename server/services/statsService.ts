@@ -108,7 +108,9 @@ export class StatsService {
         if (!db) return { pairs: 0, broods: 0, incubating: 0, totalEggs: 0, hatched: 0, fledged: 0, infertile: 0, died: 0, cracked: 0, missing: 0, losses: 0, hatchRate: 0 };
 
         const yearStr = String(year);
-        const [seasonPairs, seasonBroods, eggOutcomes, incubatingEggsResult] = await Promise.all([
+        const yearStart = `${yearStr}-01-01`;
+        const yearEnd = `${yearStr}-12-31`;
+        const [seasonPairs, seasonBroods, eggOutcomes, incubatingEggsResult, fledgedBirdsResult] = await Promise.all([
             db.select().from(breedingPairs).where(and(eq(breedingPairs.userId, userId), eq(breedingPairs.season, year))),
             db.select().from(broods).where(and(eq(broods.userId, userId), eq(broods.season, yearStr))),
             db.select({ outcome: clutchEggs.outcome, total: count() })
@@ -125,6 +127,15 @@ export class StatsService {
                     eq(broods.status, "incubating"),
                     inArray(clutchEggs.outcome, ["unknown", "fertile"]),
                 )),
+            // Count birds fledged this season — catches birds added directly (not via egg conversion)
+            db.select({ total: count() })
+                .from(birds)
+                .where(and(
+                    eq(birds.userId, userId),
+                    isNotNull(birds.fledgedDate),
+                    gte(birds.fledgedDate, yearStart),
+                    lte(birds.fledgedDate, yearEnd),
+                )),
         ]);
 
         const pairs = seasonPairs.length;
@@ -139,7 +150,11 @@ export class StatsService {
 
         const totalEggs = Object.values(outcomeMap).reduce((s, n) => s + n, 0);
         const hatched = outcomeMap["hatched"] ?? 0;
-        const fledged = outcomeMap["fledged"] ?? 0;
+        // Prefer bird-based count (captures birds added directly, not just via egg conversion).
+        // Converted birds share the same record, so max() avoids double-counting.
+        const fledgedFromEggs = outcomeMap["fledged"] ?? 0;
+        const fledgedBirds = Number(fledgedBirdsResult[0]?.total ?? 0);
+        const fledged = Math.max(fledgedFromEggs, fledgedBirds);
         const infertile = outcomeMap["infertile"] ?? 0;
         const died = outcomeMap["died"] ?? 0;
         const cracked = outcomeMap["cracked"] ?? 0;
