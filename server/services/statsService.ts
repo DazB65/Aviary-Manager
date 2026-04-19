@@ -28,7 +28,7 @@ export class StatsService {
             db
                 .select({ gender: birds.gender, count: count() })
                 .from(birds)
-                .where(and(eq(birds.userId, userId), inArray(birds.status, ["alive", "breeding", "resting"])))
+                .where(and(eq(birds.userId, userId), inArray(birds.status, ["alive", "breeding", "resting", "fledged"])))
                 .groupBy(birds.gender),
 
             // Active/breeding pairs count
@@ -109,7 +109,7 @@ export class StatsService {
 
         const yearStr = String(year);
         const [seasonPairs, seasonBroods, eggOutcomes, incubatingEggsResult] = await Promise.all([
-            db.select().from(breedingPairs).where(and(eq(breedingPairs.userId, userId), eq(breedingPairs.season, year), inArray(breedingPairs.status, ["active", "breeding"]))),
+            db.select().from(breedingPairs).where(and(eq(breedingPairs.userId, userId), eq(breedingPairs.season, year))),
             db.select().from(broods).where(and(eq(broods.userId, userId), eq(broods.season, yearStr))),
             db.select({ outcome: clutchEggs.outcome, total: count() })
                 .from(clutchEggs)
