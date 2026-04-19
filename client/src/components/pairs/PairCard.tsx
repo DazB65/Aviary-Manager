@@ -69,7 +69,9 @@ export function PairCard({
                         </div>
                         <div className="min-w-0">
                             <p className="text-sm font-semibold truncate">{birdLabel(male)}</p>
-                            <p className="text-sm text-blue-600">Male</p>
+                            <p className="text-sm text-blue-600">
+                                Male{male?.ringId ? <span className="text-muted-foreground"> · Ring {male.ringId}</span> : null}
+                            </p>
                             {male?.colorMutation && (
                                 <p className="text-sm text-amber-600 truncate">{male.colorMutation}</p>
                             )}
@@ -97,7 +99,9 @@ export function PairCard({
                         </div>
                         <div className="min-w-0">
                             <p className="text-sm font-semibold truncate">{birdLabel(female)}</p>
-                            <p className="text-sm text-pink-600">Female</p>
+                            <p className="text-sm text-pink-600">
+                                Female{female?.ringId ? <span className="text-muted-foreground"> · Ring {female.ringId}</span> : null}
+                            </p>
                             {female?.colorMutation && (
                                 <p className="text-sm text-amber-600 truncate">{female.colorMutation}</p>
                             )}
