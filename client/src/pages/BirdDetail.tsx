@@ -16,14 +16,17 @@ import { readActiveGeneticsPacks, readBirdGenotype, formatGeneticsDisplay } from
 import { GenotypeState, InheritanceType, type BirdGenotype } from "@/genetics/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Bird, Calendar, Tag, Dna, GitBranch, Users, CalendarDays, CheckCircle2, Circle, Heart, Pencil } from "lucide-react";
+import { ArrowLeft, Bird, Calendar, Tag, Dna, GitBranch, Users, CalendarDays, CheckCircle2, Circle, Heart, Pencil, Plus, Trash2 } from "lucide-react";
 import { BirdFormModal } from "@/components/birds/BirdFormModal";
+import { EventFormModal } from "@/components/events/EventFormModal";
 import { EGG_OUTCOME_CONFIG } from "@/components/broods/constants";
 import { STATUS_STYLES, STATUS_LABELS } from "@/components/pairs/constants";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { format } from "date-fns";
 import { GenderIcon } from "@/components/ui/GenderIcon";
+import { toast } from "sonner";
+import { generateDates, type EventFormData } from "@/hooks/useEventForm";
 
 type PedigreeBird = {
   id: number;
@@ -324,7 +327,101 @@ export default function BirdDetail() {
   const { data: descendants = [] } = trpc.birds.descendants.useQuery({ id: birdId });
   const { data: siblings = [] } = trpc.birds.siblings.useQuery({ id: birdId });
   const { data: allEvents = [] } = trpc.events.list.useQuery();
+  const { data: pairsList = [] } = trpc.pairs.list.useQuery();
   const { data: breedingHistory = [] } = trpc.birds.breedingHistory.useQuery({ id: birdId });
+
+  const [eventDialogOpen, setEventDialogOpen] = useState(false);
+  const [editingEventId, setEditingEventId] = useState<number | null>(null);
+  const [editingEvent, setEditingEvent] = useState<any>(null);
+
+  const createEvent = trpc.events.create.useMutation({ onError: (e) => toast.error(e.message) });
+  const updateEvent = trpc.events.update.useMutation({
+    onSuccess: () => { utils.events.list.invalidate(); utils.dashboard.stats.invalidate(); toast.success("Event updated!"); },
+    onError: (e) => toast.error(e.message),
+  });
+  const deleteEvent = trpc.events.delete.useMutation({
+    onSuccess: () => { utils.events.list.invalidate(); utils.dashboard.stats.invalidate(); toast.success("Event removed."); },
+    onError: (e) => toast.error(e.message),
+  });
+  const toggleComplete = trpc.events.toggleComplete.useMutation({
+    onSuccess: () => { utils.events.list.invalidate(); utils.dashboard.stats.invalidate(); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const birdLabel = (b: any) => b?.name || b?.ringId || `#${b?.id}`;
+  const pairLabel = (pair: any) => {
+    if (!pair) return "Unknown";
+    const male = birdsList.find(b => b.id === pair.maleId);
+    const female = birdsList.find(b => b.id === pair.femaleId);
+    return `${birdLabel(male)} × ${birdLabel(female)}`;
+  };
+
+  const openAddEvent = () => {
+    setEditingEventId(null);
+    setEditingEvent({ birdId, eventType: "other", eventDate: new Date().toISOString().split("T")[0] });
+    setEventDialogOpen(true);
+  };
+
+  const openEditEvent = (ev: any) => {
+    setEditingEventId(ev.id);
+    setEditingEvent(ev);
+    setEventDialogOpen(true);
+  };
+
+  const handleEventSubmit = async (form: EventFormData) => {
+    if (!form.title.trim()) { toast.error("Please enter a title"); return; }
+    const baseDate = form.eventDate || new Date().toISOString().split("T")[0];
+    const basePayload = {
+      title: form.title.trim(),
+      eventType: form.eventType,
+      pairId: form.pairId ? Number(form.pairId) : undefined,
+      notes: form.notes || undefined,
+    };
+
+    if (editingEventId) {
+      updateEvent.mutate({
+        id: editingEventId,
+        ...basePayload,
+        eventDate: baseDate,
+        birdId: form.birdId && form.birdId !== "all" ? Number(form.birdId) : undefined,
+      });
+      setEventDialogOpen(false);
+      return;
+    }
+
+    const recurrenceUnit = form.recurrence === "none" ? undefined
+      : form.recurrence === "daily" ? "days"
+      : form.recurrence === "weekly" ? "weeks"
+      : form.recurrence === "monthly" ? "months"
+      : form.recurrence === "yearly" ? "years"
+      : form.customUnit;
+    const recurrenceInterval = form.recurrence === "none" ? undefined
+      : form.recurrence === "custom" ? form.customInterval : 1;
+    const occurrences = form.neverEnding ? 2 : form.recurrence === "none" ? 1 : form.recurrenceCount;
+    const dates = generateDates(baseDate, form.recurrence, occurrences, form.customInterval, form.customUnit);
+    const isAllBirds = form.birdId === "all";
+    const specificBirdId = !isAllBirds && form.birdId ? Number(form.birdId) : undefined;
+    const seriesId = dates.length > 1 || form.neverEnding ? crypto.randomUUID() : undefined;
+
+    try {
+      await Promise.all(dates.map(date => createEvent.mutateAsync({
+        ...basePayload,
+        eventDate: date,
+        birdId: specificBirdId,
+        allBirds: isAllBirds,
+        seriesId,
+        recurrenceUnit,
+        recurrenceInterval,
+        isIndefinite: form.neverEnding || undefined,
+      })));
+      toast.success(dates.length === 1 ? "Event added!" : `${dates.length} events added!`);
+      utils.events.list.invalidate();
+      utils.dashboard.stats.invalidate();
+      setEventDialogOpen(false);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to create events");
+    }
+  };
 
   const speciesMap = Object.fromEntries(speciesList.map(s => [s.id, s]));
   const species = bird ? speciesMap[bird.speciesId] : undefined;
@@ -868,36 +965,62 @@ export default function BirdDetail() {
           <TabsContent value="events">
             <Card className="border border-border shadow-card">
               <CardHeader className="pb-3 pt-5 px-6">
-                <CardTitle className="flex items-center gap-2 text-xl font-bold">
-                  <CalendarDays className="h-5 w-5 text-primary" />
-                  Events
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">Events linked to this bird and aviary-wide events.</p>
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-xl font-bold">
+                      <CalendarDays className="h-5 w-5 text-primary" />
+                      Events
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground mt-1">Events linked to this bird and aviary-wide events.</p>
+                  </div>
+                  <Button onClick={openAddEvent} className="bg-primary hover:bg-primary/90 shadow-md gap-2 shrink-0">
+                    <Plus className="h-4 w-4" /> Add Event
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="px-6 pb-6">
                 {birdEvents.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <CalendarDays className="h-12 w-12 mx-auto mb-3 opacity-20" />
                     <p className="text-base font-medium">No events recorded for this bird.</p>
+                    <Button onClick={openAddEvent} variant="outline" className="mt-4 gap-2">
+                      <Plus className="h-4 w-4" /> Add your first event
+                    </Button>
                   </div>
                 ) : (
                   <div className="space-y-2">
                     {birdEvents.map(ev => (
                       <div key={ev.id} className={`flex items-center gap-4 p-4 rounded-xl border border-border bg-white transition-all ${ev.completed ? "opacity-60" : ""}`}>
-                        <span className="shrink-0">
+                        <button
+                          className="shrink-0"
+                          onClick={() => toggleComplete.mutate({ id: ev.id })}
+                          aria-label={ev.completed ? "Mark incomplete" : "Mark complete"}
+                        >
                           {ev.completed
                             ? <CheckCircle2 className="h-6 w-6 text-emerald-500" />
-                            : <Circle className="h-6 w-6 text-muted-foreground" />
+                            : <Circle className="h-6 w-6 text-muted-foreground hover:text-primary transition-colors" />
                           }
-                        </span>
-                        <div className="flex-1 min-w-0">
+                        </button>
+                        <button
+                          onClick={() => openEditEvent(ev)}
+                          className="flex-1 min-w-0 text-left"
+                        >
                           <p className={`text-base font-semibold ${ev.completed ? "line-through text-muted-foreground" : ""}`}>{ev.title}</p>
                           <p className="text-sm text-muted-foreground">
                             {(ev as any).allBirds ? "🐦 All birds · " : ""}
                             {ev.eventDate ? format(typeof ev.eventDate === 'object' && ev.eventDate ? ev.eventDate : new Date(String(ev.eventDate)), "dd MMM yyyy") : "—"}
                           </p>
-                        </div>
+                        </button>
                         <Badge variant="outline" className="text-sm shrink-0 px-3 py-1">{ev.eventType}</Badge>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="shrink-0 text-muted-foreground hover:text-destructive"
+                          onClick={() => { if (confirm("Delete this event?")) deleteEvent.mutate({ id: ev.id }); }}
+                          aria-label="Delete event"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -1031,6 +1154,19 @@ export default function BirdDetail() {
           status: data.status,
         }, { onSuccess: () => setEditOpen(false) });
       }}
+    />
+
+    {/* Event modal */}
+    <EventFormModal
+      open={eventDialogOpen}
+      onOpenChange={setEventDialogOpen}
+      editingId={editingEventId}
+      initialEvent={editingEvent}
+      birds={birdsList}
+      pairs={pairsList}
+      pairLabel={pairLabel}
+      onSubmit={handleEventSubmit}
+      isSubmitting={createEvent.isPending || updateEvent.isPending}
     />
 
     {/* Lightbox */}
