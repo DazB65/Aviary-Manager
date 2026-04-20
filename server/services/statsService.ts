@@ -1,4 +1,4 @@
-import { eq, and, inArray, gte, lte, count, sum, sql, isNotNull } from "drizzle-orm";
+import { eq, and, ne, inArray, gte, lte, count, sum, sql, isNotNull } from "drizzle-orm";
 import { getDb } from "../db";
 import { birds, breedingPairs, broods, clutchEggs, events } from "../../drizzle/schema";
 
@@ -111,7 +111,7 @@ export class StatsService {
         const yearStart = `${yearStr}-01-01`;
         const yearEnd = `${yearStr}-12-31`;
         const [seasonPairs, seasonBroods, eggOutcomes, incubatingEggsResult, fledgedBirdsResult] = await Promise.all([
-            db.select().from(breedingPairs).where(and(eq(breedingPairs.userId, userId), eq(breedingPairs.season, year))),
+            db.select().from(breedingPairs).where(and(eq(breedingPairs.userId, userId), eq(breedingPairs.season, year), ne(breedingPairs.status, "retired"))),
             db.select().from(broods).where(and(eq(broods.userId, userId), eq(broods.season, yearStr))),
             db.select({ outcome: clutchEggs.outcome, total: count() })
                 .from(clutchEggs)
