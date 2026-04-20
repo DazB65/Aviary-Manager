@@ -147,7 +147,7 @@ export class StatsService {
         const abandoned = outcomeMap["abandoned"] ?? 0;
         const losses = infertile + died + cracked + missing + abandoned;
         const eggsRemaining = (outcomeMap["unknown"] ?? 0) + (outcomeMap["fertile"] ?? 0);
-        const eggsResolved = hatched + fledgedFromEggs + losses;
+        const eggsResolved = hatched + fledged + losses;
         const hatchRate = totalEggs > 0 ? Math.round(((hatched + fledged) / totalEggs) * 100) : 0;
 
         return { pairs, broods: broodsCount, incubating, totalEggs, eggsRemaining, eggsResolved, hatched, fledged, infertile, died, cracked, missing, abandoned, losses, hatchRate };
