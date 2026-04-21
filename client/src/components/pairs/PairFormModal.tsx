@@ -44,7 +44,7 @@ export function PairFormModal({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent key={editingId ?? "new"} className="max-w-md">
+            <DialogContent key={editingId ?? "new"} className="sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle className="font-display text-xl">
                         {editingId ? "Edit Pair" : "Create Breeding Pair"}
