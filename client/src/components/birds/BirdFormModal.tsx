@@ -551,7 +551,7 @@ export function BirdFormModal({
                                 </div>
 
                                 <div>
-                                    <Label>Father (Bird ID)</Label>
+                                    <Label>Father</Label>
                                     <Controller
                                         control={form.control}
                                         name="fatherId"
@@ -564,21 +564,24 @@ export function BirdFormModal({
                                                     <SelectItem value="none">None</SelectItem>
                                                     {maleBirds
                                                         .filter((b) => b.id !== editingId)
-                                                        .map((b) => (
-                                                            <SelectItem key={b.id} value={String(b.id)}>
-                                                                {b.name || b.ringId || `#${b.id}`}
-                                                                {b.status === "deceased" || b.status === "sold"
-                                                                    ? ` (${b.status})`
-                                                                    : ""}
-                                                            </SelectItem>
-                                                        ))}
+                                                        .map((b) => {
+                                                            const label = b.ringId
+                                                                ? b.name ? `${b.ringId} — ${b.name}` : b.ringId
+                                                                : b.name || `#${b.id}`;
+                                                            const suffix = b.status === "deceased" || b.status === "sold" ? ` (${b.status})` : "";
+                                                            return (
+                                                                <SelectItem key={b.id} value={String(b.id)}>
+                                                                    {label}{suffix}
+                                                                </SelectItem>
+                                                            );
+                                                        })}
                                                 </SelectContent>
                                             </Select>
                                         )}
                                     />
                                 </div>
                                 <div>
-                                    <Label>Mother (Bird ID)</Label>
+                                    <Label>Mother</Label>
                                     <Controller
                                         control={form.control}
                                         name="motherId"
@@ -591,14 +594,17 @@ export function BirdFormModal({
                                                     <SelectItem value="none">None</SelectItem>
                                                     {femaleBirds
                                                         .filter((b) => b.id !== editingId)
-                                                        .map((b) => (
-                                                            <SelectItem key={b.id} value={String(b.id)}>
-                                                                {b.name || b.ringId || `#${b.id}`}
-                                                                {b.status === "deceased" || b.status === "sold"
-                                                                    ? ` (${b.status})`
-                                                                    : ""}
-                                                            </SelectItem>
-                                                        ))}
+                                                        .map((b) => {
+                                                            const label = b.ringId
+                                                                ? b.name ? `${b.ringId} — ${b.name}` : b.ringId
+                                                                : b.name || `#${b.id}`;
+                                                            const suffix = b.status === "deceased" || b.status === "sold" ? ` (${b.status})` : "";
+                                                            return (
+                                                                <SelectItem key={b.id} value={String(b.id)}>
+                                                                    {label}{suffix}
+                                                                </SelectItem>
+                                                            );
+                                                        })}
                                                 </SelectContent>
                                             </Select>
                                         )}
