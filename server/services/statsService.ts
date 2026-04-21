@@ -1,4 +1,4 @@
-import { eq, and, ne, inArray, gte, lte, count, sum, sql, isNotNull } from "drizzle-orm";
+import { eq, and, ne, or, isNull, inArray, gte, lte, count, sum, sql, isNotNull } from "drizzle-orm";
 import { getDb } from "../db";
 import { birds, breedingPairs, broods, clutchEggs, events } from "../../drizzle/schema";
 
@@ -110,20 +110,32 @@ export class StatsService {
         const yearStr = String(year);
         const yearStart = `${yearStr}-01-01`;
         const yearEnd = `${yearStr}-12-31`;
-        const [seasonPairs, seasonBroods, eggOutcomes, incubatingEggsResult, fledgedBirdsResult] = await Promise.all([
-            db.select().from(breedingPairs).where(and(eq(breedingPairs.userId, userId), eq(breedingPairs.season, year), ne(breedingPairs.status, "retired"))),
-            db.select().from(broods).where(and(eq(broods.userId, userId), eq(broods.season, yearStr))),
+
+        // Fetch season pairs first — their IDs are used to pick up broods with season=NULL
+        const seasonPairs = await db.select().from(breedingPairs)
+            .where(and(eq(breedingPairs.userId, userId), eq(breedingPairs.season, year), ne(breedingPairs.status, "retired")));
+
+        const seasonPairIds = seasonPairs.map(p => p.id);
+
+        // A brood belongs to this season if it has the matching season string, OR if its
+        // season is NULL and its pair is one of the current season's pairs.
+        const broodSeasonFilter = seasonPairIds.length > 0
+            ? or(eq(broods.season, yearStr), and(isNull(broods.season), inArray(broods.pairId, seasonPairIds)))
+            : eq(broods.season, yearStr);
+
+        const [seasonBroods, eggOutcomes, incubatingEggsResult, fledgedBirdsResult] = await Promise.all([
+            db.select().from(broods).where(and(eq(broods.userId, userId), broodSeasonFilter)),
             db.select({ outcome: clutchEggs.outcome, total: count() })
                 .from(clutchEggs)
                 .innerJoin(broods, eq(clutchEggs.broodId, broods.id))
-                .where(and(eq(clutchEggs.userId, userId), eq(broods.season, yearStr)))
+                .where(and(eq(clutchEggs.userId, userId), broodSeasonFilter))
                 .groupBy(clutchEggs.outcome),
             db.select({ total: count() })
                 .from(clutchEggs)
                 .innerJoin(broods, eq(clutchEggs.broodId, broods.id))
                 .where(and(
                     eq(clutchEggs.userId, userId),
-                    eq(broods.season, yearStr),
+                    broodSeasonFilter,
                     eq(broods.status, "incubating"),
                     inArray(clutchEggs.outcome, ["unknown", "fertile"]),
                 )),
