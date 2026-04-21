@@ -8,6 +8,7 @@ export type PedigreeBird = {
     ringId: string | null;
     gender: string;
     colorMutation: string | null;
+    genotype: string | null;
     photoUrl: string | null;
     speciesId: number;
     fatherId: number | null;
@@ -29,6 +30,7 @@ export class PedigreeService {
                 ringId: birds.ringId,
                 gender: birds.gender,
                 colorMutation: birds.colorMutation,
+                genotype: birds.genotype,
                 photoUrl: birds.photoUrl,
                 speciesId: birds.speciesId,
                 fatherId: birds.fatherId,
@@ -125,6 +127,7 @@ export class PedigreeService {
                 ringId: birds.ringId,
                 gender: birds.gender,
                 colorMutation: birds.colorMutation,
+                genotype: birds.genotype,
                 photoUrl: birds.photoUrl,
                 speciesId: birds.speciesId,
                 fatherId: birds.fatherId,

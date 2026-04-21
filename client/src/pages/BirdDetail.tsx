@@ -197,12 +197,10 @@ function PedigreeCard({
         </div>
       </div>
       {size !== "sm" && (() => {
-        // Try DB genotype first, fall back to localStorage
         let genotype: BirdGenotype = {};
         if (bird.genotype) {
           try { genotype = JSON.parse(bird.genotype); } catch { /* fall through */ }
         }
-        if (!Object.keys(genotype).length) genotype = readBirdGenotype(bird.id);
         const traitRows = gouldianFinchPack.traits.flatMap((trait) => {
           const expressing = trait.mutations.find(m => genotype[m.id] === GenotypeState.EXPRESSING);
           const carrier = trait.mutations.find(m => genotype[m.id] === GenotypeState.CARRIER);
