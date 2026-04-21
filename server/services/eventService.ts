@@ -1,4 +1,4 @@
-import { and, eq, asc, desc, sql, inArray } from "drizzle-orm";
+import { and, eq, asc, desc, sql, inArray, isNull } from "drizzle-orm";
 import { getDb } from "../db";
 import { events, birds, breedingPairs, type InsertEvent } from "../../drizzle/schema";
 
@@ -33,7 +33,8 @@ export class EventService {
     }
 
     static async deleteAllEventsForUser(userId: number) {
-        await getDb().delete(events).where(eq(events.userId, userId));
+        // Preserve events tied to a specific bird — those are deliberate health/history records.
+        await getDb().delete(events).where(and(eq(events.userId, userId), isNull(events.birdId)));
     }
 
     static async toggleEventComplete(id: number, userId: number) {
