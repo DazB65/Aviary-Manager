@@ -54,9 +54,6 @@ function formatTraitName(traitName: string): string {
   return traitName.replace(/\s*Colour$/i, "");
 }
 
-function formatProbability(probabilityPercentage: number): string {
-  return `${probabilityPercentage.toLocaleString(undefined, { maximumFractionDigits: 2 })}%`;
-}
 
 function parseBirdGenotype(bird?: PairBird): BirdGenotype | null {
   if (!bird) return null;
@@ -125,11 +122,8 @@ export function PredictedOffspringSection({ male, female }: { male?: PairBird; f
               </p>
               <ul className="mt-2 space-y-2">
                 {trait.outcomes.map((outcome) => (
-                  <li key={`${trait.traitName}-${outcome.label}`} className="flex items-center justify-between gap-3 text-sm">
+                  <li key={`${trait.traitName}-${outcome.label}`} className="text-sm">
                     <span className="text-foreground">{outcome.label}</span>
-                    <span className="font-medium text-teal-700">
-                      {formatProbability(outcome.probabilityPercentage)}
-                    </span>
                   </li>
                 ))}
               </ul>
