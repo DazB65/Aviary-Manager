@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
 import { ArrowLeft, Bird, Calendar, Tag, Dna, GitBranch, Users, CalendarDays, CheckCircle2, Circle, Heart, Pencil, Plus, Trash2 } from "lucide-react";
 import { BirdFormModal } from "@/components/birds/BirdFormModal";
+import { BirdEventCalendar } from "@/components/birds/BirdEventCalendar";
 import { EventFormModal } from "@/components/events/EventFormModal";
 import { EGG_OUTCOME_CONFIG } from "@/components/broods/constants";
 import { STATUS_STYLES, STATUS_LABELS } from "@/components/pairs/constants";
@@ -356,9 +357,9 @@ export default function BirdDetail() {
     return `${birdLabel(male)} × ${birdLabel(female)}`;
   };
 
-  const openAddEvent = () => {
+  const openAddEvent = (date?: string) => {
     setEditingEventId(null);
-    setEditingEvent({ birdId, eventType: "other", eventDate: new Date().toISOString().split("T")[0] });
+    setEditingEvent({ birdId, eventType: "other", eventDate: date ?? new Date().toISOString().split("T")[0] });
     setEventDialogOpen(true);
   };
 
@@ -973,58 +974,19 @@ export default function BirdDetail() {
                     </CardTitle>
                     <p className="text-sm text-muted-foreground mt-1">Events linked to this bird and aviary-wide events.</p>
                   </div>
-                  <Button onClick={openAddEvent} className="bg-primary hover:bg-primary/90 shadow-md gap-2 shrink-0">
+                  <Button onClick={() => openAddEvent()} className="bg-primary hover:bg-primary/90 shadow-md gap-2 shrink-0">
                     <Plus className="h-4 w-4" /> Add Event
                   </Button>
                 </div>
               </CardHeader>
               <CardContent className="px-6 pb-6">
-                {birdEvents.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <CalendarDays className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                    <p className="text-base font-medium">No events recorded for this bird.</p>
-                    <Button onClick={openAddEvent} variant="outline" className="mt-4 gap-2">
-                      <Plus className="h-4 w-4" /> Add your first event
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {birdEvents.map(ev => (
-                      <div key={ev.id} className={`flex items-center gap-4 p-4 rounded-xl border border-border bg-white transition-all ${ev.completed ? "opacity-60" : ""}`}>
-                        <button
-                          className="shrink-0"
-                          onClick={() => toggleComplete.mutate({ id: ev.id })}
-                          aria-label={ev.completed ? "Mark incomplete" : "Mark complete"}
-                        >
-                          {ev.completed
-                            ? <CheckCircle2 className="h-6 w-6 text-emerald-500" />
-                            : <Circle className="h-6 w-6 text-muted-foreground hover:text-primary transition-colors" />
-                          }
-                        </button>
-                        <button
-                          onClick={() => openEditEvent(ev)}
-                          className="flex-1 min-w-0 text-left"
-                        >
-                          <p className={`text-base font-semibold ${ev.completed ? "line-through text-muted-foreground" : ""}`}>{ev.title}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {(ev as any).allBirds ? "🐦 All birds · " : ""}
-                            {ev.eventDate ? format(typeof ev.eventDate === 'object' && ev.eventDate ? ev.eventDate : new Date(String(ev.eventDate)), "dd MMM yyyy") : "—"}
-                          </p>
-                        </button>
-                        <Badge variant="outline" className="text-sm shrink-0 px-3 py-1">{ev.eventType}</Badge>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="shrink-0 text-muted-foreground hover:text-destructive"
-                          onClick={() => { if (confirm("Delete this event?")) deleteEvent.mutate({ id: ev.id }); }}
-                          aria-label="Delete event"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <BirdEventCalendar
+                  events={birdEvents}
+                  onAddEvent={openAddEvent}
+                  onEditEvent={openEditEvent}
+                  onDeleteEvent={(id) => deleteEvent.mutate({ id })}
+                  onToggleComplete={(id) => toggleComplete.mutate({ id })}
+                />
               </CardContent>
             </Card>
           </TabsContent>
