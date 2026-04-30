@@ -106,6 +106,14 @@ export class BroodService {
         const db = getDb();
         if (!db) return;
 
+        // Ownership check — prevent a crafted broodId from overwriting another user's eggs
+        const [ownedBrood] = await db
+            .select({ id: broods.id })
+            .from(broods)
+            .where(and(eq(broods.id, broodId), eq(broods.userId, userId)))
+            .limit(1);
+        if (!ownedBrood) throw new Error("Brood not found");
+
         // If the date is an empty string (""), default to null so Drizzle sends it properly to Postgres
         const safeNotes = notes?.trim() ? notes : null;
         const safeDate = outcomeDate?.trim() ? outcomeDate : null;

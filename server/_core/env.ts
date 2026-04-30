@@ -4,6 +4,10 @@ if (!process.env.JWT_SECRET) {
   );
 }
 
+if (process.env.NODE_ENV === "production" && !process.env.STRIPE_WEBHOOK_SECRET) {
+  throw new Error("STRIPE_WEBHOOK_SECRET environment variable must be set in production.");
+}
+
 export const ENV = {
   cookieSecret: process.env.JWT_SECRET,
   databaseUrl: process.env.DATABASE_URL ?? "",
