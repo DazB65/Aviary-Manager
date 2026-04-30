@@ -1,4 +1,4 @@
-import { eq, and, desc, inArray } from "drizzle-orm";
+import { eq, and, desc, inArray, count, ne } from "drizzle-orm";
 import { getDb } from "../db";
 import {
     breedingPairs,
@@ -10,6 +10,15 @@ import {
 } from "../../drizzle/schema";
 
 export class PairService {
+    static async countActivePairs(userId: number): Promise<number> {
+        const db = getDb();
+        const [row] = await db
+            .select({ n: count() })
+            .from(breedingPairs)
+            .where(and(eq(breedingPairs.userId, userId), ne(breedingPairs.status, "retired")));
+        return Number(row?.n ?? 0);
+    }
+
     static async getPairsByUser(userId: number) {
         const db = getDb();
         if (!db) return [];

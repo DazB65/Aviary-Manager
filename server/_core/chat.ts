@@ -10,7 +10,6 @@ import { tool } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import type { Express } from "express";
 import { z } from "zod/v4";
-import { createPatchedFetch } from "./patchedFetch";
 import { BirdService } from "../services/birdService";
 import { PairService } from "../services/pairService";
 import { BroodService } from "../services/broodService";
@@ -35,7 +34,6 @@ function createLLMProvider() {
   return createOpenAI({
     baseURL,
     apiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
-    fetch: createPatchedFetch(fetch),
   });
 }
 

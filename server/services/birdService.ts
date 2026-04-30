@@ -14,6 +14,14 @@ export class BirdService {
         return getDb().select().from(birds).where(eq(birds.userId, userId)).orderBy(asc(birds.name));
     }
 
+    static async countBirds(userId: number): Promise<number> {
+        const [row] = await getDb()
+            .select({ n: count() })
+            .from(birds)
+            .where(eq(birds.userId, userId));
+        return Number(row?.n ?? 0);
+    }
+
     static async getBirdById(id: number, userId: number) {
         const results = await getDb()
             .select()

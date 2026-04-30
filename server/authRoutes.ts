@@ -5,7 +5,7 @@ import { nanoid } from "nanoid";
 import Stripe from "stripe";
 import { getDb } from "./db";
 import { users, birds, breedingPairs, broods, clutchEggs, events, userSettings, species } from "../drizzle/schema";
-import { eq, or } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { sendVerificationEmail, sendPasswordResetEmail } from "./email";
 import { sdk } from "./_core/sdk";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -93,22 +93,6 @@ export function registerAuthRoutes(app: Express) {
       const existing = existingRows[0];
 
       if (existing) {
-        // Legacy Manus OAuth user — no password set yet. Allow them to claim the account.
-        if (!existing.passwordHash) {
-          const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
-          await db.update(users)
-            .set({
-              passwordHash,
-              loginMethod: "email",
-              emailVerified: true,
-              name: name?.trim() || existing.name || null,
-              lastSignedIn: new Date(),
-            })
-            .where(eq(users.id, existing.id));
-          res.status(201).json({ success: true, requiresVerification: false, message: "Account set up! You can now log in." });
-          return;
-        }
-        // Full account already exists with a password
         res.status(409).json({ error: "An account with this email already exists. Please log in instead." });
         return;
       }
