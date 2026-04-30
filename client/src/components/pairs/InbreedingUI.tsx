@@ -57,6 +57,17 @@ export function InbreedingCheck({ maleId, femaleId }: { maleId: string; femaleId
     const isHigh = (coefficient ?? 0) >= 0.125;
     const isMod = (coefficient ?? 0) >= 0.0625 && (coefficient ?? 0) < 0.125;
 
+    // Safe pairing — compact single-line badge
+    if (!isHigh && !isMod && !siblingType) {
+        return (
+            <div className="flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md px-2.5 py-1.5">
+                <Dna className="h-3.5 w-3.5 shrink-0" />
+                <span className="font-medium">F = {pct}% — No inbreeding detected</span>
+            </div>
+        );
+    }
+
+    // Warning — keep prominent box display
     return (
         <div className="space-y-2">
             {siblingType && (
@@ -75,27 +86,17 @@ export function InbreedingCheck({ maleId, femaleId }: { maleId: string; femaleId
             <div
                 className={`rounded-lg p-3 text-sm border ${isHigh
                         ? "bg-red-50 border-red-200 text-red-800"
-                        : isMod
-                            ? "bg-orange-50 border-orange-200 text-orange-800"
-                            : "bg-emerald-50 border-emerald-200 text-emerald-800"
+                        : "bg-orange-50 border-orange-200 text-orange-800"
                     }`}
             >
                 <div className="flex items-center gap-2 font-medium">
-                    {isHigh || isMod ? (
-                        <AlertTriangle className="h-4 w-4 shrink-0" />
-                    ) : (
-                        <Dna className="h-4 w-4 shrink-0" />
-                    )}
+                    <AlertTriangle className="h-4 w-4 shrink-0" />
                     Inbreeding coefficient (F) = {pct}%
                 </div>
                 <p className="text-xs mt-1 opacity-80">
-                    {coefficient === 0
-                        ? "No shared ancestors found — this pairing is genetically unrelated."
-                        : isHigh
-                            ? "High inbreeding detected. This pairing shares significant common ancestry and may increase the risk of genetic defects."
-                            : isMod
-                                ? "Moderate inbreeding detected. Consider the cumulative effect over multiple generations."
-                                : "Low inbreeding. This pairing is generally acceptable but monitor over generations."}
+                    {isHigh
+                        ? "High inbreeding detected. This pairing shares significant common ancestry and may increase the risk of genetic defects."
+                        : "Moderate inbreeding detected. Consider the cumulative effect over multiple generations."}
                 </p>
             </div>
         </div>
