@@ -168,14 +168,14 @@ const SECTIONS: Section[] = [
     id: "plan", emoji: "💳", title: "Plan & Billing",
     articles: [
       {
-        title: "Free vs Pro Plan",
-        summary: "The free plan supports up to 20 birds and 5 breeding pairs. Pro gives you unlimited birds, unlimited pairs, and all future features.",
-        content: "On the free plan you can add up to 20 birds and 5 breeding pairs — broods, events, cages, statistics and pedigrees are all unlimited. When you hit a limit, the app shows a message explaining why and links you to upgrade. Pro removes all limits and is billed annually. Click Billing in the sidebar to see your current plan and upgrade.",
+        title: "Starter vs Pro Plan",
+        summary: "Starter gives you unlimited birds, pairs, and broods. Pro adds the AI Assistant for chat-based aviary management.",
+        content: "Both Starter and Pro give you unlimited birds, breeding pairs, broods, events, cages, statistics, pedigrees, and photo uploads. The only difference is that Pro includes the Aviary AI Assistant — you can manage your aviary by chat, get breeding recommendations, and get smart mutation advice. Click Billing in the sidebar to see your current plan and upgrade.",
       },
       {
         title: "Upgrading to Pro",
-        summary: "Upgrade any time from the Billing page. Your existing data is never affected — upgrading just removes the limits.",
-        content: "Go to Billing in the sidebar and click the upgrade button. Once upgraded, the bird and pair limits are removed immediately — no need to restart or log out. All your existing birds, pairs, and records stay exactly as they were. If you're on a beta invitation, your plan may have been set by the app administrator already.",
+        summary: "Upgrade any time from the Billing page to unlock the AI Assistant. Your existing data is never affected.",
+        content: "Go to Billing in the sidebar and click the upgrade button. Once upgraded, the AI Assistant is available immediately — no need to restart or log out. All your existing birds, pairs, and records stay exactly as they were.",
       },
     ],
   },
