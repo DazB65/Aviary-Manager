@@ -33,8 +33,11 @@ export class EventService {
     }
 
     static async deleteAllEventsForUser(userId: number) {
-        // Preserve events tied to a specific bird — those are deliberate health/history records.
-        await getDb().delete(events).where(and(eq(events.userId, userId), isNull(events.birdId)));
+        // Preserve bird-specific and all-birds events — those are deliberate health/history records.
+        // Only delete pure reminders (no birdId, allBirds = false).
+        await getDb().delete(events).where(
+            and(eq(events.userId, userId), isNull(events.birdId), eq(events.allBirds, false))
+        );
     }
 
     static async toggleEventComplete(id: number, userId: number) {
