@@ -68,11 +68,11 @@ export class EventService {
         let pairLabel = `Pair #${pairId}`;
         let cageLabel = "";
         if (pairId) {
-            const [pair] = await db.select().from(breedingPairs).where(eq(breedingPairs.id, pairId)).limit(1);
+            const [pair] = await db.select().from(breedingPairs).where(and(eq(breedingPairs.id, pairId), eq(breedingPairs.userId, userId))).limit(1);
             if (pair) {
                 const [[male], [female]] = await Promise.all([
-                    db.select().from(birds).where(eq(birds.id, pair.maleId)).limit(1),
-                    db.select().from(birds).where(eq(birds.id, pair.femaleId)).limit(1),
+                    db.select().from(birds).where(and(eq(birds.id, pair.maleId), eq(birds.userId, userId))).limit(1),
+                    db.select().from(birds).where(and(eq(birds.id, pair.femaleId), eq(birds.userId, userId))).limit(1),
                 ]);
                 const maleName = male?.name || male?.ringId || `Bird #${pair.maleId}`;
                 const femaleName = female?.name || female?.ringId || `Bird #${pair.femaleId}`;

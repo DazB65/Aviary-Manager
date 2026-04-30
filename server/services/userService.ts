@@ -8,6 +8,7 @@ import {
     broods,
     events,
     clutchEggs,
+    species,
     type InsertUser,
 } from "../../drizzle/schema";
 import { ENV } from "../_core/env";
@@ -76,6 +77,7 @@ export class UserService {
             await tx.delete(broods).where(eq(broods.userId, userId));
             await tx.delete(breedingPairs).where(eq(breedingPairs.userId, userId));
             await tx.delete(birds).where(eq(birds.userId, userId));
+            await tx.delete(species).where(eq(species.userId, userId));
             await tx.delete(userSettings).where(eq(userSettings.userId, userId));
             await tx.delete(users).where(eq(users.id, userId));
         });

@@ -49,6 +49,22 @@ const resendVerificationLimiter = rateLimit({
   message: { error: "Too many verification emails requested. Please try again in an hour." },
 });
 
+const resetPasswordLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many password reset attempts. Please try again in an hour." },
+});
+
+const deleteAccountLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many account deletion requests. Please try again in an hour." },
+});
+
 export function registerAuthRoutes(app: Express) {
 
   // ── POST /api/auth/register ───────────────────────────────────────────────
@@ -62,6 +78,10 @@ export function registerAuthRoutes(app: Express) {
       }
       if (password.length < 8) {
         res.status(400).json({ error: "Password must be at least 8 characters" });
+        return;
+      }
+      if (password.length > 128) {
+        res.status(400).json({ error: "Password must be 128 characters or fewer" });
         return;
       }
 
@@ -237,7 +257,7 @@ export function registerAuthRoutes(app: Express) {
   });
 
   // ── POST /api/auth/reset-password ────────────────────────────────────────
-  app.post("/api/auth/reset-password", async (req: Request, res: Response) => {
+  app.post("/api/auth/reset-password", resetPasswordLimiter, async (req: Request, res: Response) => {
     try {
       const { token, password } = req.body as { token?: string; password?: string };
       if (!token || !password) {
@@ -246,6 +266,10 @@ export function registerAuthRoutes(app: Express) {
       }
       if (password.length < 8) {
         res.status(400).json({ error: "Password must be at least 8 characters" });
+        return;
+      }
+      if (password.length > 128) {
+        res.status(400).json({ error: "Password must be 128 characters or fewer" });
         return;
       }
 
@@ -305,7 +329,7 @@ export function registerAuthRoutes(app: Express) {
   });
 
   // ── DELETE /api/auth/account ──────────────────────────────────────────────
-  app.delete("/api/auth/account", async (req: Request, res: Response) => {
+  app.delete("/api/auth/account", deleteAccountLimiter, async (req: Request, res: Response) => {
     let user: Awaited<ReturnType<typeof sdk.authenticateRequest>>;
     try {
       user = await sdk.authenticateRequest(req);
