@@ -34,9 +34,10 @@ export class EventService {
 
     static async deleteAllEventsForUser(userId: number) {
         // Preserve bird-specific and all-birds events — those are deliberate health/history records.
-        // Only delete pure reminders (no birdId, allBirds = false).
+        // Only delete pure reminders (no birdId, no pairId, allBirds = false).
+        // Preserve bird-specific events, allBirds records, and auto-generated brood events (pairId set).
         await getDb().delete(events).where(
-            and(eq(events.userId, userId), isNull(events.birdId), eq(events.allBirds, false))
+            and(eq(events.userId, userId), isNull(events.birdId), isNull(events.pairId), eq(events.allBirds, false))
         );
     }
 
@@ -57,7 +58,7 @@ export class EventService {
         return updated;
     }
 
-    static async syncBroodEvents(userId: number, pairId: number, broodId: number, fertilityDate?: string, hatchDate?: string) {
+    static async syncBroodEvents(userId: number, pairId: number | null, broodId: number, fertilityDate?: string, hatchDate?: string) {
         const db = getDb();
         if (!db) return;
 

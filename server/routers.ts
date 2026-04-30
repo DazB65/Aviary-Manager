@@ -329,6 +329,13 @@ export const appRouter = router({
         notes: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
+        const [male, female] = await Promise.all([
+          BirdService.getBirdById(input.maleId, ctx.user.id),
+          BirdService.getBirdById(input.femaleId, ctx.user.id),
+        ]);
+        if (!male) throw new TRPCError({ code: "BAD_REQUEST", message: "Male bird not found" });
+        if (!female) throw new TRPCError({ code: "BAD_REQUEST", message: "Female bird not found" });
+
         const { cageNumber, ...pairData } = input;
         let pair;
         try {
@@ -502,7 +509,7 @@ export const appRouter = router({
     delete: activeProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
-        await EventService.syncBroodEvents(ctx.user.id, 0, input.id);
+        await EventService.syncBroodEvents(ctx.user.id, null, input.id);
         return BroodService.deleteBrood(input.id, ctx.user.id);
       }),
 

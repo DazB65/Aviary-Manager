@@ -213,7 +213,7 @@ export class BroodService {
         // Delete eggs whose number now exceeds eggsLaid
         const toDelete = existing.filter(egg => egg.eggNumber > eggsLaid).map(egg => egg.id);
         if (toDelete.length > 0) {
-            await db.delete(clutchEggs).where(inArray(clutchEggs.id, toDelete));
+            await db.delete(clutchEggs).where(and(inArray(clutchEggs.id, toDelete), eq(clutchEggs.userId, userId)));
         }
     }
 
