@@ -203,9 +203,9 @@ export const appRouter = router({
         commonName: z.string().min(1),
         scientificName: z.string().optional(),
         category: z.string().optional(),
-        incubationDays: z.number().int().min(1).default(14),
-        clutchSizeMin: z.number().int().optional(),
-        clutchSizeMax: z.number().int().optional(),
+        incubationDays: z.number().int().min(1).max(365).default(14),
+        clutchSizeMin: z.number().int().min(0).max(50).optional(),
+        clutchSizeMax: z.number().int().min(0).max(50).optional(),
       }))
       .mutation(({ ctx, input }) =>
         SpeciesService.createSpecies({ ...input, isCustom: true, userId: ctx.user.id } as any)
@@ -619,7 +619,7 @@ export const appRouter = router({
     users: adminProcedure.query(() => UserService.getAllUsers()),
     chatStats: adminProcedure.query(() => getChatStats()),
     setPlan: adminProcedure
-      .input(z.object({ userId: z.number(), plan: z.enum(["free", "pro"]) }))
+      .input(z.object({ userId: z.number(), plan: z.enum(["free", "starter", "pro"]) }))
       .mutation(({ input }) => UserService.setUserPlan(input.userId, input.plan)),
     deleteUser: adminProcedure
       .input(z.object({ userId: z.number() }))
