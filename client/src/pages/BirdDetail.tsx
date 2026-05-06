@@ -444,9 +444,17 @@ export default function BirdDetail() {
     [bird, birdGenotype, showGeneticsTab]
   );
 
-  // Events relevant to this bird: either linked directly or applies to all birds
+  const relevantPairIds = new Set(
+    pairsList
+      .filter((pair) => pair.maleId === birdId || pair.femaleId === birdId)
+      .map((pair) => pair.id)
+  );
+
+  // Events relevant to this bird: linked directly, applies to all birds, or belongs to one of this bird's pairs.
   const birdEvents = allEvents.filter(e =>
-    e.birdId === birdId || (e as any).allBirds === true
+    e.birdId === birdId ||
+    (e as any).allBirds === true ||
+    (e.pairId ? relevantPairIds.has(e.pairId) : false)
   ).sort((a, b) => {
     // Sort by date descending (most recent first)
     const aDate = a.eventDate ? new Date(String(a.eventDate)).getTime() : 0;

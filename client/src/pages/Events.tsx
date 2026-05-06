@@ -22,8 +22,7 @@ export default function Events() {
     birdMap,
     pairLabel,
     isLoading,
-    showCompleted,
-    setShowCompleted,
+    displayEvents,
     grouped,
     sortedKeys,
     createEvent,
@@ -145,7 +144,7 @@ export default function Events() {
               Events & Reminders
             </h1>
             <p className="text-muted-foreground mt-1">
-              {events.filter((e) => !e.completed).length} upcoming
+              {displayEvents.length} upcoming
             </p>
           </div>
           <div className="flex gap-2">
@@ -171,25 +170,6 @@ export default function Events() {
           </div>
         </div>
 
-        <div id="tour-events-filters" className="flex gap-2">
-          <Button
-            variant={!showCompleted ? "default" : "outline"}
-            size="sm"
-            onClick={() => setShowCompleted(false)}
-            className={!showCompleted ? "bg-primary text-white" : ""}
-          >
-            Upcoming
-          </Button>
-          <Button
-            variant={showCompleted ? "default" : "outline"}
-            size="sm"
-            onClick={() => setShowCompleted(true)}
-            className={showCompleted ? "bg-primary text-white" : ""}
-          >
-            Completed
-          </Button>
-        </div>
-
         {isLoading ? (
           <div className="space-y-3">
             {[...Array(4)].map((_, i) => (
@@ -199,23 +179,18 @@ export default function Events() {
               />
             ))}
           </div>
-        ) : events.filter((e) => (showCompleted ? e.completed : !e.completed))
-          .length === 0 ? (
+        ) : displayEvents.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground">
             <CalendarDays className="h-12 w-12 mx-auto mb-3 opacity-30" />
-            <p className="font-medium">
-              {showCompleted ? "No completed events" : "No upcoming events"}
-            </p>
-            {!showCompleted && (
-              <Button
-                onClick={openAdd}
-                variant="outline"
-                className="mt-4 gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Add your first event
-              </Button>
-            )}
+            <p className="font-medium">No upcoming events</p>
+            <Button
+              onClick={openAdd}
+              variant="outline"
+              className="mt-4 gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Add your first event
+            </Button>
           </div>
         ) : (
           <div className="space-y-6">
@@ -233,7 +208,7 @@ export default function Events() {
                     <h3
                       className={`text-sm font-semibold ${dateKey === "Today"
                         ? "text-primary"
-                        : isPastDate && !showCompleted
+                        : isPastDate
                           ? "text-destructive"
                           : "text-muted-foreground"
                         }`}

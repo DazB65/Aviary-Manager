@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { format, parseISO, isToday, isTomorrow, isPast } from "date-fns";
@@ -12,7 +12,6 @@ export function formatDateLabel(val: Date | string | null | undefined): string {
 }
 
 export function useEvents() {
-    const [showCompleted, setShowCompleted] = useState(false);
     const utils = trpc.useUtils();
 
     const { data: events = [], isLoading: eventsLoading } = trpc.events.list.useQuery();
@@ -69,15 +68,13 @@ export function useEvents() {
         return `${mLabel} × ${fLabel}`;
     }
 
-    // Derived state filters
+    // The main Events page is an action list: completed items remain in bird history.
     const filtered = useMemo(() => {
-        return events.filter((e) => (showCompleted ? e.completed : !e.completed));
-    }, [events, showCompleted]);
+        return events.filter((e) => !e.completed);
+    }, [events]);
 
-    // When viewing upcoming events, hide future recurrences
+    // Hide future recurrences until the current occurrence is completed.
     const displayEvents = useMemo(() => {
-        if (showCompleted) return filtered;
-
         const earliestBySeries = new Map<string, typeof events[0]>();
         const nonSeries: typeof events[0][] = [];
 
@@ -93,7 +90,7 @@ export function useEvents() {
             }
         }
         return [...nonSeries, ...Array.from(earliestBySeries.values())];
-    }, [filtered, showCompleted]);
+    }, [filtered]);
 
     // Group by date
     const grouped = useMemo(() => {
@@ -124,8 +121,6 @@ export function useEvents() {
         birdMap,
         pairLabel,
         isLoading: eventsLoading || birdsLoading || pairsLoading,
-        showCompleted,
-        setShowCompleted,
         displayEvents,
         grouped,
         sortedKeys,

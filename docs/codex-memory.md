@@ -108,3 +108,4 @@ Before production-oriented changes, check:
 
 - 2026-05-06: Public Free tier removed from copy and admin controls. Canonical product model is 7-day trial, then Starter or Pro subscription.
 - 2026-05-06: New bird photos should upload to Tigris and store stable same-origin `/api/photos/birds/{userId}/{object}` URLs. Existing base64 `photoUrl` values may still exist until a separate migration/cleanup is planned.
+- 2026-05-06: The main Events & Reminders page is an open-actions list only. Completed events/reminders should remain available in relevant bird/pair history, not via a global Completed tab.

@@ -85,7 +85,17 @@ export class EventService {
 
         const titleSuffix = ` - ${pairLabel}${cageLabel}`;
 
-        // Clear previous auto-events for this specific brood
+        const existingAutoEvents = await db
+            .select({ seriesId: events.seriesId, completed: events.completed })
+            .from(events)
+            .where(and(eq(events.userId, userId), inArray(events.seriesId, [fSeries, hSeries])));
+
+        const completedBySeries = new Map<string, boolean>();
+        for (const ev of existingAutoEvents) {
+            if (ev.seriesId) completedBySeries.set(ev.seriesId, ev.completed ?? false);
+        }
+
+        // Clear previous auto-events for this specific brood, then recreate with completion state preserved.
         await db.delete(events).where(and(eq(events.userId, userId), inArray(events.seriesId, [fSeries, hSeries])));
 
         if (fertilityDate) {
@@ -97,6 +107,7 @@ export class EventService {
                 eventType: "other",
                 pairId,
                 seriesId: fSeries,
+                completed: completedBySeries.get(fSeries) ?? false,
             });
         }
 
@@ -109,6 +120,7 @@ export class EventService {
                 eventType: "other",
                 pairId,
                 seriesId: hSeries,
+                completed: completedBySeries.get(hSeries) ?? false,
             });
         }
     }
