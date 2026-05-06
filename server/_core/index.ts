@@ -59,8 +59,10 @@ async function startServer() {
     await runMigrations();
   } catch (dbError) {
     console.error("[DB] Migration failed:", dbError);
-    // Don't crash immediately unless critical, but often it's safe to halt.
-    // We'll just log it so Railway can debug it.
+    if (process.env.NODE_ENV === "production") {
+      throw dbError;
+    }
+    console.warn("[DB] Continuing after migration failure outside production.");
   }
 
   // tRPC API

@@ -4,13 +4,14 @@ import bcrypt from "bcryptjs";
 import { nanoid } from "nanoid";
 import Stripe from "stripe";
 import { getDb } from "./db";
-import { users, birds, breedingPairs, broods, clutchEggs, events, userSettings, species } from "../drizzle/schema";
+import { users } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 import { sendVerificationEmail, sendPasswordResetEmail } from "./email";
 import { sdk } from "./_core/sdk";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { ENV } from "./_core/env";
+import { UserService } from "./services/userService";
 
 const BCRYPT_ROUNDS = 12;
 const VERIFY_EXPIRY_MS = 24 * 60 * 60 * 1000;   // 24 hours
@@ -321,9 +322,6 @@ export function registerAuthRoutes(app: Express) {
       res.status(401).json({ error: "Unauthorised" }); return;
     }
 
-    const db = await getDb();
-    if (!db) { res.status(500).json({ error: "Database unavailable" }); return; }
-
     try {
       // 1. Cancel active Stripe subscription so user isn't billed again
       if (user.stripeSubscriptionId) {
@@ -340,15 +338,8 @@ export function registerAuthRoutes(app: Express) {
         }
       }
 
-      // 2. Delete all user data (FK-safe order: children before parents)
-      await db.delete(clutchEggs).where(eq(clutchEggs.userId, user.id));
-      await db.delete(events).where(eq(events.userId, user.id));
-      await db.delete(broods).where(eq(broods.userId, user.id));
-      await db.delete(breedingPairs).where(eq(breedingPairs.userId, user.id));
-      await db.delete(birds).where(eq(birds.userId, user.id));
-      await db.delete(species).where(eq(species.userId, user.id));   // custom species only
-      await db.delete(userSettings).where(eq(userSettings.userId, user.id));
-      await db.delete(users).where(eq(users.id, user.id));
+      // 2. Delete all local user data in one transaction.
+      await UserService.deleteUser(user.id);
 
       console.log(`[DeleteAccount] All data deleted for user ${user.id}`);
 
