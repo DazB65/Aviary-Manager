@@ -510,6 +510,61 @@ export default function BirdDetail() {
   })();
 
   const pedigreeBird = pedigreeMap[birdId] ?? { ...bird, fatherId: bird.fatherId ?? null, motherId: bird.motherId ?? null };
+  const displayName = bird.name || bird.ringId || `Bird #${bird.id}`;
+  const speciesName = species?.commonName ?? "Unknown species";
+  const genderLabel = bird.gender === "male" ? "Male" : bird.gender === "female" ? "Female" : "Unknown";
+  const genderTone = bird.gender === "male"
+    ? "from-sky-50 to-blue-100 text-blue-600 border-blue-200"
+    : bird.gender === "female"
+      ? "from-rose-50 to-pink-100 text-rose-600 border-rose-200"
+      : "from-amber-50 to-orange-100 text-amber-600 border-amber-200";
+  const accentClass = bird.gender === "male" ? "bg-blue-500" : bird.gender === "female" ? "bg-rose-500" : "bg-amber-500";
+  const statusClass =
+    bird.status === "alive" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+      bird.status === "breeding" ? "bg-pink-50 text-pink-700 border-pink-200" :
+        bird.status === "resting" ? "bg-amber-50 text-amber-700 border-amber-200" :
+          bird.status === "fledged" ? "bg-cyan-50 text-cyan-700 border-cyan-200" :
+            bird.status === "sold" ? "bg-blue-50 text-blue-700 border-blue-200" :
+              "bg-gray-50 text-gray-500 border-gray-200";
+  const statusLabel = {
+    alive: "Alive",
+    breeding: "Breeding",
+    resting: "Resting",
+    fledged: "Fledged",
+    deceased: "Deceased",
+    sold: "Sold",
+    unknown: "Unknown",
+  }[bird.status] ?? bird.status;
+  const mutationRows = showGeneticsTab
+    ? gouldianFinchPack.traits.flatMap((trait) => {
+        const sel = traitSelections[trait.traitName] ?? { colour: "", splitTo: "" };
+        const colourMutation = trait.mutations.find(m => m.id === sel.colour);
+        const splitMutation = trait.mutations.find(m => m.id === sel.splitTo);
+        if (!colourMutation) return [];
+        const label = trait.traitName.replace(" Colour", "").toUpperCase();
+        const traitWord = trait.traitName.replace(" Colour", "");
+        const cleanValue = colourMutation.name.replace(new RegExp(`\\s*${traitWord}\\s*`, "i"), "").trim() || colourMutation.name;
+        const splitValue = splitMutation?.name.replace(new RegExp(`\\s*${traitWord}\\s*`, "i"), "").trim() || splitMutation?.name;
+        return [{ label, value: splitValue ? `${cleanValue} split to ${splitValue}` : cleanValue }];
+      })
+    : bird.colorMutation
+      ? (() => {
+          const parts = bird.colorMutation.split(" / ");
+          const labels = ["HEAD", "BODY", "BREAST"];
+          const trailWords = ["Head", "Body", "Breast"];
+          if (parts.length <= 1) return [{ label: "MUTATION", value: bird.colorMutation }];
+          return parts.map((part, i) => ({
+            label: labels[i] ?? "MUTATION",
+            value: part.replace(new RegExp(`\\s*${trailWords[i]}\\s*$`, "i"), "").trim() || part,
+          }));
+        })()
+      : [];
+  const detailItems = [
+    { label: "Ring ID", value: bird.ringId || "—", className: "font-mono" },
+    { label: "Gender", value: genderLabel, icon: <GenderIcon gender={bird.gender} className="w-4 h-4" /> },
+    { label: "Date of Birth", value: dobStr || "—" },
+    { label: "Fledged Date", value: fledgedStr || "—" },
+  ];
 
   const handleGenotypeChange = (mutationId: string, nextState: GenotypeState) => {
     setBirdGenotype((currentGenotype) => {
@@ -558,134 +613,94 @@ export default function BirdDetail() {
         </div>
 
         {/* Profile Header */}
-        <Card className="border border-border shadow-card overflow-hidden">
+        <Card className="overflow-hidden border border-border/80 shadow-card bg-white">
           <CardContent className="p-0">
-            <div className="flex flex-col sm:flex-row">
-              {/* Gender accent bar */}
-              <div className={`h-1.5 sm:h-auto sm:w-1.5 shrink-0 ${bird.gender === "male" ? "bg-blue-400" : bird.gender === "female" ? "bg-rose-400" : "bg-amber-400"}`} />
-
-              {/* Left: Photo + name + status */}
-              <div className="sm:w-52 lg:w-64 shrink-0 p-6 flex flex-col gap-4 sm:border-r border-border">
+            <div className={`h-1.5 ${accentClass}`} />
+            <div className="grid gap-0 lg:grid-cols-[320px_1fr]">
+              <div className="p-5 sm:p-6 lg:p-7 bg-muted/20 lg:border-r border-border/70">
                 <div
-                  className={`rounded-2xl overflow-hidden w-full aspect-square ${bird.gender === "male" ? "bg-gradient-to-br from-blue-50 to-blue-100" : bird.gender === "female" ? "bg-gradient-to-br from-pink-50 to-rose-100" : "bg-gradient-to-br from-amber-50 to-orange-100"} flex items-center justify-center ${bird.photoUrl ? "cursor-zoom-in" : ""}`}
+                  className={`relative aspect-[4/3] overflow-hidden rounded-xl border ${genderTone} bg-gradient-to-br flex items-center justify-center ${bird.photoUrl ? "cursor-zoom-in" : ""}`}
                   onClick={() => bird.photoUrl && setLightboxSrc(bird.photoUrl)}
                 >
                   {bird.photoUrl ? (
-                    <img src={bird.photoUrl} alt={bird.name ?? "Bird"} className="w-full h-full object-cover" />
+                    <img src={bird.photoUrl} alt={displayName} className="h-full w-full object-cover" />
                   ) : (
-                    <GenderIcon gender={bird.gender} className="w-16 h-16 opacity-25" />
+                    <div className="flex flex-col items-center gap-3 text-current">
+                      <GenderIcon gender={bird.gender} className="w-16 h-16 opacity-35" />
+                      <span className="text-xs font-semibold uppercase tracking-widest opacity-70">No photo</span>
+                    </div>
                   )}
                 </div>
-                <div>
-                  <h1 className="font-display text-2xl font-bold leading-tight">{bird.name || bird.ringId || `Bird #${bird.id}`}</h1>
-                  <p className="text-muted-foreground text-sm mt-1">{species?.commonName ?? "Unknown species"}</p>
+
+                <div className="mt-5 flex flex-wrap items-center gap-2">
+                  <Badge variant="outline" className={`border px-3 py-1 text-sm font-semibold ${statusClass}`}>
+                    {statusLabel}
+                  </Badge>
+                  <Badge variant="secondary" className="px-3 py-1 text-sm font-semibold bg-white border border-border text-muted-foreground">
+                    {speciesName}
+                  </Badge>
                 </div>
-                <Badge
-                  className={`w-fit border text-sm px-3 py-1 ${bird.status === "alive" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
-                    bird.status === "breeding" ? "bg-pink-50 text-pink-700 border-pink-200" :
-                    bird.status === "resting" ? "bg-amber-50 text-amber-700 border-amber-200" :
-                    bird.status === "fledged" ? "bg-cyan-50 text-cyan-700 border-cyan-200" :
-                    bird.status === "sold" ? "bg-blue-50 text-blue-700 border-blue-200" :
-                    "bg-gray-50 text-gray-500 border-gray-200"}`}
-                  variant="outline"
-                >
-                  {{ alive: "Alive", breeding: "🥚 Breeding", resting: "💤 Resting", fledged: "🪶 Fledged", deceased: "Deceased", sold: "Sold", unknown: "Unknown" }[bird.status] ?? bird.status}
-                </Badge>
               </div>
 
-              {/* Right: Details */}
-              <div className="flex-1 p-6 flex flex-col gap-5 min-w-0">
-                {/* Stats row */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Ring ID</p>
-                    <p className="text-lg font-bold font-mono">{bird.ringId || "—"}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Gender</p>
-                    <p className="text-lg font-bold flex items-center gap-1.5">
-                      <GenderIcon gender={bird.gender} className="w-5 h-5" />
-                      {bird.gender === "male" ? "Male" : bird.gender === "female" ? "Female" : "Unknown"}
+              <div className="min-w-0 p-5 sm:p-6 lg:p-7">
+                <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Bird record</p>
+                    <h1 className="mt-1 font-display text-3xl font-bold leading-tight text-foreground sm:text-4xl">
+                      {displayName}
+                    </h1>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      {speciesName}{bird.ringId ? ` • ${bird.ringId}` : ""}
                     </p>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Date of Birth</p>
-                    <p className="text-lg font-bold">{dobStr || "—"}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Fledged Date</p>
-                    <p className="text-lg font-bold">{fledgedStr || "—"}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <div className="rounded-lg border border-border bg-muted/30 px-3 py-2">
+                      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Records</p>
+                      <p className="mt-1 text-sm font-bold text-foreground">{birdEvents.length} events</p>
+                    </div>
+                    <div className="rounded-lg border border-border bg-muted/30 px-3 py-2">
+                      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Lineage</p>
+                      <p className="mt-1 text-sm font-bold text-foreground">{genCount > 0 ? `${genCount} gen` : "No parents"}</p>
+                    </div>
                   </div>
                 </div>
 
-                {/* Colour / Mutation */}
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">Colour / Mutation</p>
-                  {showGeneticsTab ? (
-                    (() => {
-                      const traitRows = gouldianFinchPack.traits.flatMap((trait) => {
-                        const sel = traitSelections[trait.traitName] ?? { colour: "", splitTo: "" };
-                        const colourMutation = trait.mutations.find(m => m.id === sel.colour);
-                        const splitMutation = trait.mutations.find(m => m.id === sel.splitTo);
-                        if (!colourMutation) return [];
-                        const label = trait.traitName.replace(" Colour", "").toUpperCase();
-                        // Strip the trait name from the value (e.g. "Black Head" → "Black", "Green Body" → "Green")
-                        const traitWord = trait.traitName.replace(" Colour", "");
-                        const cleanValue = colourMutation.name.replace(new RegExp(`\\s*${traitWord}\\s*`, "i"), "").trim() || colourMutation.name;
-                        const displayValue = splitMutation
-                          ? `${cleanValue} split to ${splitMutation.name.replace(new RegExp(`\\s*${traitWord}\\s*`, "i"), "").trim() || splitMutation.name}`
-                          : cleanValue;
-                        return [{ label, value: displayValue }];
-                      });
-                      if (traitRows.length === 0) {
-                        return <p className="text-lg font-bold text-amber-600">{bird.colorMutation || "—"}</p>;
-                      }
-                      return (
-                        <div className="flex flex-col gap-2">
-                          {traitRows.map(({ label, value }) => (
-                            <div key={label}>
-                              <p className="text-xs font-bold tracking-widest text-muted-foreground uppercase">{label}</p>
-                              <p className="text-lg font-bold text-amber-600 leading-tight">{value}</p>
-                            </div>
-                          ))}
+                <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  {detailItems.map((item) => (
+                    <div key={item.label} className="rounded-lg border border-border bg-white px-4 py-3 shadow-sm">
+                      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{item.label}</p>
+                      <p className={`mt-2 flex items-center gap-2 text-base font-bold text-foreground ${item.className ?? ""}`}>
+                        {item.icon}
+                        {item.value}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50/45 p-4">
+                  <div className="flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-amber-700" />
+                    <p className="text-sm font-bold text-foreground">Colour / Mutation</p>
+                  </div>
+                  {mutationRows.length > 0 ? (
+                    <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                      {mutationRows.map(({ label, value }) => (
+                        <div key={label} className="min-w-0">
+                          <p className="text-xs font-bold tracking-widest text-muted-foreground uppercase">{label}</p>
+                          <p className="mt-1 text-lg font-bold leading-tight text-amber-700">{value}</p>
                         </div>
-                      );
-                    })()
+                      ))}
+                    </div>
                   ) : (
-                    (() => {
-                      // Parse "Black Head / Green / Purple" style strings into labelled rows
-                      if (bird.colorMutation) {
-                        const parts = bird.colorMutation.split(" / ");
-                        const labels = ["HEAD", "BODY", "BREAST"];
-                        const trailWords = ["Head", "Body", "Breast"];
-                        if (parts.length > 1) {
-                          return (
-                            <div className="flex flex-col gap-2">
-                              {parts.map((part, i) => {
-                                const clean = part.replace(new RegExp(`\\s*${trailWords[i]}\\s*$`, "i"), "").trim() || part;
-                                return (
-                                  <div key={i}>
-                                    <p className="text-xs font-bold tracking-widest text-muted-foreground uppercase">{labels[i] ?? ""}</p>
-                                    <p className="text-lg font-bold text-amber-600 leading-tight">{clean}</p>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          );
-                        }
-                      }
-                      return <p className="text-lg font-bold text-amber-600">{bird.colorMutation || "—"}</p>;
-                    })()
+                    <p className="mt-3 text-lg font-bold text-amber-700">—</p>
                   )}
                 </div>
 
-                {/* Notes */}
                 {bird.notes && (
-                  <div className="p-3 bg-muted rounded-xl text-sm text-muted-foreground border border-border">
+                  <div className="mt-5 rounded-xl border border-border bg-muted/35 p-4 text-sm leading-relaxed text-muted-foreground">
                     {bird.notes}
                   </div>
                 )}
-
               </div>
             </div>
           </CardContent>
@@ -693,7 +708,7 @@ export default function BirdDetail() {
 
         {/* Tabs: Pedigree + Descendants */}
         <Tabs id="tour-bird-tabs" defaultValue="pedigree">
-          <TabsList className="mb-4 h-11 rounded-xl p-1 gap-0.5">
+          <TabsList className="mb-4 h-auto max-w-full flex-wrap justify-start rounded-xl bg-muted/70 p-1 gap-1">
             <TabsTrigger value="pedigree" className="gap-2 text-sm px-4 rounded-lg h-9">
               <GitBranch className="h-4 w-4" /> Pedigree
               {genCount > 0 && <Badge variant="secondary" className="ml-1 text-xs">{genCount} gen</Badge>}
