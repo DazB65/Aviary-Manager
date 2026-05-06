@@ -4,14 +4,24 @@ import { getDb } from "./db";
 import { users } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 import { sdk } from "./_core/sdk";
-import { COOKIE_NAME } from "@shared/const";
 import { PRODUCTS } from "./stripeProducts";
+
+type BillingInterval = "monthly" | "yearly";
+type PlanTier = keyof typeof PRODUCTS;
 
 function getStripe() {
   // Support both STRIPE_SECRET_KEY and STRIPE_PRIVATE_KEY env var names
   const key = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_PRIVATE_KEY;
   if (!key) throw new Error("Stripe secret key not configured (set STRIPE_SECRET_KEY or STRIPE_PRIVATE_KEY)");
   return new Stripe(key, { apiVersion: "2026-01-28.clover" });
+}
+
+function normalizePlanTier(plan: unknown, fallback: PlanTier = "pro"): PlanTier {
+  return plan === "starter" || plan === "pro" ? plan : fallback;
+}
+
+function normalizeBillingInterval(interval: unknown): BillingInterval {
+  return interval === "yearly" ? "yearly" : "monthly";
 }
 
 export function registerStripeRoutes(app: Express) {
@@ -46,7 +56,7 @@ export function registerStripeRoutes(app: Express) {
             const userId = parseInt(session.metadata?.user_id || "0", 10);
             if (!userId) break;
 
-            const planTier = (session.metadata?.plan_tier as "starter" | "pro") || "pro";
+            const planTier = normalizePlanTier(session.metadata?.plan_tier);
             await db.update(users).set({
               plan: planTier,
               stripeCustomerId: (session.customer as string) || null,
@@ -61,7 +71,7 @@ export function registerStripeRoutes(app: Express) {
             const sub = event.data.object as Stripe.Subscription;
             const customerId = sub.customer as string;
             const isActive = sub.status === "active" || sub.status === "trialing";
-            const planTier = (sub.metadata?.plan_tier as "starter" | "pro") || "pro";
+            const planTier = normalizePlanTier(sub.metadata?.plan_tier);
             await db.update(users).set({
               plan: isActive ? planTier : "free",
               stripeSubscriptionId: isActive ? sub.id : null,
@@ -80,6 +90,8 @@ export function registerStripeRoutes(app: Express) {
         }
       } catch (err) {
         console.error("[Stripe Webhook] Handler error:", err);
+        res.status(500).json({ error: "Webhook handler failed" });
+        return;
       }
 
       res.json({ received: true });
@@ -101,10 +113,16 @@ export function registerStripeRoutes(app: Express) {
       return;
     }
 
-    const { interval = "monthly", plan = "pro" } = req.body as {
-      interval?: "monthly" | "yearly";
-      plan?: "starter" | "pro";
+    const { interval: requestedInterval, plan: requestedPlan } = req.body as {
+      interval?: unknown;
+      plan?: unknown;
     };
+    const interval = normalizeBillingInterval(requestedInterval);
+    if (requestedPlan !== undefined && requestedPlan !== "starter" && requestedPlan !== "pro") {
+      res.status(400).json({ error: "Invalid subscription plan" });
+      return;
+    }
+    const plan = normalizePlanTier(requestedPlan);
     const origin = req.headers.origin || "http://localhost:3000";
 
     let stripe: Stripe;
