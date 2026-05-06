@@ -305,8 +305,8 @@ export const appRouter = router({
         }
         const key = `birds/${ctx.user.id}/${nanoid()}.${ext}`;
         const buffer = Buffer.from(input.dataBase64, "base64");
-        const { url } = await storagePut(key, buffer, input.contentType);
-        return { url };
+        await storagePut(key, buffer, input.contentType);
+        return { url: `/api/photos/${key}` };
       }),
   }),
 

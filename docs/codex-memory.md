@@ -25,7 +25,7 @@ The app has real users, Stripe billing, PostgreSQL data, Tigris photo storage, a
 - Database: PostgreSQL with Drizzle ORM.
 - Auth: JWT in httpOnly cookies with bcrypt password auth.
 - Storage: Tigris S3-compatible storage for bird photos.
-- Billing: Stripe Free/Pro tiers.
+- Billing: Stripe 7-day trial, then Starter or Pro subscriptions.
 - Deploy: Docker on Railway.
 - AI: OpenAI SDK / AI SDK streaming chat and tool calling.
 - Frontend route entry: `client/src/App.tsx`.
@@ -44,9 +44,12 @@ The app has real users, Stripe billing, PostgreSQL data, Tigris photo storage, a
 
 ## Pricing And Limits
 
-- Free: 20 birds, 5 breeding pairs.
-- Pro: unlimited birds and breeding pairs.
-- Do not change pricing, limits, Stripe products, checkout, billing portal, or webhook behavior without Darren's explicit approval.
+- There is no public Free tier.
+- New accounts get a 7-day trial, then must subscribe to Starter or Pro.
+- Starter: paid subscription for core aviary management.
+- Pro: paid subscription with AI Assistant access.
+- The database may still use internal `free` plan values for legacy trial/expired states until a careful enum migration is planned.
+- Do not change pricing, limits, Stripe products, checkout, billing portal, webhook behavior, or plan enums without Darren's explicit approval.
 
 ## Production Safety
 
@@ -86,7 +89,7 @@ Before production-oriented changes, check:
 - User isolation by `user.id`.
 - Auth/cookie/session behavior.
 - Stripe checkout, portal, subscription status, and webhook behavior.
-- Free/Pro enforcement.
+- Trial/Starter/Pro enforcement.
 - Tigris uploads, signed URLs, and photo access isolation.
 - Drizzle schema/migration effects.
 - Railway startup/build behavior.
@@ -100,3 +103,8 @@ Before production-oriented changes, check:
 - Confirm whether CI should run `pnpm check`, `pnpm test`, and `pnpm build` on PRs.
 - Confirm current Railway deployment policy and whether `main` auto-deploys.
 - Confirm whether old media/screenshot/deleted-file state should be cleaned in a separate maintenance task.
+
+## Recent Decisions
+
+- 2026-05-06: Public Free tier removed from copy and admin controls. Canonical product model is 7-day trial, then Starter or Pro subscription.
+- 2026-05-06: New bird photos should upload to Tigris and store stable same-origin `/api/photos/birds/{userId}/{object}` URLs. Existing base64 `photoUrl` values may still exist until a separate migration/cleanup is planned.

@@ -8,6 +8,7 @@ import { registerChatRoutes } from "./chat";
 import { registerPdfRoutes } from "../pdfRoutes";
 import { registerAuthRoutes } from "../authRoutes";
 import { registerStripeRoutes } from "../stripeRoutes";
+import { registerPhotoRoutes } from "../photoRoutes";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
@@ -50,6 +51,8 @@ async function startServer() {
   registerChatRoutes(app);
   // PDF generation routes
   registerPdfRoutes(app);
+  // Stable authenticated photo URLs backed by Tigris signed URLs
+  registerPhotoRoutes(app);
 
   // Run pending database migrations
   try {

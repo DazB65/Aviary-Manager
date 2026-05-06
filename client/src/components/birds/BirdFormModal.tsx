@@ -16,7 +16,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Dna, Upload } from "lucide-react";
+import { Dna, Loader2, Upload } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 import { Controller } from "react-hook-form";
 import { useBirdForm, type BirdFormData } from "@/hooks/useBirdForm";
@@ -24,6 +24,8 @@ import { GenderIcon } from "@/components/ui/GenderIcon";
 import { gouldianFinchPack } from "@/genetics/packs/gouldianFinch";
 import { GenotypeState, InheritanceType, type BirdGenotype } from "@/genetics/types";
 import { readBirdGenotype, formatGeneticsDisplay } from "@/genetics/storage";
+import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 
 /** Read genotype from bird DB field first, fall back to localStorage */
 function getBirdGenotype(bird?: any, birdId?: number | null): BirdGenotype {
@@ -85,6 +87,13 @@ function parseSelectionsFromGenotype(
 
 const CROP_VIEW = 280; // px visible in the crop UI
 const CROP_OUT = 400;  // px of the output image
+const CROP_OUTPUT_TYPE = "image/jpeg";
+
+function dataUrlToBase64(dataUrl: string) {
+    const marker = ";base64,";
+    const idx = dataUrl.indexOf(marker);
+    return idx >= 0 ? dataUrl.slice(idx + marker.length) : dataUrl;
+}
 
 interface BirdFormModalProps {
     open: boolean;
@@ -114,6 +123,7 @@ export function BirdFormModal({
     activeGeneticsPacks = [],
 }: BirdFormModalProps) {
     const form = useBirdForm(initialBird, userSettings);
+    const uploadPhoto = trpc.birds.uploadPhoto.useMutation();
     const fileRef = useRef<HTMLInputElement>(null);
     const [showAllSpecies, setShowAllSpecies] = useState(!!editingId);
     const [traitSelections, setTraitSelections] = useState<Record<string, { colour: string; splitTo: string }>>(() =>
@@ -262,14 +272,26 @@ export function BirdFormModal({
         canvas.height = CROP_OUT;
         const ctx = canvas.getContext("2d")!;
         const img = new Image();
-        img.onload = () => {
+        img.onload = async () => {
             const s = cropScaleRef.current;
             const { x: ox, y: oy } = cropOffsetRef.current;
             ctx.fillStyle = "#ffffff";
             ctx.fillRect(0, 0, CROP_OUT, CROP_OUT);
             ctx.drawImage(img, -ox / s, -oy / s, CROP_VIEW / s, CROP_VIEW / s, 0, 0, CROP_OUT, CROP_OUT);
-            form.setValue("photoUrl", canvas.toDataURL("image/jpeg", 0.85), { shouldValidate: true });
-            setCropSrc(null);
+            const dataUrl = canvas.toDataURL(CROP_OUTPUT_TYPE, 0.85);
+
+            try {
+                const { url } = await uploadPhoto.mutateAsync({
+                    filename: `bird-${Date.now()}.jpg`,
+                    contentType: CROP_OUTPUT_TYPE,
+                    dataBase64: dataUrlToBase64(dataUrl),
+                });
+                form.setValue("photoUrl", url, { shouldValidate: true });
+                setCropSrc(null);
+            } catch (error) {
+                const message = error instanceof Error ? error.message : "Photo upload failed. Please try again.";
+                toast.error(message);
+            }
         };
         img.src = cropSrc;
     }
@@ -350,8 +372,14 @@ export function BirdFormModal({
                         </div>
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={() => setCropSrc(null)}>Cancel</Button>
-                            <Button type="button" onClick={confirmCrop} className="bg-primary hover:bg-primary/90">
-                                Use this photo
+                            <Button
+                                type="button"
+                                onClick={confirmCrop}
+                                className="bg-primary hover:bg-primary/90"
+                                disabled={uploadPhoto.isPending}
+                            >
+                                {uploadPhoto.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {uploadPhoto.isPending ? "Uploading..." : "Use this photo"}
                             </Button>
                         </DialogFooter>
                     </>
@@ -394,9 +422,10 @@ export function BirdFormModal({
                                             size="sm"
                                             onClick={() => fileRef.current?.click()}
                                             className="gap-2"
+                                            disabled={uploadPhoto.isPending}
                                         >
                                             <Upload className="h-3.5 w-3.5" />
-                                            {form.watch("photoUrl") ? "Change photo" : "Upload photo"}
+                                            {uploadPhoto.isPending ? "Uploading..." : form.watch("photoUrl") ? "Change photo" : "Upload photo"}
                                         </Button>
                                         {form.watch("photoUrl") && (
                                             <Button
@@ -404,6 +433,7 @@ export function BirdFormModal({
                                                 variant="ghost"
                                                 size="sm"
                                                 className="text-muted-foreground hover:text-destructive"
+                                                disabled={uploadPhoto.isPending}
                                                 onClick={() => form.setValue("photoUrl", "")}
                                             >
                                                 Remove
@@ -421,6 +451,14 @@ export function BirdFormModal({
                                         const f = e.target.files?.[0];
                                         if (!f) return;
                                         e.target.value = "";
+                                        if (!f.type.startsWith("image/")) {
+                                            toast.error("Please choose an image file.");
+                                            return;
+                                        }
+                                        if (f.size > 5 * 1024 * 1024) {
+                                            toast.error("Image must be 5 MB or smaller.");
+                                            return;
+                                        }
                                         const reader = new FileReader();
                                         reader.onload = (ev) => initCrop(ev.target?.result as string);
                                         reader.readAsDataURL(f);
@@ -740,7 +778,7 @@ export function BirdFormModal({
                                 </Button>
                                 <Button
                                     type="submit"
-                                    disabled={isSubmitting}
+                                    disabled={isSubmitting || uploadPhoto.isPending}
                                     className="bg-primary hover:bg-primary/90"
                                 >
                                     {editingId ? "Save changes" : "Add bird"}
