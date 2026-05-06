@@ -30,7 +30,7 @@ const requireUser = t.middleware(async opts => {
 
 export const protectedProcedure = t.procedure.use(requireUser);
 
-/** Requires an active trial OR a starter/pro plan. Admins always pass. */
+/** Requires an active trial OR a starter/pro subscription. Admins always pass. */
 const requireActive = t.middleware(async opts => {
   const { ctx, next } = opts;
   const user = ctx.user;
@@ -39,13 +39,13 @@ const requireActive = t.middleware(async opts => {
     throw new TRPCError({ code: "UNAUTHORIZED", message: UNAUTHED_ERR_MSG });
   }
 
-  // Admins and paid users (starter or pro) always have access
+  // Admins and subscribed users (starter or pro) always have access.
   if (user.role === "admin" || user.plan === "starter" || user.plan === "pro") {
     return next({ ctx: { ...ctx, user } });
   }
 
-  // Free plan — check trial window (full Pro trial)
-  // planExpiresAt is set on registration; fall back to createdAt + 7 days for legacy accounts
+  // Non-subscribed accounts are trial/expired states, not a public no-cost tier.
+  // planExpiresAt is set on registration; fall back to createdAt + 7 days for legacy accounts.
   const trialEnd = user.planExpiresAt
     ? new Date(user.planExpiresAt)
     : new Date(user.createdAt.getTime() + TRIAL_DAYS_MS);
@@ -61,7 +61,7 @@ export const activeProcedure = t.procedure.use(requireActive);
 
 export const PRO_REQUIRED_MSG = "PRO_REQUIRED";
 
-/** Requires Pro plan OR active trial. Starter users are blocked. Admins always pass. */
+/** Requires Pro subscription OR active trial. Starter users are blocked. Admins always pass. */
 const requirePro = t.middleware(async opts => {
   const { ctx, next } = opts;
   const user = ctx.user;
@@ -74,7 +74,7 @@ const requirePro = t.middleware(async opts => {
     return next({ ctx: { ...ctx, user } });
   }
 
-  // Free plan — check trial window (trial gives full Pro access)
+  // Non-subscribed trial accounts get temporary Pro access.
   if (user.plan === "free") {
     const trialEnd = user.planExpiresAt
       ? new Date(user.planExpiresAt)

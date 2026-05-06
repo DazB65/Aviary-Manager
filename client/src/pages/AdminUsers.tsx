@@ -142,8 +142,10 @@ export default function AdminUsers() {
                           <td className="px-3 py-2">
                             {u.plan === "pro" ? (
                               <Badge className="text-xs bg-yellow-400 text-yellow-900 hover:bg-yellow-400">Pro</Badge>
+                            ) : u.plan === "starter" ? (
+                              <Badge className="text-xs bg-teal-100 text-teal-800 border-teal-200">Starter</Badge>
                             ) : (
-                              <Badge variant="outline" className="text-xs">Free</Badge>
+                              <Badge variant="outline" className="text-xs">Trial/Expired</Badge>
                             )}
                           </td>
                           <td className="px-3 py-2">
@@ -182,9 +184,9 @@ export default function AdminUsers() {
                                 variant="outline"
                                 className="text-xs h-7 whitespace-nowrap"
                                 disabled={setPlan.isPending || deleteUser.isPending || setRole.isPending}
-                                onClick={() => setPlan.mutate({ userId: u.id, plan: u.plan === "pro" ? "free" : "pro" })}
+                                onClick={() => setPlan.mutate({ userId: u.id, plan: u.plan === "pro" ? "starter" : "pro" })}
                               >
-                                {u.plan === "pro" ? "→ Free" : "→ Pro"}
+                                {u.plan === "pro" ? "→ Starter" : "→ Pro"}
                               </Button>
                               {u.id !== me?.id && (
                                 <>
@@ -223,4 +225,3 @@ export default function AdminUsers() {
     </DashboardLayout>
   );
 }
-

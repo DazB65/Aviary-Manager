@@ -619,7 +619,7 @@ export const appRouter = router({
     users: adminProcedure.query(() => UserService.getAllUsers()),
     chatStats: adminProcedure.query(() => getChatStats()),
     setPlan: adminProcedure
-      .input(z.object({ userId: z.number(), plan: z.enum(["free", "starter", "pro"]) }))
+      .input(z.object({ userId: z.number(), plan: z.enum(["starter", "pro"]) }))
       .mutation(({ input }) => UserService.setUserPlan(input.userId, input.plan)),
     deleteUser: adminProcedure
       .input(z.object({ userId: z.number() }))

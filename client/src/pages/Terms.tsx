@@ -36,7 +36,7 @@ export default function Terms() {
 
         <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">3. Subscriptions & Billing</h2>
         <p className="text-gray-600 leading-relaxed">
-          Paid plans are billed in Australian dollars (AUD) via Stripe. Monthly and yearly subscriptions renew automatically until cancelled. A 7-day free trial is offered on all new accounts — no card required. After 7 days, a subscription is required to continue full access. Lifetime plans are a one-time payment with no recurring fees.
+          Paid plans are billed in US dollars (USD) via Stripe. Monthly and yearly subscriptions renew automatically until cancelled. A 7-day trial is offered on all new accounts — no card required. After 7 days, a subscription is required to continue full access. Lifetime plans are a one-time payment with no recurring fees.
         </p>
         <p className="text-gray-600 leading-relaxed mt-2">
           You may cancel your subscription at any time via the billing portal. Cancellations take effect at the end of the current billing period. We do not offer refunds for partial billing periods except where required by law.
@@ -89,4 +89,3 @@ export default function Terms() {
     </div>
   );
 }
-

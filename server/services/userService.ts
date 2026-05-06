@@ -48,7 +48,7 @@ export class UserService {
         });
     }
 
-    static async setUserPlan(userId: number, plan: "free" | "starter" | "pro") {
+    static async setUserPlan(userId: number, plan: "starter" | "pro") {
         const db = getDb();
         if (!db) throw new Error("DB unavailable");
         await db.update(users).set({ plan }).where(eq(users.id, userId));

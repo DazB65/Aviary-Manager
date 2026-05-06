@@ -151,14 +151,14 @@ export default function Billing() {
           <div className="rounded-xl bg-blue-50 border border-blue-200 p-4 flex items-center gap-3">
             <Zap className="w-5 h-5 text-blue-600 shrink-0" />
             <p className="text-blue-800">
-              You're on a free Pro trial — <strong>{trialDaysLeft} day{trialDaysLeft === 1 ? "" : "s"} remaining</strong>. Subscribe below to keep access after your trial ends.
+              You're on a Pro trial — <strong>{trialDaysLeft} day{trialDaysLeft === 1 ? "" : "s"} remaining</strong>. Subscribe below to keep access after your trial ends.
             </p>
           </div>
         )}
         {trialExpired && !isPaid && !justUpgraded && (
           <div className="rounded-xl bg-red-50 border border-red-200 p-4 flex items-center gap-3">
             <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
-            <p className="text-red-800 font-medium">Your free trial has ended. Subscribe below to regain access.</p>
+              <p className="text-red-800 font-medium">Your trial has ended. Subscribe below to regain access.</p>
           </div>
         )}
 
@@ -173,7 +173,7 @@ export default function Billing() {
                 <p className="text-sm text-gray-500">Current plan</p>
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className="text-xl font-bold text-gray-900">
-                    {isPro ? "Pro" : isStarter ? "Starter" : "Free Trial"}
+                    {isPro ? "Pro" : isStarter ? "Starter" : "Trial"}
                   </span>
                   {isPaid && <Badge className="bg-teal-600 text-white text-xs">Active</Badge>}
                   {isOnTrial && <Badge className="bg-blue-500 text-white text-xs">{trialDaysLeft}d left</Badge>}

@@ -348,7 +348,7 @@ export default function AuthPage() {
                       )}
                       <Button type="submit" className="w-full bg-teal-600 hover:bg-teal-700 text-white" disabled={regLoading}>
                         {regLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                        Create Free Account
+                        Create Trial Account
                       </Button>
                       <p className="text-xs text-center text-gray-500">
                         By signing up you agree to our{" "}

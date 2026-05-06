@@ -128,7 +128,7 @@ function DashboardLayoutContent({
   const isStarter = user?.plan === "starter";
   const hasAiAccess = isPro || isAdmin;
 
-  // Trial status (free plan only — starter/pro users don't have a trial)
+  // Trial status for accounts that have not subscribed yet.
   const trialEnd = user && !isPro && !isStarter && !isAdmin
     ? (user.planExpiresAt
         ? new Date(user.planExpiresAt)
@@ -386,7 +386,7 @@ function DashboardLayoutContent({
         {isOnTrial && (
           <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center justify-between gap-2 text-sm text-amber-800">
             <span>
-              ⏳ Free trial — <strong>{trialDaysLeft} day{trialDaysLeft === 1 ? "" : "s"} remaining</strong>
+            ⏳ Trial — <strong>{trialDaysLeft} day{trialDaysLeft === 1 ? "" : "s"} remaining</strong>
             </span>
             <button
               onClick={() => setLocation("/billing")}

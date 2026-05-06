@@ -739,7 +739,7 @@ export function registerChatRoutes(app: Express) {
         return;
       }
 
-      // AI is a Pro-only feature. Trial users (free plan within 7 days) get full access.
+    // AI is a Pro-only feature. Trial users get temporary full access.
       if (user.plan === "starter") {
         res.status(403).json({ error: "PRO_REQUIRED" });
         return;
