@@ -33,6 +33,28 @@ function getStripePriceId(plan: PlanTier, interval: BillingInterval): string {
   return priceId;
 }
 
+async function applyCheckoutSessionToUser(
+  session: Stripe.Checkout.Session,
+  expectedUserId?: number,
+) {
+  const userId = parseInt(session.metadata?.user_id || session.client_reference_id || "0", 10);
+  if (!userId || (expectedUserId && userId !== expectedUserId)) {
+    throw new Error("Checkout session does not belong to this user");
+  }
+
+  const planTier = normalizePlanTier(session.metadata?.plan_tier);
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+
+  await db.update(users).set({
+    plan: planTier,
+    stripeCustomerId: (session.customer as string) || null,
+    stripeSubscriptionId: (session.subscription as string) || null,
+  }).where(eq(users.id, userId));
+
+  return { userId, planTier };
+}
+
 export function registerStripeRoutes(app: Express) {
 
   // ── POST /api/stripe/webhook ──────────────────────────────────────────────
@@ -62,16 +84,7 @@ export function registerStripeRoutes(app: Express) {
         switch (event.type) {
           case "checkout.session.completed": {
             const session = event.data.object as Stripe.Checkout.Session;
-            const userId = parseInt(session.metadata?.user_id || "0", 10);
-            if (!userId) break;
-
-            const planTier = normalizePlanTier(session.metadata?.plan_tier);
-            await db.update(users).set({
-              plan: planTier,
-              stripeCustomerId: (session.customer as string) || null,
-              stripeSubscriptionId: (session.subscription as string) || null,
-            }).where(eq(users.id, userId));
-
+            const { userId, planTier } = await applyCheckoutSessionToUser(session);
             console.log(`[Stripe] User ${userId} subscribed to ${planTier}`);
             break;
           }
@@ -173,7 +186,7 @@ export function registerStripeRoutes(app: Express) {
           price: priceId,
           quantity: 1,
         }],
-        success_url: `${origin}/billing?success=1`,
+        success_url: `${origin}/billing?success=1&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${origin}/billing?cancelled=1`,
       });
     } catch (err: any) {
@@ -183,6 +196,48 @@ export function registerStripeRoutes(app: Express) {
     }
 
     res.json({ url: session.url });
+  });
+
+  // ── POST /api/stripe/sync-checkout ───────────────────────────────────────
+  // Lets the app immediately reconcile a successful Checkout return instead of
+  // relying only on webhook timing and cached auth state.
+  app.post("/api/stripe/sync-checkout", express.json(), async (req: Request, res: Response) => {
+    let user: Awaited<ReturnType<typeof sdk.authenticateRequest>>;
+    try {
+      user = await sdk.authenticateRequest(req);
+    } catch {
+      res.status(401).json({ error: "Unauthorised" });
+      return;
+    }
+
+    const sessionId = typeof req.body?.sessionId === "string" ? req.body.sessionId : "";
+    if (!sessionId.startsWith("cs_")) {
+      res.status(400).json({ error: "Invalid checkout session" });
+      return;
+    }
+
+    let stripe: Stripe;
+    try {
+      stripe = getStripe();
+    } catch (err: any) {
+      console.error("[Stripe] Init failed:", err);
+      res.status(500).json({ error: err?.message || "Stripe not configured" });
+      return;
+    }
+
+    try {
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+      if (session.payment_status !== "paid" && session.status !== "complete") {
+        res.status(409).json({ error: "Checkout has not completed yet" });
+        return;
+      }
+
+      const { planTier } = await applyCheckoutSessionToUser(session, user.id);
+      res.json({ plan: planTier });
+    } catch (err: any) {
+      console.error("[Stripe] Checkout sync failed:", err);
+      res.status(500).json({ error: err?.message || "Could not sync checkout" });
+    }
   });
 
   // ── POST /api/stripe/portal ───────────────────────────────────────────────

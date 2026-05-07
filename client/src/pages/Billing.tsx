@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import {
   AlertTriangle, Bird, Bot, Check, CreditCard, Loader2, Sparkles, Star, Zap
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import DashboardLayout from "@/components/DashboardLayout";
 
@@ -32,7 +32,7 @@ const PRO_EXTRAS = [
 ];
 
 export default function Billing() {
-  const { user, logout } = useAuth();
+  const { user, logout, refresh } = useAuth();
   const [, navigate] = useLocation();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [loadingPortal, setLoadingPortal] = useState(false);
@@ -59,6 +59,43 @@ export default function Billing() {
   const params = new URLSearchParams(window.location.search);
   const justUpgraded = params.get("success") === "1";
   const cancelled = params.get("cancelled") === "1";
+  const checkoutSessionId = params.get("session_id");
+  const isSyncingPaidReturn = justUpgraded && !isPaid;
+
+  useEffect(() => {
+    if (!justUpgraded) return;
+
+    let cancelled = false;
+
+    async function syncCheckout() {
+      try {
+        if (checkoutSessionId) {
+          const res = await fetch("/api/stripe/sync-checkout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ sessionId: checkoutSessionId }),
+          });
+          if (!res.ok && res.status !== 409) {
+            const data = await res.json().catch(() => ({}));
+            throw new Error(data.error || "Could not confirm checkout");
+          }
+        }
+
+        if (!cancelled) await refresh();
+      } catch (err: any) {
+        if (!cancelled) {
+          toast.error(err?.message || "Payment received, but your plan is still syncing. Please refresh in a moment.");
+        }
+      }
+    }
+
+    syncCheckout();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [checkoutSessionId, justUpgraded, refresh]);
 
   async function handleCheckout(plan: "starter" | "pro") {
     const key = `${plan}-${billingInterval}`;
@@ -138,7 +175,9 @@ export default function Billing() {
         {justUpgraded && (
           <div className="rounded-xl bg-teal-50 border border-teal-200 p-4 flex items-center gap-3">
             <Sparkles className="w-5 h-5 text-teal-600 shrink-0" />
-            <p className="text-teal-800 font-medium">Welcome! Your account has been upgraded.</p>
+            <p className="text-teal-800 font-medium">
+              {isPaid ? "Welcome! Your account has been upgraded." : "Payment received. Finalising your plan..."}
+            </p>
           </div>
         )}
         {cancelled && (
@@ -173,11 +212,12 @@ export default function Billing() {
                 <p className="text-sm text-gray-500">Current plan</p>
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className="text-xl font-bold text-gray-900">
-                    {isPro ? "Pro" : isStarter ? "Starter" : "Trial"}
+                    {isPro ? "Pro" : isStarter ? "Starter" : isSyncingPaidReturn ? "Finalising" : "Trial"}
                   </span>
                   {isPaid && <Badge className="bg-teal-600 text-white text-xs">Active</Badge>}
-                  {isOnTrial && <Badge className="bg-blue-500 text-white text-xs">{trialDaysLeft}d left</Badge>}
-                  {trialExpired && !isPaid && <Badge className="bg-red-500 text-white text-xs">Expired</Badge>}
+                  {isSyncingPaidReturn && <Badge className="bg-teal-600 text-white text-xs">Syncing</Badge>}
+                  {isOnTrial && !isSyncingPaidReturn && <Badge className="bg-blue-500 text-white text-xs">{trialDaysLeft}d left</Badge>}
+                  {trialExpired && !isPaid && !isSyncingPaidReturn && <Badge className="bg-red-500 text-white text-xs">Expired</Badge>}
                 </div>
               </div>
             </div>
@@ -191,7 +231,7 @@ export default function Billing() {
         </Card>
 
         {/* Pricing toggle */}
-        {!isPaid && (
+        {!isPaid && !isSyncingPaidReturn && (
           <>
             <div className="flex items-center justify-center gap-2 bg-white border border-gray-200 p-1.5 rounded-full shadow-sm max-w-xs mx-auto">
               <button

@@ -41,6 +41,8 @@ export function useAuth(options?: UseAuthOptions) {
     }
   }, [logoutMutation, utils]);
 
+  const refresh = useCallback(() => meQuery.refetch(), [meQuery.refetch]);
+
   useEffect(() => {
     localStorage.setItem(
       "manus-runtime-user-info",
@@ -79,7 +81,7 @@ export function useAuth(options?: UseAuthOptions) {
 
   return {
     ...state,
-    refresh: () => meQuery.refetch(),
+    refresh,
     logout,
   };
 }
