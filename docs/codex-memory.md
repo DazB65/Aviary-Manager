@@ -110,3 +110,4 @@ Before production-oriented changes, check:
 - 2026-05-06: New bird photos should upload to Tigris and store stable same-origin `/api/photos/birds/{userId}/{object}` URLs. Existing base64 `photoUrl` values may still exist until a separate migration/cleanup is planned.
 - 2026-05-06: The main Events & Reminders page is an open-actions list only. Completed events/reminders should remain available in relevant bird/pair history, not via a global Completed tab.
 - 2026-05-06: Production startup should fail fast on migration errors; non-production may log and continue for local debugging.
+- 2026-05-07: Stripe should own live subscription Products/Prices. Checkout uses configured `STRIPE_PRICE_*` Price IDs from Railway instead of dynamic inline price data.

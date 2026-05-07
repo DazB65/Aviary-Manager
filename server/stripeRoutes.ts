@@ -24,6 +24,15 @@ function normalizeBillingInterval(interval: unknown): BillingInterval {
   return interval === "yearly" ? "yearly" : "monthly";
 }
 
+function getStripePriceId(plan: PlanTier, interval: BillingInterval): string {
+  const envKey = `STRIPE_PRICE_${plan.toUpperCase()}_${interval.toUpperCase()}`;
+  const priceId = process.env[envKey];
+  if (!priceId) {
+    throw new Error(`${envKey} is not configured`);
+  }
+  return priceId;
+}
+
 export function registerStripeRoutes(app: Express) {
 
   // ── POST /api/stripe/webhook ──────────────────────────────────────────────
@@ -134,14 +143,14 @@ export function registerStripeRoutes(app: Express) {
       return;
     }
 
-    const product = PRODUCTS[plan] ?? PRODUCTS.pro;
-    const unitAmount = interval === "yearly" ? product.priceYearlyUsd : product.priceMonthlyUsd;
-
-    const priceData: Stripe.Checkout.SessionCreateParams.LineItem.PriceData = {
-      currency: "usd",
-      unit_amount: unitAmount,
-      recurring: { interval: interval === "yearly" ? "year" : "month" },
-    };
+    let priceId: string;
+    try {
+      priceId = getStripePriceId(plan, interval);
+    } catch (err: any) {
+      console.error("[Stripe] Price configuration missing:", err);
+      res.status(500).json({ error: err?.message || "Stripe price not configured" });
+      return;
+    }
 
     let session;
     try {
@@ -161,13 +170,7 @@ export function registerStripeRoutes(app: Express) {
           metadata: { plan_tier: plan },
         },
         line_items: [{
-          price_data: {
-            ...priceData,
-            product_data: {
-              name: product.name,
-              description: product.description,
-            },
-          },
+          price: priceId,
           quantity: 1,
         }],
         success_url: `${origin}/billing?success=1`,
