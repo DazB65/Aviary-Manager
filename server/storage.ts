@@ -1,20 +1,19 @@
 // Storage helpers using S3-compatible object storage.
-// Configure TIGRIS_ENDPOINT_URL, TIGRIS_ACCESS_KEY_ID, TIGRIS_SECRET_ACCESS_KEY,
-// and TIGRIS_BUCKET_NAME via Railway environment variables.
+// Configure TIGRIS_* variables, Railway Bucket variables, or AWS_* Tigris aliases.
 
-import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { ENV } from './_core/env';
 
 function getS3Client(): S3Client {
-  const { tigrisEndpointUrl, tigrisAccessKeyId, tigrisSecretAccessKey } = ENV;
+  const { tigrisEndpointUrl, tigrisAccessKeyId, tigrisSecretAccessKey, tigrisRegion } = ENV;
   if (!tigrisEndpointUrl || !tigrisAccessKeyId || !tigrisSecretAccessKey) {
     throw new Error(
-      "Tigris credentials missing: ensure TIGRIS_ENDPOINT_URL, TIGRIS_ACCESS_KEY_ID, and TIGRIS_SECRET_ACCESS_KEY are set"
+      "Tigris credentials missing: set TIGRIS_* variables, Railway Bucket variables, or AWS_* S3 variables"
     );
   }
   return new S3Client({
-    region: "auto",
+    region: tigrisRegion,
     endpoint: tigrisEndpointUrl,
     credentials: {
       accessKeyId: tigrisAccessKeyId,
@@ -62,6 +61,22 @@ export async function storagePut(
   );
 
   return { key, url };
+}
+
+/**
+ * Delete a file from Tigris.
+ */
+export async function storageDelete(relKey: string): Promise<{ key: string }> {
+  const client = getS3Client();
+  const bucket = getBucket();
+  const key = normalizeKey(relKey);
+
+  await client.send(new DeleteObjectCommand({
+    Bucket: bucket,
+    Key: key,
+  }));
+
+  return { key };
 }
 
 /**

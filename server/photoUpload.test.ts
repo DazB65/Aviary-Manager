@@ -1,15 +1,18 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { TrpcContext } from "./_core/context";
 
 const mocks = vi.hoisted(() => ({
+  storageDelete: vi.fn(),
   storagePut: vi.fn(),
 }));
 
 vi.mock("./storage", () => ({
+  storageDelete: mocks.storageDelete,
   storagePut: mocks.storagePut,
 }));
 
 import { appRouter } from "./routers";
+import { BirdService } from "./services/birdService";
 
 function createAuthContext(userId = 42): TrpcContext {
   const now = new Date();
@@ -43,6 +46,7 @@ function createAuthContext(userId = 42): TrpcContext {
 
 describe("birds.uploadPhoto", () => {
   beforeEach(() => {
+    mocks.storageDelete.mockReset();
     mocks.storagePut.mockReset();
     mocks.storagePut.mockResolvedValue({ key: "birds/42/test.jpg", url: "signed-url" });
   });
@@ -110,5 +114,52 @@ describe("birds.uploadPhoto", () => {
     ).rejects.toThrow("Only JPEG, PNG, GIF, and WebP images are allowed.");
 
     expect(mocks.storagePut).not.toHaveBeenCalled();
+  });
+});
+
+describe("birds.update photo cleanup", () => {
+  beforeEach(() => {
+    mocks.storageDelete.mockReset();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("clears the bird photo and deletes the previous managed object", async () => {
+    vi.spyOn(BirdService, "getBirdById").mockResolvedValue({
+      id: 12,
+      userId: 42,
+      photoUrl: "/api/photos/birds/42/old-photo.jpg",
+    } as any);
+    vi.spyOn(BirdService, "updateBird").mockResolvedValue({
+      id: 12,
+      userId: 42,
+      photoUrl: null,
+    } as any);
+
+    const caller = appRouter.createCaller(createAuthContext(42));
+    await caller.birds.update({ id: 12, photoUrl: null });
+
+    expect(BirdService.updateBird).toHaveBeenCalledWith(12, 42, { photoUrl: null });
+    expect(mocks.storageDelete).toHaveBeenCalledWith("birds/42/old-photo.jpg");
+  });
+
+  it("does not delete unmanaged or legacy photo values", async () => {
+    vi.spyOn(BirdService, "getBirdById").mockResolvedValue({
+      id: 12,
+      userId: 42,
+      photoUrl: "data:image/jpeg;base64,abc123",
+    } as any);
+    vi.spyOn(BirdService, "updateBird").mockResolvedValue({
+      id: 12,
+      userId: 42,
+      photoUrl: null,
+    } as any);
+
+    const caller = appRouter.createCaller(createAuthContext(42));
+    await caller.birds.update({ id: 12, photoUrl: null });
+
+    expect(mocks.storageDelete).not.toHaveBeenCalled();
   });
 });

@@ -15,7 +15,7 @@ import { UserService } from "./services/userService";
 import { PedigreeService } from "./services/pedigreeService";
 import { getChatStats } from "./_core/chat";
 
-import { storagePut } from "./storage";
+import { storageDelete, storagePut } from "./storage";
 import { nanoid } from "nanoid";
 
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
@@ -90,6 +90,32 @@ function decodePhotoUpload(dataBase64: string, contentType: string): Buffer {
   }
 
   return buffer;
+}
+
+function managedBirdPhotoKey(photoUrl: string | null | undefined, userId: number): string | null {
+  if (!photoUrl) return null;
+
+  let pathname = photoUrl;
+  try {
+    pathname = new URL(photoUrl, "https://aviarymanager.app").pathname;
+  } catch {
+    // Keep the raw string path fallback.
+  }
+
+  const prefix = `/api/photos/birds/${userId}/`;
+  if (!pathname.startsWith(prefix)) return null;
+  return pathname.slice("/api/photos/".length).replace(/^\/+/, "");
+}
+
+async function deleteManagedBirdPhoto(photoUrl: string | null | undefined, userId: number) {
+  const key = managedBirdPhotoKey(photoUrl, userId);
+  if (!key) return;
+
+  try {
+    await storageDelete(key);
+  } catch (error) {
+    console.warn("[photos] Failed to delete old bird photo from storage:", error instanceof Error ? error.message : String(error));
+  }
 }
 
 // ─── Marketing: content idea generator ───────────────────────────────────────
@@ -334,9 +360,17 @@ export const appRouter = router({
         motherId: z.number().nullable().optional(),
         status: z.enum(["alive", "breeding", "resting", "fledged", "deceased", "sold", "unknown"]).optional(),
       }))
-      .mutation(({ ctx, input }) => {
+      .mutation(async ({ ctx, input }) => {
         const { id, ...data } = input;
-        return BirdService.updateBird(id, ctx.user.id, data as any);
+        const shouldCleanupOldPhoto = Object.prototype.hasOwnProperty.call(input, "photoUrl");
+        const existing = shouldCleanupOldPhoto ? await BirdService.getBirdById(id, ctx.user.id) : undefined;
+        const result = await BirdService.updateBird(id, ctx.user.id, data as any);
+
+        if (result && shouldCleanupOldPhoto && existing?.photoUrl && existing.photoUrl !== input.photoUrl) {
+          await deleteManagedBirdPhoto(existing.photoUrl, ctx.user.id);
+        }
+
+        return result;
       }),
 
     delete: activeProcedure

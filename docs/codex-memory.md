@@ -113,3 +113,4 @@ Before production-oriented changes, check:
 - 2026-05-07: Stripe should own live subscription Products/Prices. Checkout uses configured `STRIPE_PRICE_*` Price IDs from Railway instead of dynamic inline price data.
 - 2026-05-08: Stripe subscription webhooks should derive Starter/Pro access from configured Price IDs first. Legacy subscriptions may fall back to valid `plan_tier` metadata, but unknown/missing plan data must fail closed instead of defaulting to Pro.
 - 2026-05-08: Bird photo uploads validate decoded image bytes against the declared MIME type before writing to Tigris. Removing a saved bird photo sends `photoUrl: null` so Drizzle clears the field instead of ignoring `undefined`.
+- 2026-05-08: Tigris storage config accepts `TIGRIS_*`, `AWS_*`, and Railway Bucket aliases. Removing or replacing a managed `/api/photos/birds/{userId}/...` photo clears the DB field and best-effort deletes the old Tigris object.
