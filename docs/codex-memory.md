@@ -1,6 +1,6 @@
 # Aviary Manager Codex Memory
 
-Last updated: 2026-05-04
+Last updated: 2026-05-08
 
 ## Current State
 
@@ -112,3 +112,4 @@ Before production-oriented changes, check:
 - 2026-05-06: Production startup should fail fast on migration errors; non-production may log and continue for local debugging.
 - 2026-05-07: Stripe should own live subscription Products/Prices. Checkout uses configured `STRIPE_PRICE_*` Price IDs from Railway instead of dynamic inline price data.
 - 2026-05-08: Stripe subscription webhooks should derive Starter/Pro access from configured Price IDs first. Legacy subscriptions may fall back to valid `plan_tier` metadata, but unknown/missing plan data must fail closed instead of defaulting to Pro.
+- 2026-05-08: Bird photo uploads validate decoded image bytes against the declared MIME type before writing to Tigris. Removing a saved bird photo sends `photoUrl: null` so Drizzle clears the field instead of ignoring `undefined`.

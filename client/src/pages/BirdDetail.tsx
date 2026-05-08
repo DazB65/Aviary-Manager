@@ -1130,7 +1130,7 @@ export default function BirdDetail() {
           cageNumber: data.cageNumber || undefined,
           colorMutation: data.colorMutation || undefined,
           genotype: genotypeStr,
-          photoUrl: data.photoUrl || undefined,
+          photoUrl: data.photoUrl || null,
           notes: data.notes || undefined,
           fatherId: data.fatherId ? Number(data.fatherId) : undefined,
           motherId: data.motherId ? Number(data.motherId) : undefined,

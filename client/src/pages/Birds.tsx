@@ -84,7 +84,7 @@ export default function Birds() {
       status: data.status,
     };
     if (editingId) {
-      updateBird.mutate({ id: editingId, ...payload }, {
+      updateBird.mutate({ id: editingId, ...payload, photoUrl: data.photoUrl || null }, {
         onSuccess: () => setDialogOpen(false),
       });
     } else {

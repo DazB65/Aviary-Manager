@@ -18,6 +18,80 @@ import { getChatStats } from "./_core/chat";
 import { storagePut } from "./storage";
 import { nanoid } from "nanoid";
 
+const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+const MIME_TO_PHOTO_EXT: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/gif": "gif",
+  "image/webp": "webp",
+};
+
+function badPhotoUpload(message: string): never {
+  throw new TRPCError({ code: "BAD_REQUEST", message });
+}
+
+function hasExpectedImageSignature(buffer: Buffer, contentType: string): boolean {
+  if (contentType === "image/jpeg") {
+    return buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  }
+
+  if (contentType === "image/png") {
+    return (
+      buffer.length >= 8 &&
+      buffer[0] === 0x89 &&
+      buffer[1] === 0x50 &&
+      buffer[2] === 0x4e &&
+      buffer[3] === 0x47 &&
+      buffer[4] === 0x0d &&
+      buffer[5] === 0x0a &&
+      buffer[6] === 0x1a &&
+      buffer[7] === 0x0a
+    );
+  }
+
+  if (contentType === "image/gif") {
+    const header = buffer.subarray(0, 6).toString("ascii");
+    return header === "GIF87a" || header === "GIF89a";
+  }
+
+  if (contentType === "image/webp") {
+    return (
+      buffer.length >= 12 &&
+      buffer.subarray(0, 4).toString("ascii") === "RIFF" &&
+      buffer.subarray(8, 12).toString("ascii") === "WEBP"
+    );
+  }
+
+  return false;
+}
+
+function decodePhotoUpload(dataBase64: string, contentType: string): Buffer {
+  const base64 = dataBase64.trim();
+
+  if (!base64) {
+    badPhotoUpload("Image data is required.");
+  }
+
+  if (base64.length % 4 === 1 || !/^[A-Za-z0-9+/]*={0,2}$/.test(base64)) {
+    badPhotoUpload("Image data is not valid base64.");
+  }
+
+  const buffer = Buffer.from(base64, "base64");
+  if (buffer.length === 0) {
+    badPhotoUpload("Image data is required.");
+  }
+
+  if (buffer.length > MAX_PHOTO_BYTES) {
+    badPhotoUpload("Image must be 5 MB or smaller.");
+  }
+
+  if (!hasExpectedImageSignature(buffer, contentType)) {
+    badPhotoUpload("Uploaded file does not match the selected image type.");
+  }
+
+  return buffer;
+}
+
 // ─── Marketing: content idea generator ───────────────────────────────────────
 type DashboardStats = Awaited<ReturnType<typeof StatsService.getDashboardStatsByUser>>;
 
@@ -254,7 +328,7 @@ export const appRouter = router({
         cageNumber: z.string().optional(),
         colorMutation: z.string().optional(),
         genotype: z.string().nullable().optional(),
-        photoUrl: z.string().optional(),
+        photoUrl: z.string().nullable().optional(),
         notes: z.string().optional(),
         fatherId: z.number().nullable().optional(),
         motherId: z.number().nullable().optional(),
@@ -290,13 +364,7 @@ export const appRouter = router({
         dataBase64: z.string().max(7_000_000, "Image must be 5 MB or smaller"),
       }))
       .mutation(async ({ ctx, input }) => {
-        const MIME_TO_EXT: Record<string, string> = {
-          "image/jpeg": "jpg",
-          "image/png": "png",
-          "image/gif": "gif",
-          "image/webp": "webp",
-        };
-        const ext = MIME_TO_EXT[input.contentType];
+        const ext = MIME_TO_PHOTO_EXT[input.contentType];
         if (!ext) {
           throw new TRPCError({
             code: "BAD_REQUEST",
@@ -304,7 +372,7 @@ export const appRouter = router({
           });
         }
         const key = `birds/${ctx.user.id}/${nanoid()}.${ext}`;
-        const buffer = Buffer.from(input.dataBase64, "base64");
+        const buffer = decodePhotoUpload(input.dataBase64, input.contentType);
         await storagePut(key, buffer, input.contentType);
         return { url: `/api/photos/${key}` };
       }),

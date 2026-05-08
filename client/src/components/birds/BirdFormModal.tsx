@@ -434,7 +434,7 @@ export function BirdFormModal({
                                                 size="sm"
                                                 className="text-muted-foreground hover:text-destructive"
                                                 disabled={uploadPhoto.isPending}
-                                                onClick={() => form.setValue("photoUrl", "")}
+                                                onClick={() => form.setValue("photoUrl", "", { shouldDirty: true, shouldValidate: true })}
                                             >
                                                 Remove
                                             </Button>
