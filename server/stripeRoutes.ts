@@ -16,8 +16,12 @@ function getStripe() {
   return new Stripe(key, { apiVersion: "2026-01-28.clover" });
 }
 
+function parsePlanTier(plan: unknown): PlanTier | null {
+  return plan === "starter" || plan === "pro" ? plan : null;
+}
+
 function normalizePlanTier(plan: unknown, fallback: PlanTier = "pro"): PlanTier {
-  return plan === "starter" || plan === "pro" ? plan : fallback;
+  return parsePlanTier(plan) ?? fallback;
 }
 
 function normalizeBillingInterval(interval: unknown): BillingInterval {
@@ -33,6 +37,46 @@ function getStripePriceId(plan: PlanTier, interval: BillingInterval): string {
   return priceId;
 }
 
+function getConfiguredPricePlanMap(): Map<string, PlanTier> {
+  const pricePlanMap = new Map<string, PlanTier>();
+  const plans: PlanTier[] = ["starter", "pro"];
+  const intervals: BillingInterval[] = ["monthly", "yearly"];
+
+  for (const plan of plans) {
+    for (const interval of intervals) {
+      const envKey = `STRIPE_PRICE_${plan.toUpperCase()}_${interval.toUpperCase()}`;
+      const priceId = process.env[envKey];
+      if (priceId) pricePlanMap.set(priceId, plan);
+    }
+  }
+
+  return pricePlanMap;
+}
+
+function getPlanTierFromSubscription(sub: Stripe.Subscription): PlanTier {
+  const pricePlanMap = getConfiguredPricePlanMap();
+  const matchedPlanByPrice = sub.items.data
+    .map((item) => item.price.id)
+    .map((priceId) => pricePlanMap.get(priceId))
+    .find((plan): plan is PlanTier => Boolean(plan));
+
+  if (matchedPlanByPrice) {
+    return matchedPlanByPrice;
+  }
+
+  const legacyPlan = parsePlanTier(sub.metadata?.plan_tier);
+  if (legacyPlan) {
+    console.warn(
+      `[Stripe] Subscription ${sub.id} has no configured Price ID match; using legacy plan_tier metadata: ${legacyPlan}`
+    );
+    return legacyPlan;
+  }
+
+  throw new Error(
+    `Subscription ${sub.id} has no configured Price ID match and no valid plan_tier metadata`
+  );
+}
+
 async function applyCheckoutSessionToUser(
   session: Stripe.Checkout.Session,
   expectedUserId?: number,
@@ -42,7 +86,10 @@ async function applyCheckoutSessionToUser(
     throw new Error("Checkout session does not belong to this user");
   }
 
-  const planTier = normalizePlanTier(session.metadata?.plan_tier);
+  const planTier = parsePlanTier(session.metadata?.plan_tier);
+  if (!planTier) {
+    throw new Error("Checkout session is missing valid plan_tier metadata");
+  }
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");
 
@@ -93,9 +140,9 @@ export function registerStripeRoutes(app: Express) {
             const sub = event.data.object as Stripe.Subscription;
             const customerId = sub.customer as string;
             const isActive = sub.status === "active" || sub.status === "trialing";
-            const planTier = normalizePlanTier(sub.metadata?.plan_tier);
+            const nextPlan = isActive ? getPlanTierFromSubscription(sub) : "free";
             await db.update(users).set({
-              plan: isActive ? planTier : "free",
+              plan: nextPlan,
               stripeSubscriptionId: isActive ? sub.id : null,
             }).where(eq(users.stripeCustomerId, customerId));
             console.log(`[Stripe] Subscription ${sub.id} status: ${sub.status}`);

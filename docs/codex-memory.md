@@ -111,3 +111,4 @@ Before production-oriented changes, check:
 - 2026-05-06: The main Events & Reminders page is an open-actions list only. Completed events/reminders should remain available in relevant bird/pair history, not via a global Completed tab.
 - 2026-05-06: Production startup should fail fast on migration errors; non-production may log and continue for local debugging.
 - 2026-05-07: Stripe should own live subscription Products/Prices. Checkout uses configured `STRIPE_PRICE_*` Price IDs from Railway instead of dynamic inline price data.
+- 2026-05-08: Stripe subscription webhooks should derive Starter/Pro access from configured Price IDs first. Legacy subscriptions may fall back to valid `plan_tier` metadata, but unknown/missing plan data must fail closed instead of defaulting to Pro.
