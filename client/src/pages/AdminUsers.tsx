@@ -34,7 +34,7 @@ export default function AdminUsers() {
   if (error) {
     return (
       <DashboardLayout>
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <div className="text-center py-16 text-destructive">
             <p className="text-lg font-medium">Access Denied</p>
             <p className="text-sm text-muted-foreground mt-1">You don't have permission to view this page.</p>
@@ -46,7 +46,7 @@ export default function AdminUsers() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-5xl mx-auto">
+      <div className="space-y-6 max-w-7xl mx-auto">
         <div>
           <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3">
             <Users className="h-7 w-7 text-primary" />
