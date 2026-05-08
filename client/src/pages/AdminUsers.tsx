@@ -3,13 +3,21 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Users, Trash2, MessageSquare, Cpu, AlertTriangle, Activity, RefreshCw } from "lucide-react";
+import { Users, Trash2, MessageSquare, Cpu, AlertTriangle, Activity, RefreshCw, ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useMemo, useState } from "react";
+
+type SortKey = "name" | "email" | "plan" | "role" | "joined" | "lastSeen" | "chatToday" | "model";
+type SortDirection = "asc" | "desc";
 
 export default function AdminUsers() {
   const { user: me } = useAuth();
+  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({
+    key: "joined",
+    direction: "desc",
+  });
   const utils = trpc.useUtils();
   const { data: users, isLoading, error } = trpc.admin.users.useQuery();
   const { data: chatStats, isFetching: chatFetching, refetch: refetchChat } = trpc.admin.chatStats.useQuery(undefined, { refetchInterval: 60 * 60 * 1000 });
@@ -29,6 +37,78 @@ export default function AdminUsers() {
   function handleDelete(userId: number, email: string) {
     if (!confirm(`Delete user "${email}" and all their data? This cannot be undone.`)) return;
     deleteUser.mutate({ userId });
+  }
+
+  const sortedUsers = useMemo(() => {
+    const chatByUserId = new Map(chatStats?.topUsers.map(entry => [entry.userId, entry]) ?? []);
+    const direction = sortConfig.direction === "asc" ? 1 : -1;
+    const planRank: Record<string, number> = { free: 0, starter: 1, pro: 2 };
+
+    function compareText(a: string | null | undefined, b: string | null | undefined) {
+      return (a || "").localeCompare(b || "", undefined, { sensitivity: "base" });
+    }
+
+    function compareNumber(a: number, b: number) {
+      return a === b ? 0 : a > b ? 1 : -1;
+    }
+
+    return [...(users ?? [])].sort((a, b) => {
+      let result = 0;
+      const aChat = chatByUserId.get(a.id);
+      const bChat = chatByUserId.get(b.id);
+
+      switch (sortConfig.key) {
+        case "name":
+          result = compareText(a.name, b.name);
+          break;
+        case "email":
+          result = compareText(a.email, b.email);
+          break;
+        case "plan":
+          result = compareNumber(planRank[a.plan] ?? -1, planRank[b.plan] ?? -1);
+          break;
+        case "role":
+          result = compareText(a.role, b.role);
+          break;
+        case "joined":
+          result = compareNumber(new Date(a.createdAt || 0).getTime(), new Date(b.createdAt || 0).getTime());
+          break;
+        case "lastSeen":
+          result = compareNumber(new Date(a.lastSignedIn || 0).getTime(), new Date(b.lastSignedIn || 0).getTime());
+          break;
+        case "chatToday":
+          result = compareNumber(aChat?.count ?? 0, bChat?.count ?? 0);
+          break;
+        case "model":
+          result = compareText(aChat ? chatStats?.model : "", bChat ? chatStats?.model : "");
+          break;
+      }
+
+      return result === 0 ? compareNumber(a.id, b.id) : result * direction;
+    });
+  }, [chatStats, sortConfig, users]);
+
+  function sortBy(key: SortKey) {
+    setSortConfig(current => ({
+      key,
+      direction: current.key === key && current.direction === "asc" ? "desc" : "asc",
+    }));
+  }
+
+  function sortHeader(key: SortKey, label: string) {
+    const active = sortConfig.key === key;
+    const Icon = active ? (sortConfig.direction === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
+
+    return (
+      <button
+        type="button"
+        className="inline-flex items-center gap-1 rounded-sm text-left font-medium text-muted-foreground hover:text-foreground"
+        onClick={() => sortBy(key)}
+      >
+        <span>{label}</span>
+        <Icon className="h-3.5 w-3.5" />
+      </button>
+    );
   }
 
   if (error) {
@@ -121,19 +201,19 @@ export default function AdminUsers() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border bg-muted/40">
-                      <th className="text-left font-medium text-muted-foreground px-3 py-2 whitespace-nowrap">Name</th>
-                      <th className="text-left font-medium text-muted-foreground px-3 py-2 whitespace-nowrap">Email</th>
-                      <th className="text-left font-medium text-muted-foreground px-3 py-2 whitespace-nowrap">Plan</th>
-                      <th className="text-left font-medium text-muted-foreground px-3 py-2 whitespace-nowrap">Role</th>
-                      <th className="text-left font-medium text-muted-foreground px-3 py-2 whitespace-nowrap">Joined</th>
-                      <th className="text-left font-medium text-muted-foreground px-3 py-2 whitespace-nowrap">Last Seen</th>
-                      <th className="text-left font-medium text-muted-foreground px-3 py-2 whitespace-nowrap">Chat Today</th>
-                      <th className="text-left font-medium text-muted-foreground px-3 py-2 whitespace-nowrap">Model</th>
+                      <th className="text-left px-3 py-2 whitespace-nowrap">{sortHeader("name", "Name")}</th>
+                      <th className="text-left px-3 py-2 whitespace-nowrap">{sortHeader("email", "Email")}</th>
+                      <th className="text-left px-3 py-2 whitespace-nowrap">{sortHeader("plan", "Plan")}</th>
+                      <th className="text-left px-3 py-2 whitespace-nowrap">{sortHeader("role", "Role")}</th>
+                      <th className="text-left px-3 py-2 whitespace-nowrap">{sortHeader("joined", "Joined")}</th>
+                      <th className="text-left px-3 py-2 whitespace-nowrap">{sortHeader("lastSeen", "Last Seen")}</th>
+                      <th className="text-left px-3 py-2 whitespace-nowrap">{sortHeader("chatToday", "Chat Today")}</th>
+                      <th className="text-left px-3 py-2 whitespace-nowrap">{sortHeader("model", "Model")}</th>
                       <th className="text-left font-medium text-muted-foreground px-3 py-2 whitespace-nowrap">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {users.map(u => {
+                    {sortedUsers.map(u => {
                       const chatEntry = chatStats?.topUsers.find(c => c.userId === u.id);
                       return (
                         <tr key={u.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
