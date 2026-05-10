@@ -694,13 +694,13 @@ export function AIChatBox({
                 )}
                 <p className="text-center text-sm max-w-xs text-foreground/70 leading-relaxed">{emptyStateMessage}</p>
                 {suggestedPrompts && suggestedPrompts.length > 0 && (
-                  <div className="flex flex-wrap justify-center gap-2 max-w-sm">
+                  <div className="flex w-full max-w-sm flex-wrap justify-center gap-2 overflow-hidden">
                     {suggestedPrompts.map((prompt, i) => (
                       <Button
                         key={i}
                         variant="outline"
                         size="sm"
-                        className="text-xs h-auto py-1.5 px-3 text-left leading-snug border-primary/20 hover:border-primary/40 hover:bg-primary/5"
+                        className="h-auto max-w-full shrink px-3 py-1.5 text-center text-xs leading-snug whitespace-normal break-words border-primary/20 hover:border-primary/40 hover:bg-primary/5"
                         onClick={() => {
                           setInput(prompt);
                           textareaRef.current?.focus();
