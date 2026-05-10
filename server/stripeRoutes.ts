@@ -171,7 +171,7 @@ export function registerStripeRoutes(app: Express) {
   // express.json() is added inline because this route is registered BEFORE the
   // global express.json() middleware (webhook must come first for raw body access)
   app.post("/api/stripe/checkout", express.json(), async (req: Request, res: Response) => {
-    console.log("[Stripe] /checkout hit — body:", req.body, "| user cookie present:", !!req.headers.cookie);
+    console.log("[Stripe] /checkout hit — user cookie present:", !!req.headers.cookie);
     // Authenticate user
     let user: Awaited<ReturnType<typeof sdk.authenticateRequest>>;
     try {

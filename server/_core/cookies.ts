@@ -21,9 +21,9 @@ export function getSessionCookieOptions(
   return {
     httpOnly: true,
     path: "/",
-    // sameSite:"none" requires secure:true — browsers silently reject the cookie
-    // otherwise. Fall back to "lax" on plain http (local dev, misconfigured proxy).
-    sameSite: secure ? "none" : "lax",
+    // Aviary Manager is served as a same-site app. Lax keeps normal navigation and
+    // same-origin API calls working while reducing cross-site request exposure.
+    sameSite: "lax",
     secure,
   };
 }

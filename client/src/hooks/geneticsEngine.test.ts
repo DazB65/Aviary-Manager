@@ -27,8 +27,8 @@ describe("calculateOffspringProbabilities", () => {
       gouldianFinchPack
     );
 
-    expect(sumProbability(results, "Female —", "Head Colour: Black head")).toBeCloseTo(25, 5);
-    expect(sumProbability(results, "Male —", "Head Colour: Black head")).toBeCloseTo(0, 5);
+    expect(sumProbability(results, "Female —", "Head Colour: Black Head")).toBeCloseTo(25, 5);
+    expect(sumProbability(results, "Male —", "Head Colour: Black Head")).toBeCloseTo(0, 5);
   });
 
   it("handles sex-linked dominant inheritance with one expressing parent copy", () => {
@@ -70,9 +70,9 @@ describe("calculateOffspringProbabilities", () => {
 describe("describeVisualPhenotype", () => {
   it("uses default pack phenotypes when no mutations are selected", () => {
     expect(describeVisualPhenotype("male", {}, gouldianFinchPack)).toEqual([
-      "Head Colour: Red head",
+      "Head Colour: Red Head",
       "Body Colour: Green",
-      "Breast Colour: Purple/Normal",
+      "Breast Colour: Purple",
     ]);
   });
 
@@ -83,7 +83,7 @@ describe("describeVisualPhenotype", () => {
         { "black-head": GenotypeState.CARRIER },
         gouldianFinchPack
       )[0]
-    ).toBe("Head Colour: Red head");
+    ).toBe("Head Colour: Red Head");
 
     expect(
       describeVisualPhenotype(
@@ -91,7 +91,7 @@ describe("describeVisualPhenotype", () => {
         { "black-head": GenotypeState.EXPRESSING },
         gouldianFinchPack
       )[0]
-    ).toBe("Head Colour: Black head");
+    ).toBe("Head Colour: Black Head");
   });
 
   it("renders pastel SF and DF phenotypes correctly", () => {

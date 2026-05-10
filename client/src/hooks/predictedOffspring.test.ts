@@ -20,8 +20,8 @@ describe("groupOffspringProbabilitiesByTrait", () => {
         {
           traitName: "Head",
           outcomes: [
-            { label: "Red head", probabilityPercentage: 75 },
-            { label: "Black head", probabilityPercentage: 25 },
+            { label: "Red Head (poss. split to Black Head)", probabilityPercentage: 75 },
+            { label: "Black Head", probabilityPercentage: 25 },
           ],
         },
       ])
