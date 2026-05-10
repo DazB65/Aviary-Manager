@@ -126,7 +126,6 @@ function DashboardLayoutContent({
   const isAdmin = user?.role === "admin";
   const isPro = user?.plan === "pro";
   const isStarter = user?.plan === "starter";
-  const hasAiAccess = isPro || isAdmin;
 
   // Trial status for accounts that have not subscribed yet.
   const trialEnd = user && !isPro && !isStarter && !isAdmin
@@ -138,6 +137,7 @@ function DashboardLayoutContent({
   const trialDaysLeft = isOnTrial
     ? Math.max(1, Math.ceil((trialEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : 0;
+  const hasAiAccess = Boolean(isPro || isAdmin || isOnTrial);
   const { startTour, maybeStartTour, hasTourBeenSkipped } = useAppTour();
   const [aiOpen, setAiOpen] = useState(false);
   const [aiAddBirdOpen, setAiAddBirdOpen] = useState(false);
@@ -149,6 +149,12 @@ function DashboardLayoutContent({
   const createBird = trpc.birds.create.useMutation({
     onSuccess: () => utils.birds.list.invalidate(),
   });
+  const aiChatId = user ? `assistant-global-${user.id}` : "";
+  const aiHistory = trpc.ai.conversations.loadByClientKey.useQuery(
+    { clientKey: aiChatId },
+    { enabled: Boolean(user && hasAiAccess && aiChatId) }
+  );
+  const saveAiHistory = trpc.ai.conversations.saveByClientKey.useMutation();
 
   const handleUIAction = ({ type, data }: { type: string; data: Record<string, any> }) => {
     if (type === "openAddBirdModal") {
@@ -434,23 +440,26 @@ function DashboardLayoutContent({
               </div>
             ) : user && (
               <AIChatBox
-                chatId={`assistant-global-${user.id}`}
-                initialMessages={EMPTY_MESSAGES}
+                chatId={aiChatId}
+                initialMessages={aiHistory.data?.messages ?? EMPTY_MESSAGES}
+                initialMessagesVersion={aiHistory.dataUpdatedAt}
+                persistLocally={false}
                 api="/api/chat"
                 placeholder="Ask anything about your aviary..."
                 className="h-full border-0 rounded-none shadow-none"
                 assistantAvatarUrl="/logo-transparent.svg"
                 emptyStateMessage="I'm your Aviary AI Assistant. Ask me about your birds, breeding pairs, upcoming events, hatch rates, and colour mutations."
                 suggestedPrompts={[
+                  "What needs attention today?",
+                  "Search for blue hens in cage 4 that have not bred this season",
+                  "Plan my next breeding pairs",
                   "Pair [male name] and [female name] together",
                   "Record a clutch of 4 eggs for [pair name]",
                   "What breeding pairs do I have?",
-                  "Add a vet appointment for next Monday",
-                  "What's my hatch rate this season?",
-                  "Recommend a pairing based on my mutations",
                 ]}
                 onUIAction={handleUIAction}
-                onFinish={() => {
+                onFinish={(messages) => {
+                  saveAiHistory.mutate({ clientKey: aiChatId, messages: messages as any });
                   utils.birds.list.invalidate();
                   utils.pairs.list.invalidate();
                   utils.events.list.invalidate();

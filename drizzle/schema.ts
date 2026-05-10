@@ -200,3 +200,71 @@ export const userSettings = pgTable("userSettings", {
 
 export type UserSettings = typeof userSettings.$inferSelect;
 export type InsertUserSettings = typeof userSettings.$inferInsert;
+
+// AI conversations — durable chat history scoped to a user
+export const aiConversations = pgTable("aiConversations", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").notNull(),
+  clientKey: varchar("clientKey", { length: 160 }),
+  title: varchar("title", { length: 160 }).default("Aviary AI Chat").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+}, (table) => ({
+  userIdIdx: index("aiConversations_userId_idx").on(table.userId),
+  userClientKeyUnique: uniqueIndex("aiConversations_userId_clientKey_unique").on(table.userId, table.clientKey),
+}));
+
+export type AIConversation = typeof aiConversations.$inferSelect;
+export type InsertAIConversation = typeof aiConversations.$inferInsert;
+
+// AI messages — stores AI SDK UI message parts as JSON text, never customer-wide logs
+export const aiMessages = pgTable("aiMessages", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversationId").notNull(),
+  userId: integer("userId").notNull(),
+  messageId: varchar("messageId", { length: 128 }),
+  role: varchar("role", { length: 32 }).notNull(),
+  parts: text("parts").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  conversationIdIdx: index("aiMessages_conversationId_idx").on(table.conversationId),
+  userIdIdx: index("aiMessages_userId_idx").on(table.userId),
+}));
+
+export type AIMessage = typeof aiMessages.$inferSelect;
+export type InsertAIMessage = typeof aiMessages.$inferInsert;
+
+// AI memory — explicit user-approved preferences only
+export const aiMemories = pgTable("aiMemories", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").notNull(),
+  category: varchar("category", { length: 64 }).notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+}, (table) => ({
+  userIdIdx: index("aiMemories_userId_idx").on(table.userId),
+}));
+
+export type AIMemory = typeof aiMemories.$inferSelect;
+export type InsertAIMemory = typeof aiMemories.$inferInsert;
+
+// AI usage/observability — metadata only, no prompts, notes, photos, or secrets
+export const aiUsageEvents = pgTable("aiUsageEvents", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").notNull(),
+  eventType: varchar("eventType", { length: 64 }).notNull(),
+  toolName: varchar("toolName", { length: 128 }),
+  status: varchar("status", { length: 32 }).notNull(),
+  latencyMs: integer("latencyMs"),
+  model: varchar("model", { length: 128 }),
+  tokenCount: integer("tokenCount"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  userIdIdx: index("aiUsageEvents_userId_idx").on(table.userId),
+  eventTypeIdx: index("aiUsageEvents_eventType_idx").on(table.eventType),
+  createdAtIdx: index("aiUsageEvents_createdAt_idx").on(table.createdAt),
+}));
+
+export type AIUsageEvent = typeof aiUsageEvents.$inferSelect;
+export type InsertAIUsageEvent = typeof aiUsageEvents.$inferInsert;

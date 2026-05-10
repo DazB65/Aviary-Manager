@@ -3,6 +3,7 @@ import {
   ACTION_TOOL_NAMES,
   CHAT_MAX_MESSAGES,
   CHAT_MAX_USER_TEXT_CHARS,
+  READ_TOOL_NAMES,
   getActiveToolsForMessages,
   validateChatMessages,
 } from "./chatSafety";
@@ -47,6 +48,7 @@ describe("chat safety helpers", () => {
     const activeTools = getActiveToolsForMessages([userText("What pairs do I have?")]);
 
     expect(activeTools).toContain("listPairs");
+    expect(activeTools).toEqual(expect.arrayContaining(["getDailyBrief", "naturalLanguageSearch", "planBreedingCandidates"]));
     expect(activeTools).not.toContain("deleteBird");
   });
 
@@ -62,5 +64,13 @@ describe("chat safety helpers", () => {
       },
     ]);
     expect(approvalTools).toEqual(expect.arrayContaining([...ACTION_TOOL_NAMES]));
+  });
+
+  it("keeps AI memory writes behind action intent", () => {
+    expect(READ_TOOL_NAMES).toContain("getAIMemory");
+    expect(ACTION_TOOL_NAMES).toEqual(expect.arrayContaining(["rememberAIMemory", "forgetAIMemory"]));
+
+    const activeTools = getActiveToolsForMessages([userText("Remember that I focus on Gouldians")]);
+    expect(activeTools).toEqual(expect.arrayContaining(["rememberAIMemory", "forgetAIMemory"]));
   });
 });

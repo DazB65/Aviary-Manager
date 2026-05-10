@@ -173,6 +173,12 @@ export interface AIChatBoxProps {
   /** Suggested prompts shown in empty state */
   suggestedPrompts?: string[];
 
+  /** Disable browser storage when a server-backed conversation is available */
+  persistLocally?: boolean;
+
+  /** Bump this when server-loaded initial messages have changed */
+  initialMessagesVersion?: string | number;
+
   /** URL for the assistant avatar image (shown next to assistant messages and in empty state) */
   assistantAvatarUrl?: string;
 
@@ -212,6 +218,12 @@ const TOOL_LOADING_LABELS: Record<string, string> = {
   recordEggOutcome: "🥚 Recording egg outcome...",
   getUpcomingHatches: "🐣 Checking upcoming hatches...",
   getPairHistory: "📋 Loading pair history...",
+  getAIMemory: "Loading AI preferences...",
+  getDailyBrief: "Checking today's aviary brief...",
+  naturalLanguageSearch: "Searching aviary records...",
+  planBreedingCandidates: "Planning breeding candidates...",
+  rememberAIMemory: "Saving AI preference...",
+  forgetAIMemory: "Forgetting AI preference...",
 };
 
 const TOOL_APPROVAL_LABELS: Record<string, string> = {
@@ -231,6 +243,8 @@ const TOOL_APPROVAL_LABELS: Record<string, string> = {
   addBird: "Open add bird form",
   deleteBird: "Delete bird",
   recordEggOutcome: "Record egg outcome",
+  rememberAIMemory: "Remember AI preference",
+  forgetAIMemory: "Forget AI preference",
 };
 
 function formatToolInput(input: unknown): string {
@@ -503,6 +517,8 @@ export function AIChatBox({
   className,
   emptyStateMessage = "Start a conversation with AI",
   suggestedPrompts,
+  persistLocally = true,
+  initialMessagesVersion,
   assistantAvatarUrl,
   onUIAction,
 }: AIChatBoxProps) {
@@ -517,7 +533,7 @@ export function AIChatBox({
   const { messages, sendMessage, setMessages, status, error, addToolApprovalResponse } = useChat({
     // Chat ID helps AI SDK track different conversations
     id: chatId,
-    messages: loadStoredMessages(chatId, initialMessages),
+    messages: persistLocally ? loadStoredMessages(chatId, initialMessages) : initialMessages,
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
 
     // Transport configuration - how messages are sent to the server
@@ -551,15 +567,18 @@ export function AIChatBox({
   // Sync messages when chatId changes (chat switching)
   // -------------------------------------------------------------------------
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { setMessages(loadStoredMessages(chatId, initialMessages)); }, [chatId]);
+  useEffect(() => {
+    setMessages(persistLocally ? loadStoredMessages(chatId, initialMessages) : initialMessages);
+  }, [chatId, initialMessagesVersion, persistLocally]);
 
   useEffect(() => {
+    if (!persistLocally) return;
     try {
       localStorage.setItem(storageKey, JSON.stringify(messages.slice(-30)));
     } catch {
       // Local chat persistence is best-effort only.
     }
-  }, [messages, storageKey]);
+  }, [messages, persistLocally, storageKey]);
 
   const approveTool = useCallback((approvalId: string) => {
     addToolApprovalResponse({ id: approvalId, approved: true, reason: "User approved the action." });

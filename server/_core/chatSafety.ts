@@ -18,6 +18,10 @@ export const READ_TOOL_NAMES = [
   "getAttentionReport",
   "getPairPerformanceReport",
   "recommendPairings",
+  "getAIMemory",
+  "getDailyBrief",
+  "naturalLanguageSearch",
+  "planBreedingCandidates",
 ] as const;
 
 export const ACTION_TOOL_NAMES = [
@@ -36,6 +40,8 @@ export const ACTION_TOOL_NAMES = [
   "addBird",
   "deleteBird",
   "recordEggOutcome",
+  "rememberAIMemory",
+  "forgetAIMemory",
 ] as const;
 
 export const ALL_TOOL_NAMES = [...READ_TOOL_NAMES, ...ACTION_TOOL_NAMES] as const;
@@ -71,6 +77,8 @@ const ACTION_KEYWORDS = [
   "record",
   "remove",
   "set",
+  "remember",
+  "forget",
   "update",
 ];
 

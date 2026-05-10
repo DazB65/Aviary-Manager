@@ -47,9 +47,13 @@ Codex setup note as of 2026-05-04: treat this repo as production-sensitive. Prot
 ### Export
 - PDF pedigree export (PDFKit, server-side)
 
-### AI Chat
-- Streaming chat with OpenAI SDK
-- Experimental tool calling (chat can invoke backend functions)
+### AI Copilot
+- Streaming chat with OpenAI SDK / AI SDK tool calling
+- All mutating AI tools require approval before execution
+- Server-backed AI conversation history across devices
+- Explicit user-approved AI memory for breeding preferences only
+- Daily brief, natural-language search, and guided breeding planner services
+- Metadata-only AI usage logging for admin observability
 
 ### Other
 - Dark / light theme

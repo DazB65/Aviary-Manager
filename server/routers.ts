@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { activeProcedure, adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { activeProcedure, adminProcedure, proProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { SpeciesService } from "./services/speciesService";
 import { BirdService } from "./services/birdService";
 import { PairService } from "./services/pairService";
@@ -13,6 +13,12 @@ import { SettingsService } from "./services/settingsService";
 import { StatsService } from "./services/statsService";
 import { UserService } from "./services/userService";
 import { PedigreeService } from "./services/pedigreeService";
+import { AIConversationService } from "./services/aiConversationService";
+import { AIMemoryService, AI_MEMORY_CATEGORIES } from "./services/aiMemoryService";
+import { AIBriefService } from "./services/aiBriefService";
+import { AISearchService } from "./services/aiSearchService";
+import { AIBreedingPlannerService } from "./services/aiBreedingPlannerService";
+import { AIUsageService } from "./services/aiUsageService";
 import { getChatStats } from "./_core/chat";
 
 import { storageDelete, storagePut } from "./storage";
@@ -716,10 +722,73 @@ export const appRouter = router({
         return StatsService.getSeasonStats(ctx.user.id, input.year);
       }),
   }),
+  // ─── AI Copilot ───────────────────────────────────────────────────────────
+  ai: router({
+    conversations: router({
+      list: proProcedure.query(({ ctx }) => AIConversationService.list(ctx.user.id)),
+      create: proProcedure
+        .input(z.object({
+          title: z.string().min(1).max(160).optional(),
+          clientKey: z.string().min(1).max(160).optional(),
+        }))
+        .mutation(({ ctx, input }) => AIConversationService.create(ctx.user.id, input.title, input.clientKey)),
+      load: proProcedure
+        .input(z.object({ id: z.number().int().positive() }))
+        .query(async ({ ctx, input }) => {
+          const result = await AIConversationService.load(ctx.user.id, input.id);
+          if (!result) throw new TRPCError({ code: "NOT_FOUND", message: "Conversation not found" });
+          return result;
+        }),
+      loadByClientKey: proProcedure
+        .input(z.object({ clientKey: z.string().min(1).max(160) }))
+        .query(({ ctx, input }) => AIConversationService.loadByClientKey(ctx.user.id, input.clientKey)),
+      saveByClientKey: proProcedure
+        .input(z.object({
+          clientKey: z.string().min(1).max(160),
+          messages: z.array(z.any()).max(40),
+        }))
+        .mutation(({ ctx, input }) => AIConversationService.saveMessagesByClientKey(ctx.user.id, input.clientKey, input.messages as any)),
+      delete: proProcedure
+        .input(z.object({ id: z.number().int().positive() }))
+        .mutation(({ ctx, input }) => AIConversationService.delete(ctx.user.id, input.id)),
+    }),
+    memory: router({
+      list: proProcedure.query(({ ctx }) => AIMemoryService.list(ctx.user.id)),
+      remember: proProcedure
+        .input(z.object({
+          category: z.enum(AI_MEMORY_CATEGORIES),
+          content: z.string().min(1).max(500),
+        }))
+        .mutation(({ ctx, input }) => AIMemoryService.remember(ctx.user.id, input.category, input.content)),
+      forget: proProcedure
+        .input(z.object({ id: z.number().int().positive() }))
+        .mutation(({ ctx, input }) => AIMemoryService.forget(ctx.user.id, input.id)),
+    }),
+    dailyBrief: proProcedure.query(({ ctx }) => AIBriefService.getDailyBrief(ctx.user.id)),
+    search: proProcedure
+      .input(z.object({
+        query: z.string().min(1).max(300),
+        scope: z.enum(["all", "birds", "pairs", "broods", "eggs", "events", "species"]).default("all"),
+      }))
+      .query(({ ctx, input }) => AISearchService.search(ctx.user.id, input.query, input.scope)),
+    breedingPlanner: router({
+      start: proProcedure.query(({ ctx }) => AIBreedingPlannerService.start(ctx.user.id)),
+      recommend: proProcedure
+        .input(z.object({
+          goal: z.string().max(160).optional(),
+          speciesId: z.number().int().positive().optional(),
+          season: z.number().int().min(2000).max(2100).optional(),
+          mutationInterest: z.string().max(120).optional(),
+          limit: z.number().int().min(1).max(12).default(8),
+        }))
+        .query(({ ctx, input }) => AIBreedingPlannerService.recommend(ctx.user.id, input)),
+    }),
+  }),
   // ─── Admin ──────────────────────────────────────────────────────────
   admin: router({
     users: adminProcedure.query(() => UserService.getAllUsers()),
     chatStats: adminProcedure.query(() => getChatStats()),
+    aiUsage: adminProcedure.query(() => AIUsageService.dashboard()),
     setPlan: adminProcedure
       .input(z.object({ userId: z.number(), plan: z.enum(["starter", "pro"]) }))
       .mutation(({ input }) => UserService.setUserPlan(input.userId, input.plan)),

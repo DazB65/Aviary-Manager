@@ -64,6 +64,13 @@ export default function Dashboard() {
   const { data: birds } = trpc.birds.list.useQuery();
   const { data: pairs } = trpc.pairs.list.useQuery();
   const { data: settings } = trpc.settings.get.useQuery();
+  const trialEnd = user?.plan === "free"
+    ? (user.planExpiresAt ? new Date(user.planExpiresAt) : new Date(new Date(user.createdAt).getTime() + 7 * 24 * 60 * 60 * 1000))
+    : null;
+  const hasAiAccess = Boolean(user?.role === "admin" || user?.plan === "pro" || (trialEnd && trialEnd > new Date()));
+  const { data: aiBrief, isLoading: aiBriefLoading } = trpc.ai.dailyBrief.useQuery(undefined, {
+    enabled: hasAiAccess,
+  });
 
   const breedingYear = settings?.breedingYear ?? new Date().getFullYear();
   const { data: seasonStats } = trpc.dashboard.seasonStats.useQuery({ year: breedingYear });
@@ -214,6 +221,44 @@ export default function Dashboard() {
             </Badge>
           </div>
         </div>
+
+        {hasAiAccess && (
+          <Card className="border border-primary/20 shadow-card overflow-hidden">
+            <CardHeader className="pb-3 bg-primary/5">
+              <div className="flex items-center justify-between gap-3">
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-primary" />
+                  Today from Aviary AI
+                </CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => setLocation("/events")} className="h-8 gap-1 text-xs">
+                  View reminders <ChevronRight className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-4">
+              {aiBriefLoading ? (
+                <p className="text-sm text-muted-foreground">Checking today's flock priorities...</p>
+              ) : aiBrief && aiBrief.alerts.length > 0 ? (
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-md bg-red-50 border border-red-100 p-3">
+                    <p className="text-xs font-medium text-red-700">Overdue</p>
+                    <p className="text-2xl font-bold text-red-800">{aiBrief.summary.overdueEvents}</p>
+                  </div>
+                  <div className="rounded-md bg-amber-50 border border-amber-100 p-3">
+                    <p className="text-xs font-medium text-amber-700">Hatches due</p>
+                    <p className="text-2xl font-bold text-amber-800">{aiBrief.summary.hatchesDue}</p>
+                  </div>
+                  <div className="rounded-md bg-teal-50 border border-teal-100 p-3">
+                    <p className="text-xs font-medium text-teal-700">Fertility checks</p>
+                    <p className="text-2xl font-bold text-teal-800">{aiBrief.summary.fertilityChecksDue}</p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No urgent AI alerts today. Your active clutches and reminders look tidy.</p>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Getting Started */}
         {showGettingStarted && (

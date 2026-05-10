@@ -1,6 +1,6 @@
 # Aviary Manager Codex Memory
 
-Last updated: 2026-05-08
+Last updated: 2026-05-10
 
 ## Current State
 
@@ -28,6 +28,7 @@ The app has real users, Stripe billing, PostgreSQL data, Tigris photo storage, a
 - Billing: Stripe 7-day trial, then Starter or Pro subscriptions.
 - Deploy: Docker on Railway.
 - AI: OpenAI SDK / AI SDK streaming chat and tool calling.
+- AI copilot v1: server-backed conversations, explicit user-approved memory, daily brief, natural-language search, breeding planner recommendations, and metadata-only usage logging.
 - Frontend route entry: `client/src/App.tsx`.
 - Backend entry: `server/_core/index.ts`.
 - Schema: `drizzle/schema.ts`.
@@ -114,3 +115,4 @@ Before production-oriented changes, check:
 - 2026-05-08: Stripe subscription webhooks should derive Starter/Pro access from configured Price IDs first. Legacy subscriptions may fall back to valid `plan_tier` metadata, but unknown/missing plan data must fail closed instead of defaulting to Pro.
 - 2026-05-08: Bird photo uploads validate decoded image bytes against the declared MIME type before writing to Tigris. Removing a saved bird photo sends `photoUrl: null` so Drizzle clears the field instead of ignoring `undefined`.
 - 2026-05-08: Tigris storage config accepts `TIGRIS_*`, `AWS_*`, and Railway Bucket aliases. Removing or replacing a managed `/api/photos/birds/{userId}/...` photo clears the DB field and best-effort deletes the old Tigris object.
+- 2026-05-10: AI writes remain approval-gated. AI conversations and explicit memories are now persisted in user-scoped tables; AI logs must remain metadata-only with no prompts, notes, photos, JWTs, secrets, or customer content.

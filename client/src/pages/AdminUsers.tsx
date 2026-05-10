@@ -21,6 +21,7 @@ export default function AdminUsers() {
   const utils = trpc.useUtils();
   const { data: users, isLoading, error } = trpc.admin.users.useQuery();
   const { data: chatStats, isFetching: chatFetching, refetch: refetchChat } = trpc.admin.chatStats.useQuery(undefined, { refetchInterval: 60 * 60 * 1000 });
+  const { data: aiUsage, isFetching: aiUsageFetching, refetch: refetchAIUsage } = trpc.admin.aiUsage.useQuery(undefined, { refetchInterval: 60 * 60 * 1000 });
   const setPlan = trpc.admin.setPlan.useMutation({
     onSuccess: () => { utils.admin.users.invalidate(); toast.success("Plan updated!"); },
     onError: (e) => toast.error(e.message),
@@ -94,6 +95,11 @@ export default function AdminUsers() {
       direction: current.key === key && current.direction === "asc" ? "desc" : "asc",
     }));
   }
+
+  const toolFailures = Number(aiUsage?.totals.find(row => row.eventType === "tool" && row.status === "failure")?.count ?? 0);
+  const toolSuccesses = Number(aiUsage?.totals.find(row => row.eventType === "tool" && row.status === "success")?.count ?? 0);
+  const approvals = Number(aiUsage?.approvals?.approved ?? 0);
+  const rejections = Number(aiUsage?.approvals?.rejected ?? 0);
 
   function sortHeader(key: SortKey, label: string) {
     const active = sortConfig.key === key;
@@ -176,6 +182,57 @@ export default function AdminUsers() {
             </CardContent>
           </Card>
         </div>
+
+        <Card className="border border-border shadow-sm">
+          <CardHeader className="pb-3 flex flex-row items-center justify-between">
+            <CardTitle className="text-base font-semibold">AI Copilot Usage</CardTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs h-7 gap-1.5"
+              onClick={() => refetchAIUsage()}
+              disabled={aiUsageFetching}
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${aiUsageFetching ? "animate-spin" : ""}`} />
+              {aiUsageFetching ? "Refreshing..." : "Refresh AI Usage"}
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="rounded-md border bg-muted/20 p-3">
+                <p className="text-xs text-muted-foreground">Tool Successes</p>
+                <p className="text-2xl font-semibold">{toolSuccesses}</p>
+              </div>
+              <div className="rounded-md border bg-muted/20 p-3">
+                <p className="text-xs text-muted-foreground">Tool Failures</p>
+                <p className={`text-2xl font-semibold ${toolFailures > 0 ? "text-orange-600" : ""}`}>{toolFailures}</p>
+              </div>
+              <div className="rounded-md border bg-muted/20 p-3">
+                <p className="text-xs text-muted-foreground">Approvals</p>
+                <p className="text-2xl font-semibold">{approvals}</p>
+              </div>
+              <div className="rounded-md border bg-muted/20 p-3">
+                <p className="text-xs text-muted-foreground">Rejections</p>
+                <p className="text-2xl font-semibold">{rejections}</p>
+              </div>
+            </div>
+
+            {aiUsage?.failedTools?.length ? (
+              <div className="mt-4">
+                <p className="text-xs font-medium text-muted-foreground mb-2">Failed tools</p>
+                <div className="flex flex-wrap gap-2">
+                  {aiUsage.failedTools.map((tool) => (
+                    <Badge key={tool.toolName ?? "unknown"} variant="outline" className="text-xs">
+                      {tool.toolName ?? "unknown"}: {Number(tool.count)}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground mt-4">No failed AI tools recorded in the last {aiUsage?.days ?? 7} days.</p>
+            )}
+          </CardContent>
+        </Card>
 
         <Card className="border border-border shadow-card">
           <CardHeader className="pb-3 flex flex-row items-center justify-between">

@@ -17,6 +17,11 @@ import { SpeciesService } from "../services/speciesService";
 import { EventService } from "../services/eventService";
 import { PedigreeService } from "../services/pedigreeService";
 import { SettingsService } from "../services/settingsService";
+import { AIMemoryService, AI_MEMORY_CATEGORIES } from "../services/aiMemoryService";
+import { AIBriefService } from "../services/aiBriefService";
+import { AISearchService } from "../services/aiSearchService";
+import { AIBreedingPlannerService } from "../services/aiBreedingPlannerService";
+import { AIUsageService } from "../services/aiUsageService";
 import { sdk } from "./sdk";
 import {
   CHAT_MAX_OUTPUT_TOKENS,
@@ -86,6 +91,39 @@ function logAiTool(
     .map(([key, value]) => `${key}=${value}`)
     .join(" ");
   console.log(`[chat:tool] userId=${userId} tool=${toolName} status=${status}${targetText ? ` ${targetText}` : ""}`);
+  void AIUsageService.record({
+    userId,
+    eventType: "tool",
+    toolName,
+    status: status === "success" ? "success" : "failure",
+    }).catch(() => undefined);
+}
+
+const loggedApprovalResponses = new Set<string>();
+
+function logApprovalResponses(userId: number, messages: any[]) {
+  for (const message of messages) {
+    for (const part of message?.parts ?? []) {
+      if (part?.state !== "approval-responded") continue;
+      const approvalId = part?.approval?.id ?? part?.toolCallId ?? part?.id;
+      if (!approvalId) continue;
+
+      const key = `${userId}:${approvalId}`;
+      if (loggedApprovalResponses.has(key)) continue;
+      loggedApprovalResponses.add(key);
+      if (loggedApprovalResponses.size > 2_000) {
+        loggedApprovalResponses.clear();
+      }
+
+      const approved = part?.approval?.approved !== false;
+      void AIUsageService.record({
+        userId,
+        eventType: "approval",
+        toolName: typeof part?.type === "string" ? part.type.replace(/^tool-/, "") : undefined,
+        status: approved ? "approved" : "rejected",
+      }).catch(() => undefined);
+    }
+  }
 }
 
 /**
@@ -111,6 +149,76 @@ const tools = (userId: number) => ({
     execute: async () => {
       const stats = await StatsService.getDashboardStatsByUser(userId);
       return stats;
+    },
+  }),
+
+  getAIMemory: tool({
+    description: "Read the user's explicit AI preferences, such as preferred species, breeding goals, cage naming style, mutation interests, and default breeding year.",
+    inputSchema: z.object({}),
+    execute: async () => AIMemoryService.list(userId),
+  }),
+
+  getDailyBrief: tool({
+    description: "Get today's aviary brief: overdue events, hatches due, fertility checks, active clutches, and flock alerts.",
+    inputSchema: z.object({}),
+    execute: async () => AIBriefService.getDailyBrief(userId),
+  }),
+
+  naturalLanguageSearch: tool({
+    description: "Search user-owned aviary records in plain language across birds, pairs, broods, eggs, events, species, and notes. Read-only.",
+    inputSchema: z.object({
+      query: z.string().min(1).max(300),
+      scope: z.enum(["all", "birds", "pairs", "broods", "eggs", "events", "species"]).default("all"),
+    }),
+    execute: async ({ query, scope }) => AISearchService.search(userId, query, scope),
+  }),
+
+  planBreedingCandidates: tool({
+    description: "Recommend safe breeding candidates for a guided breeding plan using unpaired birds, species, pedigree risk, mutation interest, and prior performance. Read-only.",
+    inputSchema: z.object({
+      goal: z.string().max(160).optional(),
+      speciesId: z.number().int().positive().optional(),
+      season: z.number().int().min(2000).max(2100).optional(),
+      mutationInterest: z.string().max(120).optional(),
+      limit: z.number().int().min(1).max(12).default(8),
+    }),
+    execute: async (input) => AIBreedingPlannerService.recommend(userId, input),
+  }),
+
+  rememberAIMemory: tool({
+    description: "Remember an explicit user preference for future AI help. Use only when the user clearly says to remember something. Requires approval.",
+    needsApproval: true,
+    inputSchema: z.object({
+      category: z.enum(AI_MEMORY_CATEGORIES),
+      content: z.string().min(1).max(500),
+    }),
+    execute: async ({ category, content }) => {
+      try {
+        const memory = await AIMemoryService.remember(userId, category, content);
+        logAiTool(userId, "rememberAIMemory", "success", { memoryId: memory.id });
+        return { success: true, memoryId: memory.id };
+      } catch {
+        logAiTool(userId, "rememberAIMemory", "error");
+        return { success: false, error: "I could not save that memory." };
+      }
+    },
+  }),
+
+  forgetAIMemory: tool({
+    description: "Forget one explicit AI memory by ID. Requires approval.",
+    needsApproval: true,
+    inputSchema: z.object({
+      memoryId: z.number().int().positive(),
+    }),
+    execute: async ({ memoryId }) => {
+      try {
+        await AIMemoryService.forget(userId, memoryId);
+        logAiTool(userId, "forgetAIMemory", "success", { memoryId });
+        return { success: true };
+      } catch {
+        logAiTool(userId, "forgetAIMemory", "error", { memoryId });
+        return { success: false, error: "I could not forget that memory." };
+      }
     },
   }),
 
@@ -1207,6 +1315,7 @@ export function registerChatRoutes(app: Express) {
         res.status(validation.status).json({ error: validation.error, code: validation.code });
         return;
       }
+      logApprovalResponses(user.id, messages as any[]);
 
       const limit = checkChatRateLimit(user.id);
       if (!limit.allowed) {
@@ -1224,6 +1333,12 @@ export function registerChatRoutes(app: Express) {
 
       const modelName = process.env.OPENAI_MODEL || "gpt-4o-mini";
       console.log(`[chat] userId=${user.id} model=${modelName} remaining=${limit.remaining}/${CHAT_MAX_PER_DAY} activeTools=${activeTools.length}`);
+      void AIUsageService.record({
+        userId: user.id,
+        eventType: "chat",
+        status: "success",
+        model: modelName,
+      }).catch(() => undefined);
 
       const userDate = typeof req.body.userDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(req.body.userDate)
         ? req.body.userDate
@@ -1235,7 +1350,7 @@ export function registerChatRoutes(app: Express) {
       const result = streamText({
         model: openai.chat(modelName),
         system:
-          `You are an expert aviculture assistant with full control over the user's aviary. You help manage their aviary, called 'Aviary Manager'. You can both read data AND request actions on their behalf after user approval.\n\nToday's date is ${today}. Yesterday was ${yesterday}. Always use these exact dates when the user refers to 'today' or 'yesterday'.\n\nREAD TOOLS: getFlockStats, searchBirds, getUpcomingEvents, getMutationSummary, getPairEggStats, listPairs, getBirdDetails, getUpcomingHatches, getPairHistory, getSpeciesInfo, getUserSettings, getPedigreeSummary, getInbreedingRisk, getEggDetails, getAttentionReport, getPairPerformanceReport, recommendPairings\nACTION TOOLS: createBreedingPair, updatePairStatus, deletePair, recordClutch, updateClutch, recordHatch, addEvent, updateEvent, deleteEvent, markEventComplete, updateBirdStatus, updateBird, addBird, deleteBird, recordEggOutcome\n\nUse the richer read tools for analysis questions: getAttentionReport for 'what needs attention', getPairPerformanceReport for hatch-rate and underperformance questions, getPedigreeSummary/getInbreedingRisk for lineage questions, getEggDetails for individual egg outcomes, and recommendPairings for pairing recommendations.\n\nValid pair statuses are: active, breeding, resting, retired.\nIMPORTANT: When creating a breeding pair, always use the current calendar year as the season unless the user explicitly says otherwise. Never infer the season from bird names or ring IDs (a bird named '2024 Dad' was born in 2024, that is not the breeding season).\nValid bird statuses are: alive, breeding, resting, deceased, sold, unknown.\n\nWhen taking actions:\n1. Always use a read tool first to confirm you have the right bird(s), event, clutch, or pair before acting.\n2. If the user asks for something invalid (e.g. a status that doesn't exist), explain what the valid options are in plain language — never show raw error messages or JSON.\n3. If there is any ambiguity (multiple matches, wrong gender, etc.), ask the user to clarify rather than guessing.\n4. Action tools require user approval. If approval is denied, do not retry the same action unless the user asks again.\n5. After a successful action, confirm what you did in plain language. For example: 'Done — I've paired Rio (male) and Blue (female) for the 2026 season.'\n6. To update a bird's cage number, name, or notes use the updateBird tool.\n7. When opening the Add Bird modal (openAddBirdModal), only fill in fields the user explicitly provided. Leave all other fields null/undefined — never fill optional fields with 'Unknown' or placeholder text.\n\nWhen recommending pairings or discussing colour mutations, use getMutationSummary or recommendPairings then apply your expert genetics knowledge.\n\nDo not make up data about their specific birds — always use the tools.\n\nCRITICAL RULE: Never output raw JSON, error objects, or code blocks. Always respond in natural, conversational language. Be concise and helpful.`,
+          `You are an expert aviculture assistant with full control over the user's aviary. You help manage their aviary, called 'Aviary Manager'. You can both read data AND request actions on their behalf after user approval.\n\nToday's date is ${today}. Yesterday was ${yesterday}. Always use these exact dates when the user refers to 'today' or 'yesterday'.\n\nREAD TOOLS: getFlockStats, searchBirds, getUpcomingEvents, getMutationSummary, getPairEggStats, listPairs, getBirdDetails, getUpcomingHatches, getPairHistory, getSpeciesInfo, getUserSettings, getPedigreeSummary, getInbreedingRisk, getEggDetails, getAttentionReport, getPairPerformanceReport, recommendPairings, getAIMemory, getDailyBrief, naturalLanguageSearch, planBreedingCandidates\nACTION TOOLS: createBreedingPair, updatePairStatus, deletePair, recordClutch, updateClutch, recordHatch, addEvent, updateEvent, deleteEvent, markEventComplete, updateBirdStatus, updateBird, addBird, deleteBird, recordEggOutcome, rememberAIMemory, forgetAIMemory\n\nUse the richer read tools for analysis questions: getDailyBrief for today's priorities, naturalLanguageSearch for flexible record searches, getAttentionReport for 'what needs attention', getPairPerformanceReport for hatch-rate and underperformance questions, getPedigreeSummary/getInbreedingRisk for lineage questions, getEggDetails for individual egg outcomes, and recommendPairings or planBreedingCandidates for pairing recommendations.\n\nUse getAIMemory when preferences would help. Only use rememberAIMemory if the user explicitly asks you to remember a preference, and only store preferred species, breeding goals, cage naming style, mutation interests, or default breeding year. Never infer or store sensitive personal data.\n\nValid pair statuses are: active, breeding, resting, retired.\nIMPORTANT: When creating a breeding pair, always use the current calendar year as the season unless the user explicitly says otherwise. Never infer the season from bird names or ring IDs (a bird named '2024 Dad' was born in 2024, that is not the breeding season).\nValid bird statuses are: alive, breeding, resting, deceased, sold, unknown.\n\nWhen taking actions:\n1. Always use a read tool first to confirm you have the right bird(s), event, clutch, or pair before acting.\n2. If the user asks for something invalid (e.g. a status that doesn't exist), explain what the valid options are in plain language — never show raw error messages or JSON.\n3. If there is any ambiguity (multiple matches, wrong gender, etc.), ask the user to clarify rather than guessing.\n4. Action tools require user approval. If approval is denied, do not retry the same action unless the user asks again.\n5. After a successful action, confirm what you did in plain language. For example: 'Done — I've paired Rio (male) and Blue (female) for the 2026 season.'\n6. To update a bird's cage number, name, or notes use the updateBird tool.\n7. When opening the Add Bird modal (openAddBirdModal), only fill in fields the user explicitly provided. Leave all other fields null/undefined — never fill optional fields with 'Unknown' or placeholder text.\n\nWhen recommending pairings or discussing colour mutations, use getMutationSummary, recommendPairings, or planBreedingCandidates then apply your expert genetics knowledge.\n\nDo not make up data about their specific birds — always use the tools.\n\nCRITICAL RULE: Never output raw JSON, error objects, or code blocks. Always respond in natural, conversational language. Be concise and helpful.`,
         messages: modelMessages,
         tools: tools(user.id),
         activeTools,
