@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/useMobile";
 import { trpc } from "@/lib/trpc";
-import { BarChart2, Bird, CalendarDays, CreditCard, Egg, Heart, HelpCircle, Home, LayoutDashboard, LogOut, Megaphone, Settings, Users, MapPin } from "lucide-react";
+import { BarChart2, Bird, CalendarDays, CreditCard, Egg, Heart, HelpCircle, Home, LayoutDashboard, LogOut, Megaphone, Settings, Users, MapPin, Sparkles } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { useAppTour } from "@/hooks/useAppTour";
@@ -322,13 +322,35 @@ function DashboardLayoutContent({
             <button
               id="tour-ai-fab"
               onClick={() => setAiOpen(true)}
-              className="w-full flex flex-col items-center justify-center hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-ring mb-1"
+              className={`group w-full rounded-lg border border-orange-200 bg-white/75 shadow-sm hover:bg-orange-50 hover:border-orange-300 hover:shadow-md transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 mb-2 ${
+                isCollapsed ? "aspect-square p-1.5 flex items-center justify-center" : "p-2.5 text-left"
+              }`}
               aria-label="Open Aviary AI Assistant"
             >
-              {!isCollapsed && (
-                <span className="text-xs font-semibold text-orange-500 mb-1">Aviary AI Assistant</span>
+              {isCollapsed ? (
+                <span className="relative flex h-10 w-10 items-center justify-center rounded-md bg-orange-50">
+                  <img src="/aviary-assistant.svg" alt="" className="h-9 w-9 object-contain" />
+                  <Sparkles className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-white p-0.5 text-orange-500 shadow-sm" />
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <span className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-orange-50">
+                    <img src="/aviary-assistant.svg" alt="" className="h-10 w-10 object-contain" />
+                    <Sparkles className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-white p-0.5 text-orange-500 shadow-sm" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-1.5">
+                      <span className="text-sm font-semibold text-foreground">Ask Aviary AI</span>
+                      <Badge className="h-4 px-1.5 text-[10px] bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-100">
+                        AI
+                      </Badge>
+                    </span>
+                    <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
+                      Chat about birds, pairs, eggs & reminders
+                    </span>
+                  </span>
+                </span>
               )}
-              <img src="/aviary-assistant.svg" alt="Aviary AI Assistant" className="w-20 h-20 object-contain mx-auto" />
             </button>
             {!isCollapsed && (
               <button
