@@ -1345,7 +1345,7 @@ export function registerChatRoutes(app: Express) {
       const modelMessages = await convertToModelMessages(messages as any);
       const activeTools = getActiveToolsForMessages(messages as any);
 
-      const modelName = process.env.OPENAI_MODEL || "gpt-4o-mini";
+      const modelName = process.env.OPENAI_MODEL || "gpt-4.1-mini";
       console.log(`[chat] userId=${user.id} model=${modelName} remaining=${limit.remaining}/${CHAT_MAX_PER_DAY} activeTools=${activeTools.length}`);
       void AIUsageService.record({
         userId: user.id,
@@ -1387,7 +1387,7 @@ export { tools };
 // ── Admin: expose live chat usage stats ──────────────────────────────────────
 export function getChatStats() {
   const now = Date.now();
-  const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
+  const model = process.env.OPENAI_MODEL || "gpt-4.1-mini";
 
   let totalMessages = 0;
   let rateLimitedUsers = 0;
