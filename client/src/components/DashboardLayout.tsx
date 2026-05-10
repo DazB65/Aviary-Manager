@@ -32,6 +32,7 @@ import { Sheet, SheetContent, SheetDescription, SheetTitle } from "./ui/sheet";
 import { AIChatBox } from "./AIChatBox";
 import { BirdFormModal } from "./birds/BirdFormModal";
 import type { BirdGenotype } from "@/genetics/types";
+import { AVIARY_AI_PROMPT_EVENT } from "@/lib/aiPrompt";
 
 const mainMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
@@ -140,6 +141,7 @@ function DashboardLayoutContent({
   const hasAiAccess = Boolean(isPro || isAdmin || isOnTrial);
   const { startTour, maybeStartTour, hasTourBeenSkipped } = useAppTour();
   const [aiOpen, setAiOpen] = useState(false);
+  const [aiDraftPrompt, setAiDraftPrompt] = useState<string | null>(null);
   const [aiAddBirdOpen, setAiAddBirdOpen] = useState(false);
   const [aiAddBirdPrefill, setAiAddBirdPrefill] = useState<Record<string, any> | null>(null);
 
@@ -155,6 +157,18 @@ function DashboardLayoutContent({
     { enabled: Boolean(user && hasAiAccess && aiChatId) }
   );
   const saveAiHistory = trpc.ai.conversations.saveByClientKey.useMutation();
+
+  useEffect(() => {
+    const handleAIPrompt = (event: Event) => {
+      const prompt = (event as CustomEvent<{ prompt?: string }>).detail?.prompt;
+      if (!prompt) return;
+      setAiDraftPrompt(prompt);
+      setAiOpen(true);
+    };
+
+    window.addEventListener(AVIARY_AI_PROMPT_EVENT, handleAIPrompt);
+    return () => window.removeEventListener(AVIARY_AI_PROMPT_EVENT, handleAIPrompt);
+  }, []);
 
   const handleUIAction = ({ type, data }: { type: string; data: Record<string, any> }) => {
     if (type === "openAddBirdModal") {
@@ -444,6 +458,8 @@ function DashboardLayoutContent({
                 initialMessages={aiHistory.data?.messages ?? EMPTY_MESSAGES}
                 initialMessagesVersion={aiHistory.dataUpdatedAt}
                 persistLocally={false}
+                draftPrompt={aiDraftPrompt}
+                onDraftPromptConsumed={() => setAiDraftPrompt(null)}
                 api="/api/chat"
                 placeholder="Ask anything about your aviary..."
                 className="h-full border-0 rounded-none shadow-none"

@@ -9,6 +9,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { format, isToday, isTomorrow, parseISO, formatDistanceToNow } from "date-fns";
 import { GenderIcon } from "@/components/ui/GenderIcon";
+import { openAIAssistant } from "@/lib/aiPrompt";
 
 function formatDateLabel(dateVal: Date | string | null | undefined): string {
   if (!dateVal) return "—";
@@ -232,6 +233,14 @@ export default function Dashboard() {
                 </CardTitle>
                 <Button variant="ghost" size="sm" onClick={() => setLocation("/events")} className="h-8 gap-1 text-xs">
                   View reminders <ChevronRight className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openAIAssistant("What needs attention today? Summarise overdue events, hatches due, fertility checks, active clutches, and the next best actions.")}
+                  className="h-8 gap-1 text-xs"
+                >
+                  Ask AI about today
                 </Button>
               </div>
             </CardHeader>

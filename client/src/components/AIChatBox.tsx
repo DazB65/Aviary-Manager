@@ -179,6 +179,12 @@ export interface AIChatBoxProps {
   /** Bump this when server-loaded initial messages have changed */
   initialMessagesVersion?: string | number;
 
+  /** Optional prompt to place in the composer from page-aware AI buttons */
+  draftPrompt?: string | null;
+
+  /** Called after draftPrompt has been copied into the composer */
+  onDraftPromptConsumed?: () => void;
+
   /** URL for the assistant avatar image (shown next to assistant messages and in empty state) */
   assistantAvatarUrl?: string;
 
@@ -519,6 +525,8 @@ export function AIChatBox({
   suggestedPrompts,
   persistLocally = true,
   initialMessagesVersion,
+  draftPrompt,
+  onDraftPromptConsumed,
   assistantAvatarUrl,
   onUIAction,
 }: AIChatBoxProps) {
@@ -579,6 +587,13 @@ export function AIChatBox({
       // Local chat persistence is best-effort only.
     }
   }, [messages, persistLocally, storageKey]);
+
+  useEffect(() => {
+    if (!draftPrompt) return;
+    setInput(draftPrompt);
+    textareaRef.current?.focus();
+    onDraftPromptConsumed?.();
+  }, [draftPrompt, onDraftPromptConsumed]);
 
   const approveTool = useCallback((approvalId: string) => {
     addToolApprovalResponse({ id: approvalId, approved: true, reason: "User approved the action." });

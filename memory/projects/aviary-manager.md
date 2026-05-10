@@ -53,6 +53,7 @@ Codex setup note as of 2026-05-04: treat this repo as production-sensitive. Prot
 - Server-backed AI conversation history across devices
 - Explicit user-approved AI memory for breeding preferences only
 - Daily brief, natural-language search, and guided breeding planner services
+- Page-aware AI prompt buttons on dashboard, bird, pair, and brood/clutch views
 - Metadata-only AI usage logging for admin observability
 
 ### Other

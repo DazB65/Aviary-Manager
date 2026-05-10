@@ -84,7 +84,8 @@ function logAiTool(
   userId: number,
   toolName: string,
   status: "success" | "blocked" | "error",
-  target: Record<string, number | string | undefined> = {}
+  target: Record<string, number | string | undefined> = {},
+  latencyMs?: number
 ) {
   const targetText = Object.entries(target)
     .filter(([, value]) => value !== undefined)
@@ -96,7 +97,20 @@ function logAiTool(
     eventType: "tool",
     toolName,
     status: status === "success" ? "success" : "failure",
-    }).catch(() => undefined);
+    latencyMs,
+  }).catch(() => undefined);
+}
+
+async function runLoggedReadTool<T>(userId: number, toolName: string, read: () => Promise<T>): Promise<T | { success: false; error: string }> {
+  const startedAt = Date.now();
+  try {
+    const result = await read();
+    logAiTool(userId, toolName, "success", {}, Date.now() - startedAt);
+    return result;
+  } catch {
+    logAiTool(userId, toolName, "error", {}, Date.now() - startedAt);
+    return { success: false, error: "I could not complete that lookup." };
+  }
 }
 
 const loggedApprovalResponses = new Set<string>();
@@ -155,13 +169,13 @@ const tools = (userId: number) => ({
   getAIMemory: tool({
     description: "Read the user's explicit AI preferences, such as preferred species, breeding goals, cage naming style, mutation interests, and default breeding year.",
     inputSchema: z.object({}),
-    execute: async () => AIMemoryService.list(userId),
+    execute: async () => runLoggedReadTool(userId, "getAIMemory", () => AIMemoryService.list(userId)),
   }),
 
   getDailyBrief: tool({
     description: "Get today's aviary brief: overdue events, hatches due, fertility checks, active clutches, and flock alerts.",
     inputSchema: z.object({}),
-    execute: async () => AIBriefService.getDailyBrief(userId),
+    execute: async () => runLoggedReadTool(userId, "getDailyBrief", () => AIBriefService.getDailyBrief(userId)),
   }),
 
   naturalLanguageSearch: tool({
@@ -170,7 +184,7 @@ const tools = (userId: number) => ({
       query: z.string().min(1).max(300),
       scope: z.enum(["all", "birds", "pairs", "broods", "eggs", "events", "species"]).default("all"),
     }),
-    execute: async ({ query, scope }) => AISearchService.search(userId, query, scope),
+    execute: async ({ query, scope }) => runLoggedReadTool(userId, "naturalLanguageSearch", () => AISearchService.search(userId, query, scope)),
   }),
 
   planBreedingCandidates: tool({
@@ -182,7 +196,7 @@ const tools = (userId: number) => ({
       mutationInterest: z.string().max(120).optional(),
       limit: z.number().int().min(1).max(12).default(8),
     }),
-    execute: async (input) => AIBreedingPlannerService.recommend(userId, input),
+    execute: async (input) => runLoggedReadTool(userId, "planBreedingCandidates", () => AIBreedingPlannerService.recommend(userId, input)),
   }),
 
   rememberAIMemory: tool({

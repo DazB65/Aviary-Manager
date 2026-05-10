@@ -28,6 +28,7 @@ import { format } from "date-fns";
 import { GenderIcon } from "@/components/ui/GenderIcon";
 import { toast } from "sonner";
 import { generateDates, type EventFormData } from "@/hooks/useEventForm";
+import { openAIAssistant } from "@/lib/aiPrompt";
 
 type PedigreeBird = {
   id: number;
@@ -587,6 +588,14 @@ export default function BirdDetail() {
             <ArrowLeft className="h-4 w-4" /> Birds
           </Button>
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={() => openAIAssistant(`Explain this bird: ${displayName} (bird ID ${bird.id}). Summarise its species, mutation/genetics notes, pedigree, siblings or descendants, breeding history, and any events that need attention.`)}
+            >
+              Ask AI
+            </Button>
             <Button
               variant="outline"
               size="sm"

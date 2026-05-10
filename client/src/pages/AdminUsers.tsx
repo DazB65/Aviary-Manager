@@ -21,7 +21,7 @@ export default function AdminUsers() {
   const utils = trpc.useUtils();
   const { data: users, isLoading, error } = trpc.admin.users.useQuery();
   const { data: chatStats, isFetching: chatFetching, refetch: refetchChat } = trpc.admin.chatStats.useQuery(undefined, { refetchInterval: 60 * 60 * 1000 });
-  const { data: aiUsage, isFetching: aiUsageFetching, refetch: refetchAIUsage } = trpc.admin.aiUsage.useQuery(undefined, { refetchInterval: 60 * 60 * 1000 });
+  const { data: aiUsage, dataUpdatedAt: aiUsageUpdatedAt, isFetching: aiUsageFetching, refetch: refetchAIUsage } = trpc.admin.aiUsage.useQuery(undefined, { refetchInterval: 60 * 60 * 1000 });
   const setPlan = trpc.admin.setPlan.useMutation({
     onSuccess: () => { utils.admin.users.invalidate(); toast.success("Plan updated!"); },
     onError: (e) => toast.error(e.message),
@@ -100,6 +100,7 @@ export default function AdminUsers() {
   const toolSuccesses = Number(aiUsage?.totals.find(row => row.eventType === "tool" && row.status === "success")?.count ?? 0);
   const approvals = Number(aiUsage?.approvals?.approved ?? 0);
   const rejections = Number(aiUsage?.approvals?.rejected ?? 0);
+  const aiUsageUpdatedLabel = aiUsageUpdatedAt ? format(new Date(aiUsageUpdatedAt), "h:mm a") : "—";
 
   function sortHeader(key: SortKey, label: string) {
     const active = sortConfig.key === key;
@@ -185,7 +186,12 @@ export default function AdminUsers() {
 
         <Card className="border border-border shadow-sm">
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
-            <CardTitle className="text-base font-semibold">AI Copilot Usage</CardTitle>
+            <div>
+              <CardTitle className="text-base font-semibold">AI Tool & Approval Usage</CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                Last {aiUsage?.days ?? 7} days · refreshed {aiUsageUpdatedLabel}
+              </p>
+            </div>
             <Button
               size="sm"
               variant="outline"

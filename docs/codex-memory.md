@@ -28,7 +28,7 @@ The app has real users, Stripe billing, PostgreSQL data, Tigris photo storage, a
 - Billing: Stripe 7-day trial, then Starter or Pro subscriptions.
 - Deploy: Docker on Railway.
 - AI: OpenAI SDK / AI SDK streaming chat and tool calling.
-- AI copilot v1: server-backed conversations, explicit user-approved memory, daily brief, natural-language search, breeding planner recommendations, and metadata-only usage logging.
+- AI copilot v1: server-backed conversations, explicit user-approved memory, daily brief, natural-language search, breeding planner recommendations, page-aware prompt buttons, and metadata-only usage logging.
 - Frontend route entry: `client/src/App.tsx`.
 - Backend entry: `server/_core/index.ts`.
 - Schema: `drizzle/schema.ts`.

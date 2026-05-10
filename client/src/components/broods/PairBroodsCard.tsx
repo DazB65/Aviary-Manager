@@ -7,6 +7,7 @@ import { format, parseISO, differenceInDays } from "date-fns";
 import { Link } from "wouter";
 import { STATUS_STYLES, STATUS_ICONS } from "./constants";
 import { ClutchEggGrid } from "./EggGrid";
+import { openAIAssistant } from "@/lib/aiPrompt";
 
 function formatDateStr(val: Date | string | null | undefined): string {
     if (!val) return "—";
@@ -105,6 +106,14 @@ export function PairBroodsCard({ pairId, broods, pairLabel, male, female, onEdit
                         </div>
                     </div>
                     <div className="flex gap-1 shrink-0 items-start">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 text-xs"
+                            onClick={() => openAIAssistant(`Summarise the clutches for pair ID ${pairId} (${pairLabel}). Include egg outcomes, hatch/fertility dates, overdue checks, clutch performance, and the next best action.`)}
+                        >
+                            Ask AI
+                        </Button>
                         <Button
                             variant="ghost"
                             size="sm"

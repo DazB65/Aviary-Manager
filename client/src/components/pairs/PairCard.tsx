@@ -8,6 +8,7 @@ import { STATUS_STYLES, STATUS_LABELS } from "./constants";
 import { PairInbreeding } from "./InbreedingUI";
 import { GenderIcon } from "@/components/ui/GenderIcon";
 import { PredictedOffspringSection } from "./PredictedOffspringSection";
+import { openAIAssistant } from "@/lib/aiPrompt";
 
 interface PairCardProps {
     pair: any;
@@ -112,6 +113,14 @@ export function PairCard({
                         <Badge variant="outline" className={`text-sm ${STATUS_STYLES[pair.status]}`}>
                             {STATUS_LABELS[pair.status] ?? pair.status}
                         </Badge>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 text-xs"
+                            onClick={() => openAIAssistant(`Review breeding pair ID ${pair.id}: ${birdLabel(male)} x ${birdLabel(female)}. Summarise pair performance, clutch history, inbreeding risk, mutation reasoning, and the next best action.`)}
+                        >
+                            Ask AI
+                        </Button>
                         <Button
                             variant="ghost"
                             size="icon"
