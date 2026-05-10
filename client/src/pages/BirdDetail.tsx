@@ -16,7 +16,7 @@ import { readActiveGeneticsPacks, readBirdGenotype, formatGeneticsDisplay } from
 import { GenotypeState, InheritanceType, type BirdGenotype } from "@/genetics/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Bird, Calendar, Tag, Dna, GitBranch, Users, CalendarDays, CheckCircle2, Circle, Heart, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Bird, Calendar, Tag, Dna, GitBranch, Users, CalendarDays, CheckCircle2, Circle, Heart, Home, Pencil, Plus, Trash2 } from "lucide-react";
 import { BirdFormModal } from "@/components/birds/BirdFormModal";
 import { BirdEventCalendar } from "@/components/birds/BirdEventCalendar";
 import { EventFormModal } from "@/components/events/EventFormModal";
@@ -563,6 +563,7 @@ export default function BirdDetail() {
   const detailItems = [
     { label: "Ring ID", value: bird.ringId || "—", className: "font-mono" },
     { label: "Gender", value: genderLabel, icon: <GenderIcon gender={bird.gender} className="w-4 h-4" /> },
+    { label: "Cage", value: bird.cageNumber || "—", icon: <Home className="w-4 h-4 text-teal-600" /> },
     { label: "Date of Birth", value: dobStr || "—" },
     { label: "Fledged Date", value: fledgedStr || "—" },
   ];
@@ -674,7 +675,7 @@ export default function BirdDetail() {
                   </div>
                 </div>
 
-                <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
                   {detailItems.map((item) => (
                     <div key={item.label} className="rounded-lg border border-border bg-white px-4 py-3 shadow-sm">
                       <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{item.label}</p>
