@@ -1,6 +1,16 @@
 import { and, eq, asc, desc, sql, inArray, isNull } from "drizzle-orm";
 import { getDb } from "../db";
-import { events, birds, breedingPairs, type InsertEvent } from "../../drizzle/schema";
+import { events, birds, breedingPairs, broods, type InsertEvent } from "../../drizzle/schema";
+
+const FINAL_BROOD_STATUSES = new Set(["hatched", "failed", "abandoned"]);
+
+export function isFinalBroodStatus(status: string | null | undefined): boolean {
+    return Boolean(status && FINAL_BROOD_STATUSES.has(status));
+}
+
+export function getBroodAutoEventSeriesIds(broodId: number): [string, string] {
+    return [`brood-${broodId}-fertility`, `brood-${broodId}-hatch`];
+}
 
 export class EventService {
     static async getEventsByUser(userId: number) {
@@ -58,12 +68,28 @@ export class EventService {
         return updated;
     }
 
+    static async deleteBroodAutoEvents(userId: number, broodId: number) {
+        const db = getDb();
+        if (!db) return;
+        await db.delete(events).where(and(eq(events.userId, userId), inArray(events.seriesId, getBroodAutoEventSeriesIds(broodId))));
+    }
+
     static async syncBroodEvents(userId: number, pairId: number | null, broodId: number, fertilityDate?: string, hatchDate?: string) {
         const db = getDb();
         if (!db) return;
 
-        const fSeries = `brood-${broodId}-fertility`;
-        const hSeries = `brood-${broodId}-hatch`;
+        const [fSeries, hSeries] = getBroodAutoEventSeriesIds(broodId);
+
+        const [brood] = await db
+            .select({ status: broods.status })
+            .from(broods)
+            .where(and(eq(broods.id, broodId), eq(broods.userId, userId)))
+            .limit(1);
+
+        if (!brood || isFinalBroodStatus(brood.status)) {
+            await EventService.deleteBroodAutoEvents(userId, broodId);
+            return;
+        }
 
         // Build descriptive title: "Event - MaleName x FemaleName - Cage"
         let pairLabel = `Pair #${pairId}`;

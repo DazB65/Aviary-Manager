@@ -7,6 +7,7 @@ import {
     breedingPairs,
     type InsertBrood,
 } from "../../drizzle/schema";
+import { EventService, isFinalBroodStatus } from "./eventService";
 
 type ClutchEgg = typeof clutchEggs.$inferSelect;
 
@@ -38,12 +39,16 @@ export class BroodService {
             .set({ ...data, updatedAt: new Date() })
             .where(and(eq(broods.id, id), eq(broods.userId, userId)))
             .returning({ id: broods.id });
+        if (result && isFinalBroodStatus(data.status)) {
+            await EventService.deleteBroodAutoEvents(userId, id);
+        }
         return result;
     }
 
     static async deleteBrood(id: number, userId: number) {
         const db = getDb();
         if (!db) throw new Error("DB unavailable");
+        await EventService.deleteBroodAutoEvents(userId, id);
         // Transaction refactored implementation:
         await db.transaction(async (tx) => {
             await tx.delete(clutchEggs).where(and(eq(clutchEggs.broodId, id), eq(clutchEggs.userId, userId)));
@@ -182,6 +187,7 @@ export class BroodService {
             .update(broods)
             .set({ status: newStatus, updatedAt: new Date() })
             .where(and(eq(broods.id, broodId), eq(broods.userId, userId), eq(broods.status, "incubating")));
+        await EventService.deleteBroodAutoEvents(userId, broodId);
     }
 
     static async deleteEggsByBrood(broodId: number, userId: number): Promise<void> {

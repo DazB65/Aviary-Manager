@@ -160,6 +160,7 @@ export function ClutchEggGrid({
             });
             utils.clutchEggs.byBrood.invalidate({ broodId });
             utils.broods.list.invalidate();
+            utils.events.list.invalidate();
             utils.dashboard.stats.invalidate();
         },
         onError: (e, { eggNumber }) => {

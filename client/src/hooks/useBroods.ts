@@ -26,6 +26,7 @@ export function useBroods() {
     const createBrood = trpc.broods.create.useMutation({
         onSuccess: () => {
             utils.broods.list.invalidate();
+            utils.events.list.invalidate();
             utils.dashboard.stats.invalidate();
             toast.success("Brood logged!");
         },
@@ -35,6 +36,7 @@ export function useBroods() {
     const updateBrood = trpc.broods.update.useMutation({
         onSuccess: () => {
             utils.broods.list.invalidate();
+            utils.events.list.invalidate();
             utils.dashboard.stats.invalidate();
             toast.success("Brood updated!");
         },
@@ -44,6 +46,7 @@ export function useBroods() {
     const deleteBrood = trpc.broods.delete.useMutation({
         onSuccess: () => {
             utils.broods.list.invalidate();
+            utils.events.list.invalidate();
             utils.dashboard.stats.invalidate();
             toast.success("Brood removed.");
         },
