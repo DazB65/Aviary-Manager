@@ -1,10 +1,10 @@
 import "dotenv/config";
 import express from "express";
-import helmet from "helmet";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerChatRoutes } from "./chat";
+import { securityHeaders } from "./security";
 import { registerPdfRoutes } from "../pdfRoutes";
 import { registerAuthRoutes } from "../authRoutes";
 import { registerStripeRoutes } from "../stripeRoutes";
@@ -39,7 +39,7 @@ async function startServer() {
   // Trust Railway's proxy so express-rate-limit can read X-Forwarded-For correctly
   app.set("trust proxy", 1);
   // Security headers — applied before all routes
-  app.use(helmet({ contentSecurityPolicy: false }));
+  app.use(securityHeaders());
   // Stripe webhook MUST be registered BEFORE express.json() to get raw body for signature verification
   registerStripeRoutes(app);
   // Configure body parser with larger size limit for file uploads
