@@ -54,10 +54,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Markdown } from "@/components/Markdown";
 import { cn } from "@/lib/utils";
-import { Loader2, Send, Sparkles, Trash2 } from "lucide-react";
+import { Check, Loader2, Send, Sparkles, Trash2, X } from "lucide-react";
 import { useState, useRef, useEffect, ReactNode, useCallback } from "react";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+import { DefaultChatTransport, lastAssistantMessageIsCompleteWithApprovalResponses } from "ai";
 
 // ============================================================================
 // TYPES
@@ -78,6 +78,14 @@ export type ToolInvocationState = UIToolInvocation<any>["state"];
  */
 export function isToolLoading(state: ToolInvocationState): boolean {
   return state === "input-streaming" || state === "input-available";
+}
+
+export function isToolApprovalRequested(state: ToolInvocationState): boolean {
+  return state === "approval-requested";
+}
+
+export function isToolApprovalResponded(state: ToolInvocationState): boolean {
+  return state === "approval-responded";
 }
 
 /**
@@ -115,6 +123,12 @@ export interface ToolPartRendererProps {
   output?: unknown;
   /** Error text (available when state is output-error) */
   errorText?: string;
+  /** Approval object (available when state is approval-requested/responded) */
+  approval?: { id: string; approved?: boolean; reason?: string };
+  /** Approve a pending server-side tool action */
+  onApproveTool?: (approvalId: string) => void;
+  /** Reject a pending server-side tool action */
+  onRejectTool?: (approvalId: string) => void;
 }
 
 export type ToolPartRenderer = (props: ToolPartRendererProps) => ReactNode;
@@ -200,7 +214,91 @@ const TOOL_LOADING_LABELS: Record<string, string> = {
   getPairHistory: "📋 Loading pair history...",
 };
 
-function DefaultToolPartRenderer({ toolName, state, errorText }: ToolPartRendererProps) {
+const TOOL_APPROVAL_LABELS: Record<string, string> = {
+  createBreedingPair: "Create breeding pair",
+  updatePairStatus: "Update pair status",
+  deletePair: "Delete breeding pair and its clutches",
+  recordClutch: "Record clutch",
+  updateClutch: "Update clutch",
+  deleteClutch: "Delete clutch",
+  recordHatch: "Record hatch",
+  addEvent: "Add event",
+  updateEvent: "Update event",
+  deleteEvent: "Delete event",
+  markEventComplete: "Mark event complete",
+  updateBirdStatus: "Update bird status",
+  updateBird: "Update bird details",
+  addBird: "Open add bird form",
+  deleteBird: "Delete bird",
+  recordEggOutcome: "Record egg outcome",
+};
+
+function formatToolInput(input: unknown): string {
+  if (!input || typeof input !== "object") return "No extra details";
+
+  const entries = Object.entries(input as Record<string, unknown>)
+    .filter(([, value]) => value !== undefined && value !== null && value !== "")
+    .slice(0, 5)
+    .map(([key, value]) => {
+      const label = key.replace(/([A-Z])/g, " $1").replace(/^./, (char) => char.toUpperCase());
+      return `${label}: ${String(value)}`;
+    });
+
+  return entries.length ? entries.join(" · ") : "No extra details";
+}
+
+function DefaultToolPartRenderer({
+  toolName,
+  state,
+  input,
+  errorText,
+  approval,
+  onApproveTool,
+  onRejectTool,
+}: ToolPartRendererProps) {
+  if (isToolApprovalRequested(state) && approval) {
+    const title = TOOL_APPROVAL_LABELS[toolName] ?? "Run assistant action";
+    return (
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 my-2 text-sm text-amber-950">
+        <div className="font-medium">{title}</div>
+        <div className="mt-1 text-xs text-amber-800">{formatToolInput(input)}</div>
+        <div className="mt-3 flex gap-2">
+          <Button
+            type="button"
+            size="sm"
+            className="h-8 gap-1.5"
+            onClick={() => onApproveTool?.(approval.id)}
+          >
+            <Check className="size-3.5" />
+            Approve
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-8 gap-1.5 border-amber-300 bg-white/70"
+            onClick={() => onRejectTool?.(approval.id)}
+          >
+            <X className="size-3.5" />
+            Reject
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isToolApprovalResponded(state)) {
+    const approved = approval?.approved !== false;
+    return (
+      <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg my-2">
+        {approved ? <Loader2 className="size-3.5 animate-spin text-primary shrink-0" /> : <X className="size-3.5 text-muted-foreground shrink-0" />}
+        <span className="text-xs text-muted-foreground">
+          {approved ? "Approved. Running action..." : "Action rejected."}
+        </span>
+      </div>
+    );
+  }
+
   if (isToolLoading(state)) {
     const label = TOOL_LOADING_LABELS[toolName] ?? `Looking that up...`;
     return (
@@ -232,11 +330,15 @@ function MessageBubble({
   renderToolPart,
   isStreaming,
   assistantAvatarUrl,
+  onApproveTool,
+  onRejectTool,
 }: {
   message: UIMessage;
   renderToolPart: ToolPartRenderer;
   isStreaming: boolean;
   assistantAvatarUrl?: string;
+  onApproveTool?: (approvalId: string) => void;
+  onRejectTool?: (approvalId: string) => void;
 }) {
   const isUser = message.role === "user";
 
@@ -297,6 +399,7 @@ function MessageBubble({
               input?: unknown;
               output?: unknown;
               errorText?: string;
+              approval?: { id: string; approved?: boolean; reason?: string };
             };
 
             const rendererProps: ToolPartRendererProps = {
@@ -306,6 +409,9 @@ function MessageBubble({
               input: toolPart.input,
               output: toolPart.output,
               errorText: toolPart.errorText,
+              approval: toolPart.approval,
+              onApproveTool,
+              onRejectTool,
             };
 
             // Try custom renderer first, fall back to default
@@ -357,6 +463,31 @@ function ThinkingIndicator({ assistantAvatarUrl }: { assistantAvatarUrl?: string
   );
 }
 
+function getFriendlyChatError(error: Error): string {
+  const text = error.message.toLowerCase();
+  if (text.includes("pro_required") || text.includes("403")) {
+    return "The AI Assistant is a Pro feature. Upgrade to Pro to use chat-based aviary management.";
+  }
+  if (text.includes("429") || text.includes("rate") || text.includes("daily message limit")) {
+    return "You have reached today's AI message limit. Please try again after it resets.";
+  }
+  if (text.includes("message_too_long") || text.includes("413") || text.includes("too long")) {
+    return "That chat is too long for the assistant. Please clear the chat or shorten your message.";
+  }
+  return "The assistant could not complete that request. Please try again.";
+}
+
+function loadStoredMessages(chatId: string, fallback: UIMessage[]): UIMessage[] {
+  try {
+    const stored = localStorage.getItem(`aviary-ai-chat:${chatId}`);
+    if (!stored) return fallback;
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
@@ -378,13 +509,16 @@ export function AIChatBox({
   const [input, setInput] = useState("");
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const storageKey = `aviary-ai-chat:${chatId}`;
 
   // -------------------------------------------------------------------------
   // useChat hook - the core of AI SDK integration
   // -------------------------------------------------------------------------
-  const { messages, sendMessage, setMessages, status, error } = useChat({
+  const { messages, sendMessage, setMessages, status, error, addToolApprovalResponse } = useChat({
     // Chat ID helps AI SDK track different conversations
     id: chatId,
+    messages: loadStoredMessages(chatId, initialMessages),
+    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
 
     // Transport configuration - how messages are sent to the server
     transport: new DefaultChatTransport({
@@ -417,7 +551,23 @@ export function AIChatBox({
   // Sync messages when chatId changes (chat switching)
   // -------------------------------------------------------------------------
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { setMessages(initialMessages); }, [chatId]);
+  useEffect(() => { setMessages(loadStoredMessages(chatId, initialMessages)); }, [chatId]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(messages.slice(-30)));
+    } catch {
+      // Local chat persistence is best-effort only.
+    }
+  }, [messages, storageKey]);
+
+  const approveTool = useCallback((approvalId: string) => {
+    addToolApprovalResponse({ id: approvalId, approved: true, reason: "User approved the action." });
+  }, [addToolApprovalResponse]);
+
+  const rejectTool = useCallback((approvalId: string) => {
+    addToolApprovalResponse({ id: approvalId, approved: false, reason: "User rejected the action." });
+  }, [addToolApprovalResponse]);
 
   // -------------------------------------------------------------------------
   // Fire onUIAction when a tool returns a uiAction result (e.g. openAddBirdModal)
@@ -546,6 +696,8 @@ export function AIChatBox({
                       renderToolPart={renderToolPart}
                       isStreaming={isStreaming && isLastAssistant && hasContent}
                       assistantAvatarUrl={assistantAvatarUrl}
+                      onApproveTool={approveTool}
+                      onRejectTool={rejectTool}
                     />
                   );
                 })}
@@ -557,8 +709,8 @@ export function AIChatBox({
 
             {/* Error display */}
             {error && (
-              <div className="rounded-lg bg-destructive/10 p-4 text-destructive">
-                Error: {error.message}
+              <div className="rounded-lg bg-destructive/10 p-4 text-sm text-destructive">
+                {getFriendlyChatError(error)}
               </div>
             )}
           </div>
@@ -575,7 +727,10 @@ export function AIChatBox({
                 variant="outline"
                 size="icon"
                 title="Clear Chat"
-                onClick={() => setMessages([])}
+                onClick={() => {
+                  setMessages([]);
+                  localStorage.removeItem(storageKey);
+                }}
                 className="shrink-0 h-[44px] w-[44px] text-muted-foreground hover:text-destructive hover:border-destructive/30 hover:bg-destructive/10"
               >
                 <Trash2 className="size-4" />
