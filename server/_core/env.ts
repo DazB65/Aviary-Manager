@@ -18,6 +18,7 @@ export const ENV = {
   tigrisSecretAccessKey: process.env.TIGRIS_SECRET_ACCESS_KEY ?? process.env.AWS_SECRET_ACCESS_KEY ?? process.env.SECRET_ACCESS_KEY ?? "",
   tigrisBucketName: process.env.TIGRIS_BUCKET_NAME ?? process.env.BUCKET_NAME ?? process.env.BUCKET ?? "",
   tigrisRegion: process.env.TIGRIS_REGION ?? process.env.AWS_REGION ?? process.env.REGION ?? "auto",
+  tigrisForcePathStyle: (process.env.TIGRIS_FORCE_PATH_STYLE ?? process.env.AWS_S3_FORCE_PATH_STYLE ?? "").toLowerCase() === "true",
   // Owner email — user with this email gets admin role automatically on login
   ownerEmail: (process.env.OWNER_EMAIL ?? "").toLowerCase(),
 };

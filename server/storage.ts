@@ -5,16 +5,24 @@ import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } fro
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { ENV } from './_core/env';
 
+function normalizeEndpoint(endpoint: string): string {
+  const trimmed = endpoint.trim().replace(/\/+$/, "");
+  if (!trimmed) return "";
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
 function getS3Client(): S3Client {
-  const { tigrisEndpointUrl, tigrisAccessKeyId, tigrisSecretAccessKey, tigrisRegion } = ENV;
-  if (!tigrisEndpointUrl || !tigrisAccessKeyId || !tigrisSecretAccessKey) {
+  const { tigrisAccessKeyId, tigrisForcePathStyle, tigrisRegion, tigrisSecretAccessKey } = ENV;
+  const endpoint = normalizeEndpoint(ENV.tigrisEndpointUrl);
+  if (!endpoint || !tigrisAccessKeyId || !tigrisSecretAccessKey) {
     throw new Error(
       "Tigris credentials missing: set TIGRIS_* variables, Railway Bucket variables, or AWS_* S3 variables"
     );
   }
   return new S3Client({
     region: tigrisRegion,
-    endpoint: tigrisEndpointUrl,
+    endpoint,
+    forcePathStyle: tigrisForcePathStyle,
     credentials: {
       accessKeyId: tigrisAccessKeyId,
       secretAccessKey: tigrisSecretAccessKey,
@@ -28,7 +36,7 @@ function normalizeKey(relKey: string): string {
 
 function getBucket(): string {
   if (!ENV.tigrisBucketName) {
-    throw new Error("TIGRIS_BUCKET_NAME is not set");
+    throw new Error("Tigris bucket name missing: set TIGRIS_BUCKET_NAME, BUCKET_NAME, or Railway BUCKET");
   }
   return ENV.tigrisBucketName;
 }
