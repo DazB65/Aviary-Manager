@@ -508,6 +508,20 @@ function loadStoredMessages(chatId: string, fallback: UIMessage[]): UIMessage[] 
   }
 }
 
+function getUIActionToolCallIds(messages: UIMessage[]): string[] {
+  const ids: string[] = [];
+  for (const message of messages) {
+    for (const part of message.parts ?? []) {
+      if (!part.type.startsWith("tool-")) continue;
+      const toolPart = part as any;
+      if (toolPart.state === "output-available" && toolPart.output?.uiAction && toolPart.toolCallId) {
+        ids.push(toolPart.toolCallId);
+      }
+    }
+  }
+  return ids;
+}
+
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
@@ -534,6 +548,7 @@ export function AIChatBox({
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const storageKey = `aviary-ai-chat:${chatId}`;
+  const firedToolIds = useRef<Set<string>>(new Set());
 
   // -------------------------------------------------------------------------
   // useChat hook - the core of AI SDK integration
@@ -576,7 +591,9 @@ export function AIChatBox({
   // -------------------------------------------------------------------------
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    setMessages(persistLocally ? loadStoredMessages(chatId, initialMessages) : initialMessages);
+    const nextMessages = persistLocally ? loadStoredMessages(chatId, initialMessages) : initialMessages;
+    firedToolIds.current = new Set(getUIActionToolCallIds(nextMessages));
+    setMessages(nextMessages);
   }, [chatId, initialMessagesVersion, persistLocally]);
 
   useEffect(() => {
@@ -606,7 +623,6 @@ export function AIChatBox({
   // -------------------------------------------------------------------------
   // Fire onUIAction when a tool returns a uiAction result (e.g. openAddBirdModal)
   // -------------------------------------------------------------------------
-  const firedToolIds = useRef<Set<string>>(new Set());
   useEffect(() => {
     if (!onUIAction) return;
     for (const message of messages) {

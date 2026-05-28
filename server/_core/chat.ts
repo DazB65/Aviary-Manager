@@ -1313,7 +1313,7 @@ export function registerChatRoutes(app: Express) {
         return;
       }
       if (user.plan === "free") {
-        const TRIAL_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+        const TRIAL_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
         const trialEnd = user.planExpiresAt
           ? new Date(user.planExpiresAt)
           : new Date(user.createdAt.getTime() + TRIAL_DAYS_MS);

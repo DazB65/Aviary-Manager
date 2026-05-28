@@ -11,7 +11,7 @@ export const router = t.router;
 export const publicProcedure = t.procedure;
 
 export const TRIAL_EXPIRED_MSG = "TRIAL_EXPIRED";
-const TRIAL_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const TRIAL_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 const requireUser = t.middleware(async opts => {
   const { ctx, next } = opts;
@@ -45,7 +45,7 @@ const requireActive = t.middleware(async opts => {
   }
 
   // Non-subscribed accounts are trial/expired states, not a public no-cost tier.
-  // planExpiresAt is set on registration; fall back to createdAt + 7 days for legacy accounts.
+  // planExpiresAt is set on registration; fall back to createdAt + 30 days for legacy accounts.
   const trialEnd = user.planExpiresAt
     ? new Date(user.planExpiresAt)
     : new Date(user.createdAt.getTime() + TRIAL_DAYS_MS);

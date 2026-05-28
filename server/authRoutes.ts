@@ -16,7 +16,7 @@ import { UserService } from "./services/userService";
 const BCRYPT_ROUNDS = 12;
 const VERIFY_EXPIRY_MS = 24 * 60 * 60 * 1000;   // 24 hours
 const RESET_EXPIRY_MS  =  1 * 60 * 60 * 1000;   //  1 hour
-const TRIAL_DAYS = 7;
+const TRIAL_DAYS = 30;
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes

@@ -93,10 +93,8 @@ function getMessageText(message: any): string {
   return "";
 }
 
-function hasApprovalResponse(messages: any[]): boolean {
-  return messages.some((message) =>
-    message?.parts?.some((part: any) => part?.state === "approval-responded")
-  );
+function messageHasApprovalResponse(message: any): boolean {
+  return Boolean(message?.parts?.some((part: any) => part?.state === "approval-responded"));
 }
 
 export function validateChatMessages(messages: unknown): { ok: true } | { ok: false; status: number; error: string; code: string } {
@@ -147,7 +145,10 @@ function hasActionIntent(text: string): boolean {
 }
 
 export function getActiveToolsForMessages(messages: UIMessage[] | any[]): ChatToolName[] {
-  if (hasApprovalResponse(messages)) return [...ALL_TOOL_NAMES];
+  const latestActionRelevantMessage = [...messages]
+    .reverse()
+    .find((message) => message?.role === "user" || messageHasApprovalResponse(message));
+  if (messageHasApprovalResponse(latestActionRelevantMessage)) return [...ALL_TOOL_NAMES];
 
   const latestUser = [...messages].reverse().find((message) => message?.role === "user");
   const latestText = getMessageText(latestUser).toLowerCase();

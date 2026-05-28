@@ -25,7 +25,7 @@ The app has real users, Stripe billing, PostgreSQL data, Tigris photo storage, a
 - Database: PostgreSQL with Drizzle ORM.
 - Auth: JWT in httpOnly cookies with bcrypt password auth.
 - Storage: Tigris S3-compatible storage for bird photos.
-- Billing: Stripe 7-day trial, then Starter or Pro subscriptions.
+- Billing: Stripe 30-day trial, then Starter or Pro subscriptions.
 - Deploy: Docker on Railway.
 - AI: OpenAI SDK / AI SDK streaming chat and tool calling.
 - AI copilot v1: server-backed conversations, explicit user-approved memory, daily brief, natural-language search, breeding planner recommendations, page-aware prompt buttons, and metadata-only usage logging.
@@ -46,7 +46,7 @@ The app has real users, Stripe billing, PostgreSQL data, Tigris photo storage, a
 ## Pricing And Limits
 
 - There is no public Free tier.
-- New accounts get a 7-day trial, then must subscribe to Starter or Pro.
+- New accounts get a 30-day trial, then must subscribe to Starter or Pro.
 - Starter: paid subscription for core aviary management.
 - Pro: paid subscription with AI Assistant access.
 - The database may still use internal `free` plan values for legacy trial/expired states until a careful enum migration is planned.
@@ -107,7 +107,7 @@ Before production-oriented changes, check:
 
 ## Recent Decisions
 
-- 2026-05-06: Public Free tier removed from copy and admin controls. Canonical product model is 7-day trial, then Starter or Pro subscription.
+- 2026-05-06: Public Free tier removed from copy and admin controls. Canonical product model is 30-day trial, then Starter or Pro subscription.
 - 2026-05-06: New bird photos should upload to Tigris and store stable same-origin `/api/photos/birds/{userId}/{object}` URLs. Existing base64 `photoUrl` values may still exist until a separate migration/cleanup is planned.
 - 2026-05-06: The main Events & Reminders page is an open-actions list only. Completed events/reminders should remain available in relevant bird/pair history, not via a global Completed tab.
 - 2026-05-06: Production startup should fail fast on migration errors; non-production may log and continue for local debugging.

@@ -66,6 +66,20 @@ describe("chat safety helpers", () => {
     expect(approvalTools).toEqual(expect.arrayContaining([...ACTION_TOOL_NAMES]));
   });
 
+  it("does not keep action tools enabled forever after an old approval", () => {
+    const activeTools = getActiveToolsForMessages([
+      {
+        id: "a1",
+        role: "assistant",
+        parts: [{ type: "tool-addBird", state: "approval-responded" }],
+      },
+      userText("What needs attention today?"),
+    ]);
+
+    expect(activeTools).toContain("getDailyBrief");
+    expect(activeTools).not.toContain("addBird");
+  });
+
   it("keeps AI memory writes behind action intent", () => {
     expect(READ_TOOL_NAMES).toContain("getAIMemory");
     expect(ACTION_TOOL_NAMES).toEqual(expect.arrayContaining(["rememberAIMemory", "forgetAIMemory"]));

@@ -157,7 +157,7 @@ export default function Landing() {
                 Sign in
               </Button>
             </div>
-            <p className="mt-4 text-base text-gray-500">7-day trial — no card required. Subscribe on day 8 to keep full access.</p>
+            <p className="mt-4 text-base text-gray-500">30-day trial — no card required. Subscribe on day 31 to keep full access.</p>
           </div>
         </div>
       </section>
@@ -197,7 +197,7 @@ export default function Landing() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Simple, honest pricing</h2>
-            <p className="text-lg text-gray-500">Try Pro for 7 days — no card required.</p>
+            <p className="text-lg text-gray-500">Try Pro for 30 days — no card required.</p>
           </div>
           <div className="grid md:grid-cols-2 gap-6 items-stretch">
             {/* Starter */}
@@ -225,7 +225,7 @@ export default function Landing() {
                     className="w-full border-gray-300 transition-colors duration-200"
                     onClick={() => setLocation("/register")}
                   >
-                    Start 7-day trial
+                    Start 30-day trial
                   </Button>
                 </div>
               </CardContent>
@@ -294,7 +294,7 @@ export default function Landing() {
                     onClick={() => setLocation("/register")}
                   >
                     <Sparkles className="w-4 h-4 mr-2" />
-                    Start 7-day trial
+                    Start 30-day trial
                   </Button>
                   <p className="text-xs text-center text-gray-400 mt-3">Cancel anytime. No card required for trial.</p>
                 </div>
@@ -314,7 +314,7 @@ export default function Landing() {
             onClick={() => setLocation("/register")}
             className="bg-white text-teal-700 hover:bg-teal-50 text-base px-10 py-6 rounded-xl font-semibold shadow-lg transition-all duration-200"
           >
-            Start your 7-day trial <ChevronRight className="ml-2 w-5 h-5" />
+            Start your 30-day trial <ChevronRight className="ml-2 w-5 h-5" />
           </Button>
         </div>
       </section>
