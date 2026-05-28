@@ -8,9 +8,42 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useMemo, useState } from "react";
+import type { inferRouterOutputs } from "@trpc/server";
+import type { AppRouter } from "../../../server/routers";
 
 type SortKey = "name" | "email" | "plan" | "role" | "joined" | "lastSeen" | "chatToday" | "model";
 type SortDirection = "asc" | "desc";
+type AdminUser = inferRouterOutputs<AppRouter>["admin"]["users"][number];
+type PlanStatus = "trialExpired" | "trial" | "starter" | "pro";
+
+const TRIAL_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
+function getPlanStatus(user: AdminUser): PlanStatus {
+  if (user.plan === "pro" || user.plan === "starter") return user.plan;
+
+  const createdAt = user.createdAt ? new Date(user.createdAt).getTime() : Date.now();
+  const trialEndsAt = user.planExpiresAt
+    ? new Date(user.planExpiresAt)
+    : new Date(createdAt + TRIAL_DAYS_MS);
+
+  return trialEndsAt > new Date() ? "trial" : "trialExpired";
+}
+
+function PlanBadge({ user }: { user: AdminUser }) {
+  const status = getPlanStatus(user);
+
+  if (status === "pro") {
+    return <Badge className="text-xs bg-yellow-400 text-yellow-900 hover:bg-yellow-400">Pro</Badge>;
+  }
+  if (status === "starter") {
+    return <Badge className="text-xs bg-teal-100 text-teal-800 border-teal-200">Starter</Badge>;
+  }
+  if (status === "trial") {
+    return <Badge className="text-xs bg-blue-100 text-blue-800 border-blue-200">Trial</Badge>;
+  }
+
+  return <Badge variant="outline" className="text-xs border-orange-200 bg-orange-50 text-orange-700">Trial Expired</Badge>;
+}
 
 export default function AdminUsers() {
   const { user: me } = useAuth();
@@ -43,7 +76,7 @@ export default function AdminUsers() {
   const sortedUsers = useMemo(() => {
     const chatByUserId = new Map(chatStats?.topUsers.map(entry => [entry.userId, entry]) ?? []);
     const direction = sortConfig.direction === "asc" ? 1 : -1;
-    const planRank: Record<string, number> = { free: 0, starter: 1, pro: 2 };
+    const planRank = { trialExpired: 0, trial: 1, starter: 2, pro: 3 };
 
     function compareText(a: string | null | undefined, b: string | null | undefined) {
       return (a || "").localeCompare(b || "", undefined, { sensitivity: "base" });
@@ -66,7 +99,7 @@ export default function AdminUsers() {
           result = compareText(a.email, b.email);
           break;
         case "plan":
-          result = compareNumber(planRank[a.plan] ?? -1, planRank[b.plan] ?? -1);
+          result = compareNumber(planRank[getPlanStatus(a)], planRank[getPlanStatus(b)]);
           break;
         case "role":
           result = compareText(a.role, b.role);
@@ -283,13 +316,7 @@ export default function AdminUsers() {
                           <td className="px-3 py-2 font-medium whitespace-nowrap">{u.name || "—"}</td>
                           <td className="px-3 py-2 text-muted-foreground max-w-[160px] truncate">{u.email}</td>
                           <td className="px-3 py-2">
-                            {u.plan === "pro" ? (
-                              <Badge className="text-xs bg-yellow-400 text-yellow-900 hover:bg-yellow-400">Pro</Badge>
-                            ) : u.plan === "starter" ? (
-                              <Badge className="text-xs bg-teal-100 text-teal-800 border-teal-200">Starter</Badge>
-                            ) : (
-                              <Badge variant="outline" className="text-xs">Trial/Expired</Badge>
-                            )}
+                            <PlanBadge user={u} />
                           </td>
                           <td className="px-3 py-2">
                             {u.role === "admin" ? (

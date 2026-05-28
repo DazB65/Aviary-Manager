@@ -27,6 +27,7 @@ export class UserService {
             name: users.name,
             email: users.email,
             plan: users.plan,
+            planExpiresAt: users.planExpiresAt,
             role: users.role,
             createdAt: users.createdAt,
             lastSignedIn: users.lastSignedIn,
