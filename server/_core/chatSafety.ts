@@ -73,6 +73,7 @@ const ACTION_KEYWORDS = [
   "pair",
   "paired",
   "pairing",
+  "proceed",
   "reminder",
   "record",
   "remove",
@@ -80,6 +81,7 @@ const ACTION_KEYWORDS = [
   "remember",
   "forget",
   "update",
+  "yes",
 ];
 
 function getMessageText(message: any): string {

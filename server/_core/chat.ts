@@ -39,6 +39,38 @@ function birdLabel(bird: { id: number; name?: string | null; ringId?: string | n
   return bird.name || bird.ringId || `#${bird.id}`;
 }
 
+type SpeciesRow = Awaited<ReturnType<typeof SpeciesService.getAllSpecies>>[number];
+
+function normalizeSpeciesName(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function resolveSpecies(
+  speciesList: SpeciesRow[],
+  input: { speciesId?: number; speciesName?: string }
+) {
+  if (input.speciesId) {
+    return speciesList.find((item) => item.id === input.speciesId) ?? null;
+  }
+
+  const speciesName = input.speciesName?.trim();
+  if (!speciesName) return null;
+
+  const wanted = normalizeSpeciesName(speciesName);
+  return speciesList.find((item) => normalizeSpeciesName(item.commonName) === wanted)
+    ?? speciesList.find((item) => item.scientificName && normalizeSpeciesName(item.scientificName) === wanted)
+    ?? speciesList.find((item) => {
+      const common = normalizeSpeciesName(item.commonName);
+      const scientific = item.scientificName ? normalizeSpeciesName(item.scientificName) : "";
+      return common.includes(wanted) || wanted.includes(common) || scientific.includes(wanted);
+    })
+    ?? null;
+}
+
+function compactDefined<T extends Record<string, unknown>>(value: T): Partial<T> {
+  return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined && item !== "")) as Partial<T>;
+}
+
 function inbreedingRisk(coefficient: number) {
   if (coefficient >= 0.125) return "high";
   if (coefficient >= 0.0625) return "moderate";
@@ -567,28 +599,103 @@ const tools = (userId: number) => ({
   }),
 
   addBird: tool({
-    description: "Open the Add Bird form pre-filled with the details the user has provided. Use this when the user wants to register a new bird — it opens the form for them to review and confirm before saving. Use searchBirds to find a speciesId from an existing bird of the same species first.",
+    description: "Add one or more birds to the user's flock after approval. Use this directly when the user gives enough details such as species, quantity/gender, and ring IDs. Resolve species from speciesName or speciesId using the species list; do not require an existing bird of that species. Ask only for truly missing required details. For batches, pass birds with one entry per bird.",
     inputSchema: z.object({
-      speciesId: z.number().describe("Species ID — get this from an existing bird of the same species using searchBirds"),
-      name: z.string().optional().describe("Bird's name"),
-      ringId: z.string().optional().describe("Ring or band ID"),
-      gender: z.enum(["male", "female", "unknown"]).optional().describe("Bird's gender"),
-      cageNumber: z.string().optional().describe("Cage number"),
-      colorMutation: z.string().optional().describe("Colour mutation, e.g. 'Lutino', 'Pied'"),
-      dateOfBirth: z.string().optional().describe("Date of birth in YYYY-MM-DD format"),
-      notes: z.string().optional().describe("Notes about the bird"),
+      speciesId: z.number().optional().describe("Species ID if already known"),
+      speciesName: z.string().optional().describe("Species common name, e.g. 'Gouldian Finch'"),
+      birds: z.array(z.object({
+        name: z.string().optional().describe("Bird's name"),
+        ringId: z.string().optional().describe("Ring or band ID"),
+        gender: z.enum(["male", "female", "unknown"]).default("unknown").describe("Bird's gender"),
+        cageNumber: z.string().optional().describe("Cage number"),
+        colorMutation: z.string().optional().describe("Colour mutation, e.g. 'Lutino', 'Pied'"),
+        dateOfBirth: z.string().optional().describe("Date of birth in YYYY-MM-DD format"),
+        notes: z.string().optional().describe("Notes about the bird"),
+        status: z.enum(["alive", "breeding", "resting", "deceased", "sold", "unknown"]).default("alive"),
+      })).optional().describe("Birds to create. For a batch, include one object per bird."),
+      name: z.string().optional().describe("Single bird name; use birds for batches"),
+      ringId: z.string().optional().describe("Single bird ring or band ID; use birds for batches"),
+      gender: z.enum(["male", "female", "unknown"]).optional().describe("Single bird gender; use birds for batches"),
+      cageNumber: z.string().optional().describe("Single bird cage number; use birds for batches"),
+      colorMutation: z.string().optional().describe("Single bird colour mutation; use birds for batches"),
+      dateOfBirth: z.string().optional().describe("Single bird date of birth in YYYY-MM-DD format; use birds for batches"),
+      notes: z.string().optional().describe("Single bird notes; use birds for batches"),
     }),
     needsApproval: true,
-    execute: async ({ speciesId, name, ringId, gender, cageNumber, colorMutation, dateOfBirth, notes }) => {
-      const species = await SpeciesService.getAllSpecies(userId);
-      if (!species.some((item) => item.id === speciesId)) {
-        logAiTool(userId, "addBird", "blocked", { speciesId });
-        return { success: false, error: "Species not found." };
+    execute: async ({ speciesId, speciesName, birds: requestedBirds, name, ringId, gender, cageNumber, colorMutation, dateOfBirth, notes }) => {
+      const speciesList = await SpeciesService.getAllSpecies(userId);
+      const matchedSpecies = resolveSpecies(speciesList, { speciesId, speciesName });
+      if (!matchedSpecies) {
+        logAiTool(userId, "addBird", "blocked", { speciesId, speciesName });
+        const candidates = speciesList
+          .filter((item) => speciesName ? item.commonName.toLowerCase().includes(speciesName.toLowerCase()) : true)
+          .slice(0, 5)
+          .map((item) => item.commonName);
+        return {
+          success: false,
+          error: candidates.length > 0
+            ? `I couldn't match that species exactly. Did you mean one of these: ${candidates.join(", ")}?`
+            : "I couldn't find that species in your species list.",
+        };
       }
-      logAiTool(userId, "addBird", "success", { speciesId });
+
+      const birdsToCreate = requestedBirds && requestedBirds.length > 0
+        ? requestedBirds
+        : [{ name, ringId, gender: gender ?? "unknown", cageNumber, colorMutation, dateOfBirth, notes, status: "alive" as const }];
+
+      if (birdsToCreate.length > 25) {
+        logAiTool(userId, "addBird", "blocked", { count: birdsToCreate.length });
+        return { success: false, error: "Please add 25 birds or fewer in one request." };
+      }
+
+      const ringIds = birdsToCreate
+        .map((bird) => bird.ringId?.trim())
+        .filter((value): value is string => Boolean(value));
+      const duplicateRequestedRingIds = ringIds.filter((value, index) => ringIds.indexOf(value) !== index);
+      if (duplicateRequestedRingIds.length > 0) {
+        const uniqueDuplicates = Array.from(new Set(duplicateRequestedRingIds));
+        logAiTool(userId, "addBird", "blocked", { duplicateRequestedRingIds: uniqueDuplicates.join(", ") });
+        return { success: false, error: `These ring IDs were repeated in the request: ${uniqueDuplicates.join(", ")}.` };
+      }
+
+      const existingBirds = await BirdService.getBirdsByUser(userId);
+      const existingRingIds = new Set(existingBirds.map((bird) => bird.ringId?.toLowerCase()).filter(Boolean));
+      const duplicateExistingRingIds = ringIds.filter((value) => existingRingIds.has(value.toLowerCase()));
+      if (duplicateExistingRingIds.length > 0) {
+        logAiTool(userId, "addBird", "blocked", { duplicateExistingRingIds: duplicateExistingRingIds.join(", ") });
+        return { success: false, error: `These ring IDs already exist in your flock: ${duplicateExistingRingIds.join(", ")}.` };
+      }
+
+      const created = [];
+      for (const bird of birdsToCreate) {
+        const createdBird = await BirdService.createBird(compactDefined({
+          userId,
+          speciesId: matchedSpecies.id,
+          name: bird.name,
+          ringId: bird.ringId,
+          gender: bird.gender ?? "unknown",
+          cageNumber: bird.cageNumber,
+          colorMutation: bird.colorMutation,
+          dateOfBirth: bird.dateOfBirth,
+          notes: bird.notes,
+          status: bird.status ?? "alive",
+        }) as any);
+        created.push(createdBird);
+      }
+
+      logAiTool(userId, "addBird", "success", { speciesId: matchedSpecies.id, count: created.length });
       return {
-        uiAction: "openAddBirdModal",
-        prefill: { speciesId, name, ringId, gender, cageNumber, colorMutation, dateOfBirth, notes },
+        success: true,
+        speciesId: matchedSpecies.id,
+        speciesName: matchedSpecies.commonName,
+        count: created.length,
+        birds: created.map((bird) => ({
+          id: bird.id,
+          ringId: bird.ringId,
+          name: bird.name,
+          gender: bird.gender,
+          status: bird.status,
+        })),
       };
     },
   }),
@@ -1364,7 +1471,7 @@ export function registerChatRoutes(app: Express) {
       const result = streamText({
         model: openai.chat(modelName),
         system:
-          `You are an expert aviculture assistant with full control over the user's aviary. You help manage their aviary, called 'Aviary Manager'. You can both read data AND request actions on their behalf after user approval.\n\nToday's date is ${today}. Yesterday was ${yesterday}. Always use these exact dates when the user refers to 'today' or 'yesterday'.\n\nREAD TOOLS: getFlockStats, searchBirds, getUpcomingEvents, getMutationSummary, getPairEggStats, listPairs, getBirdDetails, getUpcomingHatches, getPairHistory, getSpeciesInfo, getUserSettings, getPedigreeSummary, getInbreedingRisk, getEggDetails, getAttentionReport, getPairPerformanceReport, recommendPairings, getAIMemory, getDailyBrief, naturalLanguageSearch, planBreedingCandidates\nACTION TOOLS: createBreedingPair, updatePairStatus, deletePair, recordClutch, updateClutch, recordHatch, addEvent, updateEvent, deleteEvent, markEventComplete, updateBirdStatus, updateBird, addBird, deleteBird, recordEggOutcome, rememberAIMemory, forgetAIMemory\n\nUse the richer read tools for analysis questions: getDailyBrief for today's priorities, naturalLanguageSearch for flexible record searches, getAttentionReport for 'what needs attention', getPairPerformanceReport for hatch-rate and underperformance questions, getPedigreeSummary/getInbreedingRisk for lineage questions, getEggDetails for individual egg outcomes, and recommendPairings or planBreedingCandidates for pairing recommendations.\n\nUse getAIMemory when preferences would help. Only use rememberAIMemory if the user explicitly asks you to remember a preference, and only store preferred species, breeding goals, cage naming style, mutation interests, or default breeding year. Never infer or store sensitive personal data.\n\nValid pair statuses are: active, breeding, resting, retired.\nIMPORTANT: When creating a breeding pair, always use the current calendar year as the season unless the user explicitly says otherwise. Never infer the season from bird names or ring IDs (a bird named '2024 Dad' was born in 2024, that is not the breeding season).\nValid bird statuses are: alive, breeding, resting, deceased, sold, unknown.\n\nWhen taking actions:\n1. Always use a read tool first to confirm you have the right bird(s), event, clutch, or pair before acting.\n2. If the user asks for something invalid (e.g. a status that doesn't exist), explain what the valid options are in plain language — never show raw error messages or JSON.\n3. If there is any ambiguity (multiple matches, wrong gender, etc.), ask the user to clarify rather than guessing.\n4. Action tools require user approval. If approval is denied, do not retry the same action unless the user asks again.\n5. After a successful action, confirm what you did in plain language. For example: 'Done — I've paired Rio (male) and Blue (female) for the 2026 season.'\n6. To update a bird's cage number, name, or notes use the updateBird tool.\n7. When opening the Add Bird modal (openAddBirdModal), only fill in fields the user explicitly provided. Leave all other fields null/undefined — never fill optional fields with 'Unknown' or placeholder text.\n\nWhen recommending pairings or discussing colour mutations, use getMutationSummary, recommendPairings, or planBreedingCandidates then apply your expert genetics knowledge.\n\nDo not make up data about their specific birds — always use the tools.\n\nCRITICAL RULE: Never output raw JSON, error objects, or code blocks. Always respond in natural, conversational language. Be concise and helpful.`,
+          `You are an expert aviculture assistant with full control over the user's aviary. You help manage their aviary, called 'Aviary Manager'. You can both read data AND request actions on their behalf after user approval.\n\nToday's date is ${today}. Yesterday was ${yesterday}. Always use these exact dates when the user refers to 'today' or 'yesterday'.\n\nREAD TOOLS: getFlockStats, searchBirds, getUpcomingEvents, getMutationSummary, getPairEggStats, listPairs, getBirdDetails, getUpcomingHatches, getPairHistory, getSpeciesInfo, getUserSettings, getPedigreeSummary, getInbreedingRisk, getEggDetails, getAttentionReport, getPairPerformanceReport, recommendPairings, getAIMemory, getDailyBrief, naturalLanguageSearch, planBreedingCandidates\nACTION TOOLS: createBreedingPair, updatePairStatus, deletePair, recordClutch, updateClutch, recordHatch, addEvent, updateEvent, deleteEvent, markEventComplete, updateBirdStatus, updateBird, addBird, deleteBird, recordEggOutcome, rememberAIMemory, forgetAIMemory\n\nUse the richer read tools for analysis questions: getDailyBrief for today's priorities, naturalLanguageSearch for flexible record searches, getAttentionReport for 'what needs attention', getPairPerformanceReport for hatch-rate and underperformance questions, getPedigreeSummary/getInbreedingRisk for lineage questions, getEggDetails for individual egg outcomes, and recommendPairings or planBreedingCandidates for pairing recommendations.\n\nUse getAIMemory when preferences would help. Only use rememberAIMemory if the user explicitly asks you to remember a preference, and only store preferred species, breeding goals, cage naming style, mutation interests, or default breeding year. Never infer or store sensitive personal data.\n\nValid pair statuses are: active, breeding, resting, retired.\nIMPORTANT: When creating a breeding pair, always use the current calendar year as the season unless the user explicitly says otherwise. Never infer the season from bird names or ring IDs (a bird named '2024 Dad' was born in 2024, that is not the breeding season).\nValid bird statuses are: alive, breeding, resting, deceased, sold, unknown.\n\nWhen taking actions:\n1. Always use a read tool first to confirm you have the right bird(s), event, clutch, or pair before acting.\n2. If the user asks for something invalid (e.g. a status that doesn't exist), explain what the valid options are in plain language — never show raw error messages or JSON.\n3. If there is any ambiguity (multiple matches, wrong gender, etc.), ask the user to clarify rather than guessing.\n4. Action tools require user approval. When the user asks you to add, update, delete, record, pair, or remember something and the required details are clear, call the correct action tool so the app can show an approval button. Do not ask for a plain-text "yes" instead of using the approval tool. If approval is denied, do not retry the same action unless the user asks again.\n5. After a successful action, confirm what you did in plain language. For example: 'Done — I've paired Rio (male) and Blue (female) for the 2026 season.'\n6. To update a bird's cage number, name, or notes use the updateBird tool.\n7. To add birds, use addBird. It can add one bird or a batch when the user provides species, sex/count, and ring IDs. Use speciesName such as 'Gouldian Finch' if you do not know the speciesId. Do not require the user to already have an existing bird of that species.\n\nWhen recommending pairings or discussing colour mutations, use getMutationSummary, recommendPairings, or planBreedingCandidates then apply your expert genetics knowledge.\n\nDo not make up data about their specific birds — always use the tools.\n\nCRITICAL RULE: Never output raw JSON, error objects, or code blocks. Always respond in natural, conversational language. Be concise and helpful.`,
         messages: modelMessages,
         tools: tools(user.id),
         activeTools,
