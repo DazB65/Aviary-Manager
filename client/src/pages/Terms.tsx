@@ -57,22 +57,27 @@ export default function Terms() {
           You agree not to misuse the Service, attempt to gain unauthorised access, or use automated tools to scrape or abuse the platform. We reserve the right to suspend accounts that violate these Terms.
         </p>
 
-        <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">7. Limitation of Liability</h2>
+        <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">7. AI Assistant and Animal Health</h2>
+        <p className="text-gray-600 leading-relaxed">
+          The Aviary AI Assistant provides general bird-keeping, record management, breeding, and educational support only. It is not veterinary advice and does not diagnose, treat, prescribe medication, or replace care from a qualified avian veterinarian. For urgent symptoms, illness, injury, poisoning, egg binding concerns, breathing difficulty, or any worsening condition, contact an avian veterinarian immediately.
+        </p>
+
+        <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">8. Limitation of Liability</h2>
         <p className="text-gray-600 leading-relaxed">
           To the extent permitted by law, Aviary Manager is not liable for indirect, incidental, or consequential damages arising from your use of the Service. Our total liability is limited to the amount you paid in the 12 months preceding any claim.
         </p>
 
-        <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">8. Changes to Terms</h2>
+        <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">9. Changes to Terms</h2>
         <p className="text-gray-600 leading-relaxed">
           We may update these Terms from time to time. We will notify you via email for material changes. Continued use of the Service after changes constitutes acceptance.
         </p>
 
-        <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">9. Governing Law</h2>
+        <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">10. Governing Law</h2>
         <p className="text-gray-600 leading-relaxed">
           These Terms are governed by the laws of Queensland, Australia. Any disputes will be resolved in the courts of Queensland.
         </p>
 
-        <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">10. Contact</h2>
+        <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">11. Contact</h2>
         <p className="text-gray-600 leading-relaxed">
           Questions about these Terms? Email us at <a href="mailto:aviarymanager@icloud.com" className="text-teal-600 underline">aviarymanager@icloud.com</a>.
         </p>

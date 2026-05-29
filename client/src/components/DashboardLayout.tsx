@@ -454,7 +454,7 @@ function DashboardLayoutContent({
             <div className="flex-1 min-w-0">
               <SheetTitle className="text-base font-semibold">Aviary AI Assistant</SheetTitle>
               <SheetDescription className="text-xs">
-                Your AI expert for birds, breeding &amp; mutations
+                Bird-keeping support for records, breeding &amp; mutations
               </SheetDescription>
             </div>
             <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-primary/15 text-primary shrink-0">AI Powered</span>
@@ -477,35 +477,40 @@ function DashboardLayoutContent({
                 </button>
               </div>
             ) : user && (
-              <AIChatBox
-                chatId={aiChatId}
-                initialMessages={aiHistory.data?.messages ?? EMPTY_MESSAGES}
-                initialMessagesVersion={aiHistory.dataUpdatedAt}
-                persistLocally={false}
-                draftPrompt={aiDraftPrompt}
-                onDraftPromptConsumed={() => setAiDraftPrompt(null)}
-                api="/api/chat"
-                placeholder="Ask anything about your aviary..."
-                className="h-full border-0 rounded-none shadow-none"
-                assistantAvatarUrl="/logo-transparent.svg"
-                emptyStateMessage="I'm your Aviary AI Assistant. Ask me about your birds, breeding pairs, upcoming events, hatch rates, and colour mutations."
-                suggestedPrompts={[
-                  "What needs attention today?",
-                  "Search for blue hens in cage 4 that have not bred this season",
-                  "Plan my next breeding pairs",
-                  "Pair [male name] and [female name] together",
-                  "Record a clutch of 4 eggs for [pair name]",
-                  "What breeding pairs do I have?",
-                ]}
-                onUIAction={handleUIAction}
-                onFinish={(messages) => {
-                  saveAiHistory.mutate({ clientKey: aiChatId, messages: messages as any });
-                  utils.birds.list.invalidate();
-                  utils.pairs.list.invalidate();
-                  utils.events.list.invalidate();
-                  utils.broods.list?.invalidate?.();
-                }}
-              />
+              <div className="flex h-full min-h-0 flex-col">
+                <div className="border-b bg-muted/30 px-4 py-2 text-[11px] leading-snug text-muted-foreground">
+                  General bird-keeping support only. The AI does not diagnose, prescribe, or replace care from an avian vet.
+                </div>
+                <AIChatBox
+                  chatId={aiChatId}
+                  initialMessages={aiHistory.data?.messages ?? EMPTY_MESSAGES}
+                  initialMessagesVersion={aiHistory.dataUpdatedAt}
+                  persistLocally={false}
+                  draftPrompt={aiDraftPrompt}
+                  onDraftPromptConsumed={() => setAiDraftPrompt(null)}
+                  api="/api/chat"
+                  placeholder="Ask anything about your aviary..."
+                  className="h-full border-0 rounded-none shadow-none"
+                  assistantAvatarUrl="/logo-transparent.svg"
+                  emptyStateMessage="I'm your Aviary AI Assistant. Ask me about your birds, breeding pairs, upcoming events, hatch rates, and colour mutations."
+                  suggestedPrompts={[
+                    "What needs attention today?",
+                    "Search for blue hens in cage 4 that have not bred this season",
+                    "Plan my next breeding pairs",
+                    "Pair [male name] and [female name] together",
+                    "Record a clutch of 4 eggs for [pair name]",
+                    "What breeding pairs do I have?",
+                  ]}
+                  onUIAction={handleUIAction}
+                  onFinish={(messages) => {
+                    saveAiHistory.mutate({ clientKey: aiChatId, messages: messages as any });
+                    utils.birds.list.invalidate();
+                    utils.pairs.list.invalidate();
+                    utils.events.list.invalidate();
+                    utils.broods.list?.invalidate?.();
+                  }}
+                />
+              </div>
             )}
           </div>
         </SheetContent>
