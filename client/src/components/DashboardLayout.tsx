@@ -159,6 +159,7 @@ function DashboardLayoutContent({
     { enabled: Boolean(user && hasAiAccess && aiChatId) }
   );
   const saveAiHistory = trpc.ai.conversations.saveByClientKey.useMutation();
+  const clearAiHistory = trpc.ai.conversations.clearByClientKey.useMutation();
 
   useEffect(() => {
     const handleAIPrompt = (event: Event) => {
@@ -502,6 +503,14 @@ function DashboardLayoutContent({
                     "What breeding pairs do I have?",
                   ]}
                   onUIAction={handleUIAction}
+                  onClearConversation={async () => {
+                    if (!aiChatId) return;
+                    await clearAiHistory.mutateAsync({ clientKey: aiChatId });
+                    utils.ai.conversations.loadByClientKey.setData(
+                      { clientKey: aiChatId },
+                      { conversation: null, messages: EMPTY_MESSAGES }
+                    );
+                  }}
                   onFinish={(messages) => {
                     saveAiHistory.mutate({ clientKey: aiChatId, messages: messages as any });
                     utils.birds.list.invalidate();

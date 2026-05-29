@@ -748,6 +748,9 @@ export const appRouter = router({
           messages: z.array(z.any()).max(40),
         }))
         .mutation(({ ctx, input }) => AIConversationService.saveMessagesByClientKey(ctx.user.id, input.clientKey, input.messages as any)),
+      clearByClientKey: proProcedure
+        .input(z.object({ clientKey: z.string().min(1).max(160) }))
+        .mutation(({ ctx, input }) => AIConversationService.deleteByClientKey(ctx.user.id, input.clientKey)),
       delete: proProcedure
         .input(z.object({ id: z.number().int().positive() }))
         .mutation(({ ctx, input }) => AIConversationService.delete(ctx.user.id, input.id)),

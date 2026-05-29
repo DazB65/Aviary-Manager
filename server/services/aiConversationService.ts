@@ -132,6 +132,12 @@ export class AIConversationService {
     return this.load(userId, conversation.id);
   }
 
+  static async deleteByClientKey(userId: number, clientKey: string) {
+    const conversation = await this.getByClientKey(userId, clientKey);
+    if (!conversation) return;
+    await this.delete(userId, conversation.id);
+  }
+
   static async delete(userId: number, conversationId: number) {
     await getDb().transaction(async (tx) => {
       await tx.delete(aiMessages).where(and(eq(aiMessages.conversationId, conversationId), eq(aiMessages.userId, userId)));

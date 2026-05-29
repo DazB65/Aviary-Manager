@@ -193,6 +193,9 @@ export interface AIChatBoxProps {
    * The parent component handles opening the relevant modal.
    */
   onUIAction?: (action: { type: string; data: Record<string, any> }) => void;
+
+  /** Called when the user clears the current chat. Use this to clear server-backed history. */
+  onClearConversation?: () => Promise<void> | void;
 }
 
 // ============================================================================
@@ -253,6 +256,8 @@ const TOOL_APPROVAL_LABELS: Record<string, string> = {
   forgetAIMemory: "Forget AI preference",
 };
 
+const DESTRUCTIVE_TOOL_NAMES = new Set(["deleteBird", "deletePair", "deleteEvent", "deleteClutch", "forgetAIMemory"]);
+
 function formatToolInput(input: unknown): string {
   if (!input || typeof input !== "object") return "No extra details";
 
@@ -278,6 +283,14 @@ function DefaultToolPartRenderer({
 }: ToolPartRendererProps) {
   if (isToolApprovalRequested(state) && approval) {
     const title = TOOL_APPROVAL_LABELS[toolName] ?? "Run assistant action";
+    const approveAction = () => {
+      if (DESTRUCTIVE_TOOL_NAMES.has(toolName)) {
+        const typed = window.prompt(`Type DELETE to confirm: ${title}`);
+        if (typed !== "DELETE") return;
+      }
+      onApproveTool?.(approval.id);
+    };
+
     return (
       <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 my-2 text-sm text-amber-950">
         <div className="font-medium">{title}</div>
@@ -287,7 +300,7 @@ function DefaultToolPartRenderer({
             type="button"
             size="sm"
             className="h-8 gap-1.5"
-            onClick={() => onApproveTool?.(approval.id)}
+            onClick={approveAction}
           >
             <Check className="size-3.5" />
             Approve
@@ -543,6 +556,7 @@ export function AIChatBox({
   onDraftPromptConsumed,
   assistantAvatarUrl,
   onUIAction,
+  onClearConversation,
 }: AIChatBoxProps) {
   const [input, setInput] = useState("");
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -689,6 +703,19 @@ export function AIChatBox({
     }
   };
 
+  const clearConversation = async () => {
+    if (!window.confirm("Clear this AI conversation and start a new chat? This will not delete any aviary records.")) return;
+
+    setMessages([]);
+    localStorage.removeItem(storageKey);
+    try {
+      await onClearConversation?.();
+    } catch {
+      window.alert("The chat was cleared here, but saved history could not be cleared. Please try again.");
+    }
+    textareaRef.current?.focus();
+  };
+
   // -------------------------------------------------------------------------
   // Render
   // -------------------------------------------------------------------------
@@ -776,11 +803,9 @@ export function AIChatBox({
                 type="button"
                 variant="outline"
                 size="icon"
-                title="Clear Chat"
-                onClick={() => {
-                  setMessages([]);
-                  localStorage.removeItem(storageKey);
-                }}
+                title="Start new chat"
+                aria-label="Start new chat"
+                onClick={clearConversation}
                 className="shrink-0 h-[44px] w-[44px] text-muted-foreground hover:text-destructive hover:border-destructive/30 hover:bg-destructive/10"
               >
                 <Trash2 className="size-4" />
