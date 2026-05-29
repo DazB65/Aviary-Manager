@@ -2,6 +2,7 @@ import type { UIMessage } from "ai";
 import { and, asc, desc, eq } from "drizzle-orm";
 import { getDb } from "../db";
 import { aiConversations, aiMessages } from "../../drizzle/schema";
+import { CHAT_MAX_MESSAGES } from "../_core/chatSafety";
 
 function safeTitleFromMessages(messages: UIMessage[]): string {
   const firstUserText = messages
@@ -81,7 +82,7 @@ export class AIConversationService {
       id: row.messageId ?? String(row.id),
       role: row.role,
       parts: parseMessageParts(row.parts),
-    })) as UIMessage[];
+    })).slice(-CHAT_MAX_MESSAGES) as UIMessage[];
 
     return { conversation, messages };
   }
@@ -100,7 +101,7 @@ export class AIConversationService {
       .limit(1);
     if (!conversation) throw new Error("Conversation not found");
 
-    const safeMessages = messages.slice(-40);
+    const safeMessages = messages.slice(-CHAT_MAX_MESSAGES);
     await getDb().transaction(async (tx) => {
       await tx
         .delete(aiMessages)

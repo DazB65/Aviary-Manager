@@ -11,6 +11,8 @@ import { format, isToday, isTomorrow, parseISO, formatDistanceToNow } from "date
 import { GenderIcon } from "@/components/ui/GenderIcon";
 import { openAIAssistant } from "@/lib/aiPrompt";
 
+const TRIAL_DAYS = 30;
+
 function formatDateLabel(dateVal: Date | string | null | undefined): string {
   if (!dateVal) return "—";
   const d = typeof dateVal === "string" ? parseISO(dateVal) : dateVal;
@@ -66,7 +68,7 @@ export default function Dashboard() {
   const { data: pairs } = trpc.pairs.list.useQuery();
   const { data: settings } = trpc.settings.get.useQuery();
   const trialEnd = user?.plan === "free"
-    ? (user.planExpiresAt ? new Date(user.planExpiresAt) : new Date(new Date(user.createdAt).getTime() + 7 * 24 * 60 * 60 * 1000))
+    ? (user.planExpiresAt ? new Date(user.planExpiresAt) : new Date(new Date(user.createdAt).getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000))
     : null;
   const hasAiAccess = Boolean(user?.role === "admin" || user?.plan === "pro" || (trialEnd && trialEnd > new Date()));
   const { data: aiBrief, isLoading: aiBriefLoading } = trpc.ai.dailyBrief.useQuery(undefined, {

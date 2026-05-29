@@ -48,6 +48,8 @@ const mainMenuItems = [
   { icon: HelpCircle, label: "Help", path: "/help" },
 ];
 
+const TRIAL_DAYS = 30;
+
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
 const DEFAULT_WIDTH = 280;
 const MIN_WIDTH = 200;
@@ -132,7 +134,7 @@ function DashboardLayoutContent({
   const trialEnd = user && !isPro && !isStarter && !isAdmin
     ? (user.planExpiresAt
         ? new Date(user.planExpiresAt)
-        : new Date(new Date(user.createdAt).getTime() + 7 * 24 * 60 * 60 * 1000))
+        : new Date(new Date(user.createdAt).getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000))
     : null;
   const isOnTrial = trialEnd && trialEnd > new Date();
   const trialDaysLeft = isOnTrial

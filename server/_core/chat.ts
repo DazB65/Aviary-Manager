@@ -1383,24 +1383,32 @@ const tools = (userId: number) => ({
  */
 // ── Per-user daily chat rate limiter (in-memory) ──────────────────────────────
 const CHAT_MAX_PER_DAY = 20;
+const CHAT_TRIAL_MAX_PER_DAY = 5;
 const chatUsage = new Map<number, { count: number; resetAt: number }>();
 
-function checkChatRateLimit(userId: number): { allowed: boolean; remaining: number; resetAt: number } {
+function getTrialEnd(user: { planExpiresAt?: Date | string | null; createdAt: Date | string }) {
+  const TRIAL_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+  return user.planExpiresAt
+    ? new Date(user.planExpiresAt)
+    : new Date(new Date(user.createdAt).getTime() + TRIAL_DAYS_MS);
+}
+
+function checkChatRateLimit(userId: number, maxPerDay: number): { allowed: boolean; remaining: number; resetAt: number } {
   const now = Date.now();
   const windowMs = 24 * 60 * 60 * 1000; // 24 hours
 
   const entry = chatUsage.get(userId);
   if (!entry || now > entry.resetAt) {
     chatUsage.set(userId, { count: 1, resetAt: now + windowMs });
-    return { allowed: true, remaining: CHAT_MAX_PER_DAY - 1, resetAt: now + windowMs };
+    return { allowed: true, remaining: maxPerDay - 1, resetAt: now + windowMs };
   }
 
-  if (entry.count >= CHAT_MAX_PER_DAY) {
+  if (entry.count >= maxPerDay) {
     return { allowed: false, remaining: 0, resetAt: entry.resetAt };
   }
 
   entry.count++;
-  return { allowed: true, remaining: CHAT_MAX_PER_DAY - entry.count, resetAt: entry.resetAt };
+  return { allowed: true, remaining: maxPerDay - entry.count, resetAt: entry.resetAt };
 }
 
 export function registerChatRoutes(app: Express) {
@@ -1419,12 +1427,9 @@ export function registerChatRoutes(app: Express) {
         res.status(403).json({ error: "PRO_REQUIRED", code: "PRO_REQUIRED" });
         return;
       }
+      const isTrialUser = user.plan === "free" && getTrialEnd(user) > new Date();
       if (user.plan === "free") {
-        const TRIAL_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
-        const trialEnd = user.planExpiresAt
-          ? new Date(user.planExpiresAt)
-          : new Date(user.createdAt.getTime() + TRIAL_DAYS_MS);
-        if (trialEnd <= new Date()) {
+        if (!isTrialUser) {
           res.status(403).json({ error: "PRO_REQUIRED", code: "PRO_REQUIRED" });
           return;
         }
@@ -1438,12 +1443,13 @@ export function registerChatRoutes(app: Express) {
       }
       logApprovalResponses(user.id, messages as any[]);
 
-      const limit = checkChatRateLimit(user.id);
+      const dailyLimit = isTrialUser ? CHAT_TRIAL_MAX_PER_DAY : CHAT_MAX_PER_DAY;
+      const limit = checkChatRateLimit(user.id, dailyLimit);
       if (!limit.allowed) {
         const resetsIn = Math.ceil((limit.resetAt - Date.now()) / 1000 / 60 / 60);
-        console.warn(`[chat:ratelimit] userId=${user.id} hit daily limit (${CHAT_MAX_PER_DAY}/day), resets in ~${resetsIn}h`);
+        console.warn(`[chat:ratelimit] userId=${user.id} hit daily limit (${dailyLimit}/day), resets in ~${resetsIn}h`);
         res.status(429).json({
-          error: `Daily message limit reached (${CHAT_MAX_PER_DAY}/day). Resets in ~${resetsIn}h.`,
+          error: `Daily message limit reached (${dailyLimit}/day). Resets in ~${resetsIn}h.`,
           code: "RATE_LIMITED",
         });
         return;
@@ -1453,7 +1459,7 @@ export function registerChatRoutes(app: Express) {
       const activeTools = getActiveToolsForMessages(messages as any);
 
       const modelName = process.env.OPENAI_MODEL || "gpt-4.1-mini";
-      console.log(`[chat] userId=${user.id} model=${modelName} remaining=${limit.remaining}/${CHAT_MAX_PER_DAY} activeTools=${activeTools.length}`);
+      console.log(`[chat] userId=${user.id} model=${modelName} remaining=${limit.remaining}/${dailyLimit} activeTools=${activeTools.length}`);
       void AIUsageService.record({
         userId: user.id,
         eventType: "chat",
