@@ -1382,7 +1382,7 @@ const tools = (userId: number) => ({
  * ```
  */
 // ── Per-user daily chat rate limiter (in-memory) ──────────────────────────────
-const CHAT_MAX_PER_DAY = 20;
+const CHAT_MAX_PER_DAY = 15;
 const CHAT_TRIAL_MAX_PER_DAY = 5;
 const chatUsage = new Map<number, { count: number; resetAt: number }>();
 
@@ -1458,7 +1458,7 @@ export function registerChatRoutes(app: Express) {
       const modelMessages = await convertToModelMessages(messages as any);
       const activeTools = getActiveToolsForMessages(messages as any);
 
-      const modelName = process.env.OPENAI_MODEL || "gpt-4.1-mini";
+      const modelName = process.env.OPENAI_MODEL || "gpt-5.4-mini";
       console.log(`[chat] userId=${user.id} model=${modelName} remaining=${limit.remaining}/${dailyLimit} activeTools=${activeTools.length}`);
       void AIUsageService.record({
         userId: user.id,
@@ -1500,7 +1500,7 @@ export { tools };
 // ── Admin: expose live chat usage stats ──────────────────────────────────────
 export function getChatStats() {
   const now = Date.now();
-  const model = process.env.OPENAI_MODEL || "gpt-4.1-mini";
+  const model = process.env.OPENAI_MODEL || "gpt-5.4-mini";
 
   let totalMessages = 0;
   let rateLimitedUsers = 0;
