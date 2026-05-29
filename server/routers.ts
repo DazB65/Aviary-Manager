@@ -14,6 +14,7 @@ import { StatsService } from "./services/statsService";
 import { UserService } from "./services/userService";
 import { PedigreeService } from "./services/pedigreeService";
 import { AIConversationService } from "./services/aiConversationService";
+import { AISavedNoteService } from "./services/aiSavedNoteService";
 import { AIMemoryService, AI_MEMORY_CATEGORIES } from "./services/aiMemoryService";
 import { AIBriefService } from "./services/aiBriefService";
 import { AISearchService } from "./services/aiSearchService";
@@ -754,6 +755,18 @@ export const appRouter = router({
       delete: proProcedure
         .input(z.object({ id: z.number().int().positive() }))
         .mutation(({ ctx, input }) => AIConversationService.delete(ctx.user.id, input.id)),
+    }),
+    savedNotes: router({
+      list: proProcedure.query(({ ctx }) => AISavedNoteService.list(ctx.user.id)),
+      create: proProcedure
+        .input(z.object({
+          title: z.string().min(1).max(160),
+          content: z.string().min(1).max(20_000),
+        }))
+        .mutation(({ ctx, input }) => AISavedNoteService.create(ctx.user.id, input.title, input.content)),
+      delete: proProcedure
+        .input(z.object({ id: z.number().int().positive() }))
+        .mutation(({ ctx, input }) => AISavedNoteService.delete(ctx.user.id, input.id)),
     }),
     memory: router({
       list: proProcedure.query(({ ctx }) => AIMemoryService.list(ctx.user.id)),

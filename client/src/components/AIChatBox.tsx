@@ -54,7 +54,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Markdown } from "@/components/Markdown";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Send, Sparkles, Trash2, X } from "lucide-react";
+import { Check, Loader2, Save, Send, Sparkles, Trash2, X } from "lucide-react";
 import { useState, useRef, useEffect, ReactNode, useCallback } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, lastAssistantMessageIsCompleteWithApprovalResponses } from "ai";
@@ -196,6 +196,9 @@ export interface AIChatBoxProps {
 
   /** Called when the user clears the current chat. Use this to clear server-backed history. */
   onClearConversation?: () => Promise<void> | void;
+
+  /** Called when the user saves the current chat for later reference. */
+  onSaveConversation?: (messages: UIMessage[]) => Promise<void> | void;
 }
 
 // ============================================================================
@@ -557,6 +560,7 @@ export function AIChatBox({
   assistantAvatarUrl,
   onUIAction,
   onClearConversation,
+  onSaveConversation,
 }: AIChatBoxProps) {
   const [input, setInput] = useState("");
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -716,6 +720,16 @@ export function AIChatBox({
     textareaRef.current?.focus();
   };
 
+  const saveConversation = async () => {
+    if (messages.length === 0) return;
+    try {
+      await onSaveConversation?.(messages);
+      window.alert("Saved this AI chat as a note.");
+    } catch {
+      window.alert("I could not save this chat note. Please try again.");
+    }
+  };
+
   // -------------------------------------------------------------------------
   // Render
   // -------------------------------------------------------------------------
@@ -799,17 +813,30 @@ export function AIChatBox({
         <div className="mx-auto max-w-3xl">
           <div className="flex gap-2">
             {messages.length > 0 && (
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                title="Start new chat"
-                aria-label="Start new chat"
-                onClick={clearConversation}
-                className="shrink-0 h-[44px] w-[44px] text-muted-foreground hover:text-destructive hover:border-destructive/30 hover:bg-destructive/10"
-              >
-                <Trash2 className="size-4" />
-              </Button>
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  title="Save chat as note"
+                  aria-label="Save chat as note"
+                  onClick={saveConversation}
+                  className="shrink-0 h-[44px] w-[44px] text-muted-foreground hover:text-primary hover:border-primary/30 hover:bg-primary/10"
+                >
+                  <Save className="size-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  title="Start new chat"
+                  aria-label="Start new chat"
+                  onClick={clearConversation}
+                  className="shrink-0 h-[44px] w-[44px] text-muted-foreground hover:text-destructive hover:border-destructive/30 hover:bg-destructive/10"
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              </>
             )}
             <Textarea
               ref={textareaRef}

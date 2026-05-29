@@ -22,17 +22,20 @@ import {
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/useMobile";
 import { trpc } from "@/lib/trpc";
-import { BarChart2, Bird, CalendarDays, CreditCard, Egg, Heart, HelpCircle, Home, LayoutDashboard, LogOut, Megaphone, Settings, Users, MapPin, Sparkles } from "lucide-react";
+import { BarChart2, Bird, BookOpen, CalendarDays, CreditCard, Egg, Heart, HelpCircle, Home, LayoutDashboard, LogOut, Megaphone, Settings, Trash2, Users, MapPin, Sparkles } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { useAppTour } from "@/hooks/useAppTour";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import { ScrollArea } from "./ui/scroll-area";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "./ui/sheet";
 import { AIChatBox } from "./AIChatBox";
 import { BirdFormModal } from "./birds/BirdFormModal";
 import type { BirdGenotype } from "@/genetics/types";
 import { AVIARY_AI_PROMPT_EVENT } from "@/lib/aiPrompt";
+import type { UIMessage } from "ai";
 
 const mainMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
@@ -112,6 +115,35 @@ type DashboardLayoutContentProps = {
 
 const EMPTY_MESSAGES: never[] = [];
 
+function getTextFromAIMessage(message: UIMessage): string {
+  return (message.parts ?? [])
+    .map((part: any) => (part?.type === "text" && typeof part.text === "string" ? part.text : ""))
+    .filter(Boolean)
+    .join("\n")
+    .trim();
+}
+
+function formatAIChatNote(messages: UIMessage[]) {
+  const lines = messages
+    .map((message) => {
+      const text = getTextFromAIMessage(message);
+      if (!text) return null;
+      const speaker = message.role === "user" ? "You" : "Aviary AI";
+      return `${speaker}:\n${text}`;
+    })
+    .filter(Boolean);
+
+  return lines.join("\n\n---\n\n");
+}
+
+function titleFromAIChat(messages: UIMessage[]) {
+  const firstUserText = messages.find((message) => message.role === "user")
+    ? getTextFromAIMessage(messages.find((message) => message.role === "user") as UIMessage)
+    : "";
+  const title = firstUserText.replace(/\s+/g, " ").trim();
+  return title ? title.slice(0, 80) : "Saved AI chat";
+}
+
 function DashboardLayoutContent({
   children,
   setSidebarWidth,
@@ -144,6 +176,7 @@ function DashboardLayoutContent({
   const { startTour, maybeStartTour, hasTourBeenSkipped } = useAppTour();
   const [aiOpen, setAiOpen] = useState(false);
   const [aiDraftPrompt, setAiDraftPrompt] = useState<string | null>(null);
+  const [aiNotesOpen, setAiNotesOpen] = useState(false);
   const [aiAddBirdOpen, setAiAddBirdOpen] = useState(false);
   const [aiAddBirdPrefill, setAiAddBirdPrefill] = useState<Record<string, any> | null>(null);
 
@@ -160,6 +193,15 @@ function DashboardLayoutContent({
   );
   const saveAiHistory = trpc.ai.conversations.saveByClientKey.useMutation();
   const clearAiHistory = trpc.ai.conversations.clearByClientKey.useMutation();
+  const aiSavedNotes = trpc.ai.savedNotes.list.useQuery(undefined, {
+    enabled: Boolean(user && hasAiAccess),
+  });
+  const saveAiNote = trpc.ai.savedNotes.create.useMutation({
+    onSuccess: () => utils.ai.savedNotes.list.invalidate(),
+  });
+  const deleteAiNote = trpc.ai.savedNotes.delete.useMutation({
+    onSuccess: () => utils.ai.savedNotes.list.invalidate(),
+  });
 
   useEffect(() => {
     const handleAIPrompt = (event: Event) => {
@@ -458,6 +500,17 @@ function DashboardLayoutContent({
                 Bird-keeping support for records, breeding &amp; mutations
               </SheetDescription>
             </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              title="Saved AI notes"
+              aria-label="Saved AI notes"
+              onClick={() => setAiNotesOpen(true)}
+              className="h-8 w-8 shrink-0 text-muted-foreground hover:text-primary"
+            >
+              <BookOpen className="h-4 w-4" />
+            </Button>
             <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-primary/15 text-primary shrink-0">AI Powered</span>
           </div>
           <div className="flex-1 overflow-hidden">
@@ -511,6 +564,14 @@ function DashboardLayoutContent({
                       { conversation: null, messages: EMPTY_MESSAGES }
                     );
                   }}
+                  onSaveConversation={async (messages) => {
+                    const content = formatAIChatNote(messages);
+                    if (!content) throw new Error("No chat text to save");
+                    await saveAiNote.mutateAsync({
+                      title: titleFromAIChat(messages),
+                      content,
+                    });
+                  }}
                   onFinish={(messages) => {
                     saveAiHistory.mutate({ clientKey: aiChatId, messages: messages as any });
                     utils.birds.list.invalidate();
@@ -524,6 +585,54 @@ function DashboardLayoutContent({
           </div>
         </SheetContent>
       </Sheet>
+
+      <Dialog open={aiNotesOpen} onOpenChange={setAiNotesOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Saved AI notes</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[65vh] pr-3">
+            <div className="space-y-3">
+              {(aiSavedNotes.data ?? []).length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Saved chats will appear here for later reference.
+                </p>
+              ) : (
+                (aiSavedNotes.data ?? []).map((note) => (
+                  <div key={note.id} className="rounded-lg border bg-background p-3">
+                    <div className="flex items-start gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">{note.title}</p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {new Date(note.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        title="Delete saved note"
+                        aria-label="Delete saved note"
+                        onClick={() => {
+                          if (confirm("Delete this saved AI note?")) {
+                            deleteAiNote.mutate({ id: note.id });
+                          }
+                        }}
+                        className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap rounded-md bg-muted/40 p-3 text-xs leading-relaxed text-foreground">
+                      {note.content}
+                    </pre>
+                  </div>
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
 
       <BirdFormModal
         open={aiAddBirdOpen}

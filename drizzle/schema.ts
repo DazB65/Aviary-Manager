@@ -234,6 +234,22 @@ export const aiMessages = pgTable("aiMessages", {
 export type AIMessage = typeof aiMessages.$inferSelect;
 export type InsertAIMessage = typeof aiMessages.$inferInsert;
 
+// Saved AI notes — user-selected chat excerpts retained for later reference
+export const aiSavedNotes = pgTable("aiSavedNotes", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").notNull(),
+  title: varchar("title", { length: 160 }).notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+}, (table) => ({
+  userIdIdx: index("aiSavedNotes_userId_idx").on(table.userId),
+  createdAtIdx: index("aiSavedNotes_createdAt_idx").on(table.createdAt),
+}));
+
+export type AISavedNote = typeof aiSavedNotes.$inferSelect;
+export type InsertAISavedNote = typeof aiSavedNotes.$inferInsert;
+
 // AI memory — explicit user-approved preferences only
 export const aiMemories = pgTable("aiMemories", {
   id: serial("id").primaryKey(),
