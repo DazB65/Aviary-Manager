@@ -566,26 +566,38 @@ const tools = (userId: number) => ({
   }),
 
   updateBird: tool({
-    description: "Update details of a bird such as cage number, name, notes, ring ID, or parents (father/mother). Use searchBirds to find bird IDs first.",
+    description: "Update any details of a bird: name, ring ID, cage, gender, DOB, fledge date, colour mutation, genotype, species, notes, or parents. Use searchBirds to find the bird ID first.",
     inputSchema: z.object({
       birdId: z.number().describe("ID of the bird to update"),
-      cageNumber: z.string().optional().describe("Cage number or label, e.g. '5' or 'Cage A'"),
       name: z.string().optional().describe("Bird's name"),
       ringId: z.string().optional().describe("Ring or band ID"),
+      cageNumber: z.string().optional().describe("Cage number or label, e.g. '5' or 'Cage A'"),
+      gender: z.enum(["male", "female", "unknown"]).optional().describe("Bird's gender"),
+      dateOfBirth: z.string().optional().describe("Date of birth in YYYY-MM-DD format"),
+      fledgedDate: z.string().optional().describe("Date fledged in YYYY-MM-DD format"),
+      colorMutation: z.string().optional().describe("Colour mutation, e.g. 'Blue Split to Yellow'"),
+      genotype: z.string().nullable().optional().describe("Genotype string. Pass null to clear."),
+      speciesId: z.number().optional().describe("Species ID to change the bird's species"),
       notes: z.string().optional().describe("Notes about the bird"),
-      fatherId: z.number().nullable().optional().describe("ID of the father bird (use searchBirds to resolve ring ID to numeric ID). Pass null to clear."),
-      motherId: z.number().nullable().optional().describe("ID of the mother bird (use searchBirds to resolve ring ID to numeric ID). Pass null to clear."),
+      fatherId: z.number().nullable().optional().describe("ID of the father bird (use searchBirds to resolve). Pass null to clear."),
+      motherId: z.number().nullable().optional().describe("ID of the mother bird (use searchBirds to resolve). Pass null to clear."),
     }),
     needsApproval: true,
-    execute: async ({ birdId, cageNumber, name, ringId, notes, fatherId, motherId }) => {
+    execute: async ({ birdId, name, ringId, cageNumber, gender, dateOfBirth, fledgedDate, colorMutation, genotype, speciesId, notes, fatherId, motherId }) => {
       try {
         const bird = await BirdService.getBirdById(birdId, userId);
         if (!bird) return { success: false, error: "Bird not found" };
 
         const updates: Record<string, unknown> = {};
-        if (cageNumber !== undefined) updates.cageNumber = cageNumber;
         if (name !== undefined) updates.name = name;
         if (ringId !== undefined) updates.ringId = ringId;
+        if (cageNumber !== undefined) updates.cageNumber = cageNumber;
+        if (gender !== undefined) updates.gender = gender;
+        if (dateOfBirth !== undefined) updates.dateOfBirth = dateOfBirth;
+        if (fledgedDate !== undefined) updates.fledgedDate = fledgedDate;
+        if (colorMutation !== undefined) updates.colorMutation = colorMutation;
+        if (genotype !== undefined) updates.genotype = genotype;
+        if (speciesId !== undefined) updates.speciesId = speciesId;
         if (notes !== undefined) updates.notes = notes;
         if (fatherId !== undefined) {
           if (fatherId !== null) {
@@ -995,6 +1007,96 @@ const tools = (userId: number) => ({
       } catch {
         logAiTool(userId, "recordEggOutcome", "error", { broodId, eggNumber });
         return { success: false, error: "Failed to record egg outcome. Please try again." };
+      }
+    },
+  }),
+
+  updatePair: tool({
+    description: "Update details of a breeding pair such as cage number, notes, pairing date, season, or swap the male/female birds. Use listPairs to find the pair ID first.",
+    inputSchema: z.object({
+      pairId: z.number().describe("ID of the breeding pair to update"),
+      cageNumber: z.string().optional().describe("Cage number or label for the pair"),
+      notes: z.string().optional().describe("Notes about the pair"),
+      pairingDate: z.string().optional().describe("Date pairing started in YYYY-MM-DD format"),
+      season: z.number().int().min(2000).max(2100).nullable().optional().describe("Breeding season year, e.g. 2026. Pass null to clear."),
+      maleId: z.number().optional().describe("Replace the male bird with this bird ID"),
+      femaleId: z.number().optional().describe("Replace the female bird with this bird ID"),
+    }),
+    needsApproval: true,
+    execute: async ({ pairId, cageNumber, notes, pairingDate, season, maleId, femaleId }) => {
+      try {
+        const pair = await PairService.getPairById(pairId, userId);
+        if (!pair) return { success: false, error: "Breeding pair not found" };
+
+        const updates: Record<string, unknown> = {};
+        if (notes !== undefined) updates.notes = notes;
+        if (pairingDate !== undefined) updates.pairingDate = pairingDate;
+        if (season !== undefined) updates.season = season;
+        if (maleId !== undefined) updates.maleId = maleId;
+        if (femaleId !== undefined) updates.femaleId = femaleId;
+        if (cageNumber !== undefined) updates.cageNumber = cageNumber;
+
+        await PairService.updatePair(pairId, userId, updates as any);
+
+        if (cageNumber !== undefined) {
+          const newMaleId = maleId ?? pair.maleId;
+          const newFemaleId = femaleId ?? pair.femaleId;
+          await Promise.all([
+            BirdService.updateBird(newMaleId, userId, { cageNumber: cageNumber || undefined }),
+            BirdService.updateBird(newFemaleId, userId, { cageNumber: cageNumber || undefined }),
+          ]);
+        }
+
+        logAiTool(userId, "updatePair", "success", { pairId });
+        return { success: true, pairId, updated: updates };
+      } catch {
+        logAiTool(userId, "updatePair", "error", { pairId });
+        return { success: false, error: "Failed to update pair. Please try again." };
+      }
+    },
+  }),
+
+  deleteBrood: tool({
+    description: "Delete a clutch/brood record. Use getPairHistory or listPairs to find the brood ID first. Only delete one brood at a time.",
+    inputSchema: z.object({
+      broodId: z.number().describe("ID of the brood/clutch to delete"),
+    }),
+    needsApproval: true,
+    execute: async ({ broodId }) => {
+      try {
+        const brood = await getOwnedBrood(broodId, userId);
+        if (!brood) return { success: false, error: "Clutch not found" };
+        await BroodService.deleteBrood(broodId, userId);
+        logAiTool(userId, "deleteBrood", "success", { broodId });
+        return { success: true, broodId };
+      } catch {
+        logAiTool(userId, "deleteBrood", "error", { broodId });
+        return { success: false, error: "Failed to delete clutch. Please try again." };
+      }
+    },
+  }),
+
+  convertEggToFledged: tool({
+    description: "Mark an egg as fledged and create a new bird record from it. The egg outcome must be 'fledged'. Use getPairHistory to find the broodId and egg number first.",
+    inputSchema: z.object({
+      broodId: z.number().describe("ID of the brood/clutch containing the egg"),
+      eggNumber: z.number().int().min(1).describe("The egg number within the clutch (e.g. 1, 2, 3)"),
+      outcomeDate: z.string().optional().describe("Date the chick fledged in YYYY-MM-DD format"),
+    }),
+    needsApproval: true,
+    execute: async ({ broodId, eggNumber, outcomeDate }) => {
+      try {
+        const brood = await getOwnedBrood(broodId, userId);
+        if (!brood) return { success: false, error: "Clutch not found" };
+
+        await BroodService.upsertClutchEgg(broodId, userId, eggNumber, "fledged" as any, undefined, outcomeDate);
+        const newBirdId = await BroodService.convertToBird(broodId, userId, eggNumber);
+
+        logAiTool(userId, "convertEggToFledged", "success", { broodId, eggNumber, newBirdId });
+        return { success: true, broodId, eggNumber, newBirdId, message: `Egg #${eggNumber} marked as fledged and added as a new bird record (ID: ${newBirdId}).` };
+      } catch (err: any) {
+        logAiTool(userId, "convertEggToFledged", "error", { broodId, eggNumber });
+        return { success: false, error: err?.message ?? "Failed to convert egg to fledged bird. Please try again." };
       }
     },
   }),
@@ -1497,7 +1599,9 @@ export function registerChatRoutes(app: Express) {
       const result = streamText({
         model: openai.chat(modelName),
         system:
-          `You are an expert aviculture assistant with full control over the user's aviary. You help manage their aviary, called 'Aviary Manager'. You can both read data AND request actions on their behalf after user approval.\n\nToday's date is ${today}. Yesterday was ${yesterday}. Always use these exact dates when the user refers to 'today' or 'yesterday'.\n\nREAD TOOLS: getFlockStats, searchBirds, getUpcomingEvents, getMutationSummary, getPairEggStats, listPairs, getBirdDetails, getUpcomingHatches, getPairHistory, getSpeciesInfo, getUserSettings, getPedigreeSummary, getInbreedingRisk, getEggDetails, getAttentionReport, getPairPerformanceReport, recommendPairings, getAIMemory, getDailyBrief, naturalLanguageSearch, planBreedingCandidates\nACTION TOOLS: createBreedingPair, updatePairStatus, deletePair, recordClutch, updateClutch, recordHatch, addEvent, updateEvent, deleteEvent, markEventComplete, updateBirdStatus, updateBird, addBird, deleteBird, recordEggOutcome, rememberAIMemory, forgetAIMemory\n\nUse the richer read tools for analysis questions: getDailyBrief for today's priorities, naturalLanguageSearch for flexible record searches, getAttentionReport for 'what needs attention', getPairPerformanceReport for hatch-rate and underperformance questions, getPedigreeSummary/getInbreedingRisk for lineage questions, getEggDetails for individual egg outcomes, and recommendPairings or planBreedingCandidates for pairing recommendations.\n\nUse getAIMemory when preferences would help. Only use rememberAIMemory if the user explicitly asks you to remember a preference, and only store preferred species, breeding goals, cage naming style, mutation interests, or default breeding year. Never infer or store sensitive personal data.\n\nValid pair statuses are: active, breeding, resting, retired.\nIMPORTANT: When creating a breeding pair, always use the current calendar year as the season unless the user explicitly says otherwise. Never infer the season from bird names or ring IDs (a bird named '2024 Dad' was born in 2024, that is not the breeding season).\nValid bird statuses are: alive, breeding, resting, deceased, sold, unknown.\n\nWhen taking actions:\n1. Always use a read tool first to confirm you have the right bird(s), event, clutch, or pair before acting.\n2. If the user asks for something invalid (e.g. a status that doesn't exist), explain what the valid options are in plain language — never show raw error messages or JSON.\n3. If there is any ambiguity (multiple matches, wrong gender, etc.), ask the user to clarify rather than guessing.\n4. Action tools require user approval. When the user asks you to add, update, delete, record, pair, or remember something and the required details are clear, call the correct action tool so the app can show an approval button. Do not ask for a plain-text "yes" instead of using the approval tool. If approval is denied, do not retry the same action unless the user asks again.\n5. After a successful action, confirm what you did in plain language. For example: 'Done — I've paired Rio (male) and Blue (female) for the 2026 season.'\n6. To update a bird's cage number, name, notes, or parents (father/mother) use the updateBird tool. To set parents, first use searchBirds to resolve each parent's ring ID to a numeric ID, then call updateBird with fatherId and/or motherId. Pass null to clear a parent link.\n7. To add birds, use addBird. It can add one bird or a batch when the user provides species, sex/count, and ring IDs. Use speciesName such as 'Gouldian Finch' if you do not know the speciesId. Do not require the user to already have an existing bird of that species.\n8. Destructive delete safety: never delete all birds, all pairs, all events, or multiple records in one assistant turn. If the user asks for bulk deletion, explain that bulk deletion is too destructive for chat and ask them to delete specific records individually or use account/data management screens. Only request deletion for one clearly identified record at a time.\n\nFor bird health or symptom questions:\n1. State that you can provide general bird-keeping education and triage, but you are not a veterinarian and cannot diagnose, prescribe, or replace an avian vet.\n2. Ask concise follow-up questions when needed: species, age, symptoms, duration, appetite, droppings, breathing, weight/body condition, recent breeding or egg laying, injuries, toxins, diet, cage changes, and recent new birds.\n3. For red flags such as breathing difficulty, tail bobbing, open-mouth breathing, bleeding, seizures, collapse, severe weakness, not eating, severe lethargy, egg binding signs, trauma, poisoning, or rapid decline, advise urgent avian veterinary care immediately.\n4. Do not provide medication names, doses, antibiotic advice, or home treatment plans unless the user says an avian vet has already prescribed them; even then, advise following the vet's directions.\n5. Keep health guidance practical, cautious, and focused on urgency, observation, husbandry checks, and contacting an avian vet when symptoms are severe, persistent, unclear, or worsening.\n\nWhen recommending pairings or discussing colour mutations, use getMutationSummary, recommendPairings, or planBreedingCandidates then apply your expert genetics knowledge. Present pairing advice as recommendations based on available records, not guarantees of fertility, health, or offspring outcomes.\n\nDo not make up data about their specific birds — always use the tools.\n\nCRITICAL RULE: Never output raw JSON, error objects, or code blocks. Always respond in natural, conversational language. Be concise and helpful.`,
+          `You are an expert aviculture assistant with full control over the user's aviary. You help manage their aviary, called 'Aviary Manager'. You can both read data AND request actions on their behalf after user approval.\n\nToday's date is ${today}. Yesterday was ${yesterday}. Always use these exact dates when the user refers to 'today' or 'yesterday'.\n\nREAD TOOLS: getFlockStats, searchBirds, getUpcomingEvents, getMutationSummary, getPairEggStats, listPairs, getBirdDetails, getUpcomingHatches, getPairHistory, getSpeciesInfo, getUserSettings, getPedigreeSummary, getInbreedingRisk, getEggDetails, getAttentionReport, getPairPerformanceReport, recommendPairings, getAIMemory, getDailyBrief, naturalLanguageSearch, planBreedingCandidates\nACTION TOOLS: createBreedingPair, updatePairStatus, updatePair, deletePair, recordClutch, updateClutch, recordHatch, deleteBrood, addEvent, updateEvent, deleteEvent, markEventComplete, updateBirdStatus, updateBird, addBird, deleteBird, recordEggOutcome, convertEggToFledged, rememberAIMemory, forgetAIMemory\n\nUse the richer read tools for analysis questions: getDailyBrief for today's priorities, naturalLanguageSearch for flexible record searches, getAttentionReport for 'what needs attention', getPairPerformanceReport for hatch-rate and underperformance questions, getPedigreeSummary/getInbreedingRisk for lineage questions, getEggDetails for individual egg outcomes, and recommendPairings or planBreedingCandidates for pairing recommendations.\n\nUse getAIMemory when preferences would help. Only use rememberAIMemory if the user explicitly asks you to remember a preference, and only store preferred species, breeding goals, cage naming style, mutation interests, or default breeding year. Never infer or store sensitive personal data.\n\nValid pair statuses are: active, breeding, resting, retired.\nIMPORTANT: When creating a breeding pair, always use the current calendar year as the season unless the user explicitly says otherwise. Never infer the season from bird names or ring IDs (a bird named '2024 Dad' was born in 2024, that is not the breeding season).\nValid bird statuses are: alive, breeding, resting, deceased, sold, unknown.\n\nWhen taking actions:\n1. Always use a read tool first to confirm you have the right bird(s), event, clutch, or pair before acting.\n2. If the user asks for something invalid (e.g. a status that doesn't exist), explain what the valid options are in plain language — never show raw error messages or JSON.\n3. If there is any ambiguity (multiple matches, wrong gender, etc.), ask the user to clarify rather than guessing.\n4. Action tools require user approval. When the user asks you to add, update, delete, record, pair, or remember something and the required details are clear, call the correct action tool so the app can show an approval button. Do not ask for a plain-text "yes" instead of using the approval tool. If approval is denied, do not retry the same action unless the user asks again.\n5. After a successful action, confirm what you did in plain language. For example: 'Done — I've paired Rio (male) and Blue (female) for the 2026 season.'\n6. To update any bird field (name, ring ID, cage, gender, DOB, fledge date, colour mutation, genotype, species, notes, parents) use the updateBird tool. To set parents, first use searchBirds to resolve ring IDs to numeric IDs, then call updateBird with fatherId/motherId. Pass null to clear a parent link.
+9. To update a breeding pair's cage, notes, pairing date, season, or swap birds use updatePair. Use listPairs to find the pair ID first.
+10. To delete a clutch record use deleteBrood. To mark an egg as fledged and create a bird record from it use convertEggToFledged — use getPairHistory to find the broodId and egg number first.\n7. To add birds, use addBird. It can add one bird or a batch when the user provides species, sex/count, and ring IDs. Use speciesName such as 'Gouldian Finch' if you do not know the speciesId. Do not require the user to already have an existing bird of that species.\n8. Destructive delete safety: never delete all birds, all pairs, all events, or multiple records in one assistant turn. If the user asks for bulk deletion, explain that bulk deletion is too destructive for chat and ask them to delete specific records individually or use account/data management screens. Only request deletion for one clearly identified record at a time.\n\nFor bird health or symptom questions:\n1. State that you can provide general bird-keeping education and triage, but you are not a veterinarian and cannot diagnose, prescribe, or replace an avian vet.\n2. Ask concise follow-up questions when needed: species, age, symptoms, duration, appetite, droppings, breathing, weight/body condition, recent breeding or egg laying, injuries, toxins, diet, cage changes, and recent new birds.\n3. For red flags such as breathing difficulty, tail bobbing, open-mouth breathing, bleeding, seizures, collapse, severe weakness, not eating, severe lethargy, egg binding signs, trauma, poisoning, or rapid decline, advise urgent avian veterinary care immediately.\n4. Do not provide medication names, doses, antibiotic advice, or home treatment plans unless the user says an avian vet has already prescribed them; even then, advise following the vet's directions.\n5. Keep health guidance practical, cautious, and focused on urgency, observation, husbandry checks, and contacting an avian vet when symptoms are severe, persistent, unclear, or worsening.\n\nWhen recommending pairings or discussing colour mutations, use getMutationSummary, recommendPairings, or planBreedingCandidates then apply your expert genetics knowledge. Present pairing advice as recommendations based on available records, not guarantees of fertility, health, or offspring outcomes.\n\nDo not make up data about their specific birds — always use the tools.\n\nCRITICAL RULE: Never output raw JSON, error objects, or code blocks. Always respond in natural, conversational language. Be concise and helpful.`,
         messages: modelMessages,
         tools: tools(user.id),
         activeTools,
