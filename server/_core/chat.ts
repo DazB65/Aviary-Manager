@@ -1443,16 +1443,18 @@ export function registerChatRoutes(app: Express) {
       }
       logApprovalResponses(user.id, messages as any[]);
 
-      const dailyLimit = isTrialUser ? CHAT_TRIAL_MAX_PER_DAY : CHAT_MAX_PER_DAY;
-      const limit = checkChatRateLimit(user.id, dailyLimit);
-      if (!limit.allowed) {
-        const resetsIn = Math.ceil((limit.resetAt - Date.now()) / 1000 / 60 / 60);
-        console.warn(`[chat:ratelimit] userId=${user.id} hit daily limit (${dailyLimit}/day), resets in ~${resetsIn}h`);
-        res.status(429).json({
-          error: `Daily message limit reached (${dailyLimit}/day). Resets in ~${resetsIn}h.`,
-          code: "RATE_LIMITED",
-        });
-        return;
+      if (user.role !== "admin") {
+        const dailyLimit = isTrialUser ? CHAT_TRIAL_MAX_PER_DAY : CHAT_MAX_PER_DAY;
+        const limit = checkChatRateLimit(user.id, dailyLimit);
+        if (!limit.allowed) {
+          const resetsIn = Math.ceil((limit.resetAt - Date.now()) / 1000 / 60 / 60);
+          console.warn(`[chat:ratelimit] userId=${user.id} hit daily limit (${dailyLimit}/day), resets in ~${resetsIn}h`);
+          res.status(429).json({
+            error: `Daily message limit reached (${dailyLimit}/day). Resets in ~${resetsIn}h.`,
+            code: "RATE_LIMITED",
+          });
+          return;
+        }
       }
 
       const modelMessages = await convertToModelMessages(messages as any);
