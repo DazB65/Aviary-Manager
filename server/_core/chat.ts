@@ -1443,9 +1443,10 @@ export function registerChatRoutes(app: Express) {
       }
       logApprovalResponses(user.id, messages as any[]);
 
+      const dailyLimit = user.role === "admin" ? Infinity : (isTrialUser ? CHAT_TRIAL_MAX_PER_DAY : CHAT_MAX_PER_DAY);
+      let remaining: number | string = "unlimited";
       if (user.role !== "admin") {
-        const dailyLimit = isTrialUser ? CHAT_TRIAL_MAX_PER_DAY : CHAT_MAX_PER_DAY;
-        const limit = checkChatRateLimit(user.id, dailyLimit);
+        const limit = checkChatRateLimit(user.id, dailyLimit as number);
         if (!limit.allowed) {
           const resetsIn = Math.ceil((limit.resetAt - Date.now()) / 1000 / 60 / 60);
           console.warn(`[chat:ratelimit] userId=${user.id} hit daily limit (${dailyLimit}/day), resets in ~${resetsIn}h`);
@@ -1455,13 +1456,14 @@ export function registerChatRoutes(app: Express) {
           });
           return;
         }
+        remaining = limit.remaining;
       }
 
       const modelMessages = await convertToModelMessages(messages as any);
       const activeTools = getActiveToolsForMessages(messages as any);
 
       const modelName = process.env.OPENAI_MODEL || "gpt-5.4-mini";
-      console.log(`[chat] userId=${user.id} model=${modelName} remaining=${limit.remaining}/${dailyLimit} activeTools=${activeTools.length}`);
+      console.log(`[chat] userId=${user.id} model=${modelName} remaining=${remaining}/${dailyLimit} activeTools=${activeTools.length}`);
       void AIUsageService.record({
         userId: user.id,
         eventType: "chat",
