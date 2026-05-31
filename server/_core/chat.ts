@@ -27,6 +27,7 @@ import {
   CHAT_MAX_OUTPUT_TOKENS,
   getActiveToolsForMessages,
   validateChatMessages,
+  windowChatMessages,
 } from "./chatSafety";
 
 function addDays(dateStr: string, days: number): string {
@@ -1577,8 +1578,11 @@ export function registerChatRoutes(app: Express) {
         remaining = limit.remaining;
       }
 
-      const modelMessages = await convertToModelMessages(messages as any);
-      const activeTools = getActiveToolsForMessages(messages as any);
+      // Trim long conversations to the most recent turns so the chat keeps
+      // working instead of dead-ending once it gets long.
+      const windowedMessages = windowChatMessages(messages as any[]);
+      const modelMessages = await convertToModelMessages(windowedMessages as any);
+      const activeTools = getActiveToolsForMessages(windowedMessages as any);
 
       const modelName = process.env.OPENAI_MODEL || "gpt-5.4-mini";
       console.log(`[chat] userId=${user.id} model=${modelName} remaining=${remaining}/${dailyLimit} activeTools=${activeTools.length}`);

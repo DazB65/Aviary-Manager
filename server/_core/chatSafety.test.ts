@@ -6,12 +6,21 @@ import {
   READ_TOOL_NAMES,
   getActiveToolsForMessages,
   validateChatMessages,
+  windowChatMessages,
 } from "./chatSafety";
 
 function userText(text: string) {
   return {
     id: "u1",
     role: "user",
+    parts: [{ type: "text", text }],
+  };
+}
+
+function assistantText(text: string) {
+  return {
+    id: "a1",
+    role: "assistant",
     parts: [{ type: "text", text }],
   };
 }
@@ -25,8 +34,14 @@ describe("chat safety helpers", () => {
     });
   });
 
-  it("rejects chats with too many messages", () => {
-    const messages = Array.from({ length: CHAT_MAX_MESSAGES + 1 }, (_, index) => userText(`message ${index}`));
+  it("does not reject normal long chats (they are windowed instead)", () => {
+    const messages = Array.from({ length: CHAT_MAX_MESSAGES + 10 }, (_, index) => userText(`message ${index}`));
+
+    expect(validateChatMessages(messages)).toEqual({ ok: true });
+  });
+
+  it("rejects abusively large payloads", () => {
+    const messages = Array.from({ length: 201 }, (_, index) => userText(`message ${index}`));
 
     expect(validateChatMessages(messages)).toMatchObject({
       ok: false,
@@ -44,47 +59,53 @@ describe("chat safety helpers", () => {
     });
   });
 
-  it("limits non-action prompts to read tools", () => {
+  it("exposes both read and action tools on every turn (approval is the safety gate)", () => {
     const activeTools = getActiveToolsForMessages([userText("What pairs do I have?")]);
 
-    expect(activeTools).toContain("listPairs");
-    expect(activeTools).toEqual(expect.arrayContaining(["getDailyBrief", "naturalLanguageSearch", "planBreedingCandidates"]));
-    expect(activeTools).not.toContain("deleteBird");
+    expect(activeTools).toEqual(expect.arrayContaining([...READ_TOOL_NAMES]));
+    expect(activeTools).toEqual(expect.arrayContaining([...ACTION_TOOL_NAMES]));
   });
 
-  it("exposes action tools for mutation intent and approval continuations", () => {
-    const actionTools = getActiveToolsForMessages([userText("Delete pair 12")]);
-    expect(actionTools).toEqual(expect.arrayContaining([...ACTION_TOOL_NAMES]));
+  it("includes the previously dead tools in the active set", () => {
+    const activeTools = getActiveToolsForMessages([userText("Move pair 3 to cage B")]);
 
-    const approvalTools = getActiveToolsForMessages([
-      {
-        id: "a1",
-        role: "assistant",
-        parts: [{ type: "tool-deletePair", state: "approval-responded" }],
-      },
-    ]);
-    expect(approvalTools).toEqual(expect.arrayContaining([...ACTION_TOOL_NAMES]));
+    expect(activeTools).toEqual(
+      expect.arrayContaining(["updatePair", "deleteClutch", "deleteBrood", "convertEggToFledged"]),
+    );
+  });
+});
+
+describe("windowChatMessages", () => {
+  it("returns the array unchanged when within the limit", () => {
+    const messages = [userText("hi"), assistantText("hello")];
+
+    expect(windowChatMessages(messages, CHAT_MAX_MESSAGES)).toBe(messages);
   });
 
-  it("does not keep action tools enabled forever after an old approval", () => {
-    const activeTools = getActiveToolsForMessages([
-      {
-        id: "a1",
-        role: "assistant",
-        parts: [{ type: "tool-addBird", state: "approval-responded" }],
-      },
-      userText("What needs attention today?"),
-    ]);
+  it("keeps only the most recent messages once over the limit", () => {
+    const messages = Array.from({ length: 10 }, (_, index) => userText(`message ${index}`));
 
-    expect(activeTools).toContain("getDailyBrief");
-    expect(activeTools).not.toContain("addBird");
+    const windowed = windowChatMessages(messages, 4);
+
+    expect(windowed.length).toBeLessThanOrEqual(4);
+    expect(windowed[windowed.length - 1]).toBe(messages[messages.length - 1]);
   });
 
-  it("keeps AI memory writes behind action intent", () => {
-    expect(READ_TOOL_NAMES).toContain("getAIMemory");
-    expect(ACTION_TOOL_NAMES).toEqual(expect.arrayContaining(["rememberAIMemory", "forgetAIMemory"]));
+  it("cuts at a user-message boundary so tool pairing is preserved", () => {
+    // ...older turns..., assistant(tool call), user(latest)
+    const messages = [
+      userText("turn 1"),
+      assistantText("reply 1"),
+      userText("turn 2"),
+      assistantText("reply 2"),
+      userText("latest"),
+    ];
 
-    const activeTools = getActiveToolsForMessages([userText("Remember that I focus on Gouldians")]);
-    expect(activeTools).toEqual(expect.arrayContaining(["rememberAIMemory", "forgetAIMemory"]));
+    // Window of 2 would naively start at index 3 (an assistant message); we must
+    // instead start at the next user boundary (index 4).
+    const windowed = windowChatMessages(messages, 2);
+
+    expect((windowed[0] as any).role).toBe("user");
+    expect(windowed[windowed.length - 1]).toBe(messages[messages.length - 1]);
   });
 });

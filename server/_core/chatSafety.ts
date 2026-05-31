@@ -27,10 +27,13 @@ export const READ_TOOL_NAMES = [
 export const ACTION_TOOL_NAMES = [
   "createBreedingPair",
   "updatePairStatus",
+  "updatePair",
   "deletePair",
   "recordClutch",
   "updateClutch",
+  "deleteClutch",
   "recordHatch",
+  "deleteBrood",
   "addEvent",
   "updateEvent",
   "deleteEvent",
@@ -40,6 +43,7 @@ export const ACTION_TOOL_NAMES = [
   "addBird",
   "deleteBird",
   "recordEggOutcome",
+  "convertEggToFledged",
   "rememberAIMemory",
   "forgetAIMemory",
 ] as const;
@@ -52,38 +56,6 @@ export const CHAT_MAX_USER_TEXT_CHARS = 4_000;
 export const CHAT_MAX_TOTAL_TEXT_CHARS = 12_000;
 export const CHAT_MAX_OUTPUT_TOKENS = 900;
 
-const ACTION_KEYWORDS = [
-  "add",
-  "appointment",
-  "breed",
-  "bred",
-  "cancel",
-  "change",
-  "clutch",
-  "complete",
-  "create",
-  "delete",
-  "edit",
-  "egg",
-  "eggs",
-  "hatch",
-  "hatched",
-  "mark",
-  "move",
-  "pair",
-  "paired",
-  "pairing",
-  "proceed",
-  "reminder",
-  "record",
-  "remove",
-  "set",
-  "remember",
-  "forget",
-  "update",
-  "yes",
-];
-
 function getMessageText(message: any): string {
   if (!message) return "";
   if (typeof message.content === "string") return message.content;
@@ -95,30 +67,28 @@ function getMessageText(message: any): string {
   return "";
 }
 
-function messageHasApprovalResponse(message: any): boolean {
-  return Boolean(message?.parts?.some((part: any) => part?.state === "approval-responded"));
-}
+// Absolute upper bound to reject abusive payloads. Normal long chats are NOT
+// rejected here — they are trimmed by windowChatMessages() instead, so the chat
+// keeps working instead of dead-ending once it gets long.
+const CHAT_HARD_MESSAGE_LIMIT = 200;
 
 export function validateChatMessages(messages: unknown): { ok: true } | { ok: false; status: number; error: string; code: string } {
   if (!Array.isArray(messages)) {
     return { ok: false, status: 400, error: "messages array is required", code: "INVALID_MESSAGES" };
   }
 
-  if (messages.length > CHAT_MAX_MESSAGES) {
+  if (messages.length > CHAT_HARD_MESSAGE_LIMIT) {
     return {
       ok: false,
       status: 400,
-      error: `Please start a fresh chat. The assistant can handle up to ${CHAT_MAX_MESSAGES} messages at a time.`,
+      error: "Please start a fresh chat.",
       code: "TOO_MANY_MESSAGES",
     };
   }
 
-  let totalText = 0;
   let latestUserText = "";
   for (const message of messages) {
-    const text = getMessageText(message);
-    totalText += text.length;
-    if ((message as any)?.role === "user") latestUserText = text;
+    if ((message as any)?.role === "user") latestUserText = getMessageText(message);
   }
 
   if (latestUserText.length > CHAT_MAX_USER_TEXT_CHARS) {
@@ -130,31 +100,29 @@ export function validateChatMessages(messages: unknown): { ok: true } | { ok: fa
     };
   }
 
-  if (totalText > CHAT_MAX_TOTAL_TEXT_CHARS) {
-    return {
-      ok: false,
-      status: 413,
-      error: "This chat has too much context. Please clear the chat and try again.",
-      code: "CHAT_CONTEXT_TOO_LONG",
-    };
-  }
-
   return { ok: true };
 }
 
-function hasActionIntent(text: string): boolean {
-  return ACTION_KEYWORDS.some((keyword) => new RegExp(`\\b${keyword}\\b`, "i").test(text));
+// Keep only the most recent messages so a long conversation stays within the
+// model's context instead of being rejected. We always cut at a user-message
+// boundary so the trimmed history never starts in the middle of an assistant
+// tool-call / approval sequence (which would break tool pairing for the model).
+export function windowChatMessages<T extends { role?: string }>(
+  messages: T[],
+  maxMessages: number = CHAT_MAX_MESSAGES,
+): T[] {
+  if (!Array.isArray(messages) || messages.length <= maxMessages) return messages;
+  const start = messages.length - maxMessages;
+  const userBoundary = messages.findIndex((m, i) => i >= start && (m as any)?.role === "user");
+  const cut = userBoundary === -1 ? start : userBoundary;
+  return messages.slice(cut);
 }
 
-export function getActiveToolsForMessages(messages: UIMessage[] | any[]): ChatToolName[] {
-  const latestActionRelevantMessage = [...messages]
-    .reverse()
-    .find((message) => message?.role === "user" || messageHasApprovalResponse(message));
-  if (messageHasApprovalResponse(latestActionRelevantMessage)) return [...ALL_TOOL_NAMES];
-
-  const latestUser = [...messages].reverse().find((message) => message?.role === "user");
-  const latestText = getMessageText(latestUser).toLowerCase();
-  const isActionIntent = hasActionIntent(latestText);
-
-  return isActionIntent ? [...ALL_TOOL_NAMES] : [...READ_TOOL_NAMES];
+// Expose every tool on every turn. Action tools all carry needsApproval:true, so
+// nothing executes without the user clicking Approve — that approval is the real
+// safety gate. Previously we hid action tools unless the user's message contained
+// an exact keyword ("add", "create", ...), which meant naturally-phrased requests
+// silently failed because the model literally had no tool to call.
+export function getActiveToolsForMessages(_messages: UIMessage[] | any[]): ChatToolName[] {
+  return [...ALL_TOOL_NAMES];
 }
