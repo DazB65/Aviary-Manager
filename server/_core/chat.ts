@@ -1611,9 +1611,26 @@ export function registerChatRoutes(app: Express) {
         activeTools,
         maxOutputTokens: CHAT_MAX_OUTPUT_TOKENS,
         stopWhen: stepCountIs(10),
+        // Abort a hung request instead of leaving the chat spinning forever.
+        // chunkMs catches a model that stalls mid-reply; stepMs/totalMs bound a
+        // single turn (10 tool steps max).
+        timeout: { totalMs: 120_000, stepMs: 30_000, chunkMs: 25_000 },
+        // Mid-stream errors can't be handled by the outer try/catch (the response
+        // headers are already sent once streaming starts), so log them here so we
+        // can actually diagnose failures from the server logs.
+        onError: ({ error }) => {
+          console.error(`[chat:stream-error] userId=${user.id} model=${modelName}`, error);
+        },
+        onAbort: () => {
+          console.warn(`[chat:stream-abort] userId=${user.id} model=${modelName} (timeout or client disconnect)`);
+        },
       });
 
-      result.pipeUIMessageStreamToResponse(res);
+      result.pipeUIMessageStreamToResponse(res, {
+        // Replace the SDK's opaque default ("An error occurred") with a clear,
+        // retryable message. The underlying error is already logged in onError.
+        onError: () => "The assistant hit a problem finishing that reply. Please try again.",
+      });
     } catch (error) {
       console.error(`[chat:error] userId=${(await sdk.authenticateRequest(req).catch(() => null))?.id ?? "unknown"} error:`, error);
       if (!res.headersSent) {
