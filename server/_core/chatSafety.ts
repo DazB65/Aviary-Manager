@@ -42,6 +42,7 @@ export const ACTION_TOOL_NAMES = [
   "updateBird",
   "addBird",
   "deleteBird",
+  "deleteBirds",
   "recordEggOutcome",
   "convertEggToFledged",
   "rememberAIMemory",

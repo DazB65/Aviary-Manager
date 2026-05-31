@@ -224,6 +224,7 @@ const TOOL_LOADING_LABELS: Record<string, string> = {
   listPairs: "💑 Looking up breeding pairs...",
   getBirdDetails: "🐦 Looking up bird details...",
   deleteBird: "🗑️ Deleting bird...",
+  deleteBirds: "🗑️ Deleting birds...",
   updateEvent: "📅 Updating event...",
   deleteEvent: "🗑️ Deleting event...",
   markEventComplete: "✅ Marking event complete...",
@@ -254,22 +255,31 @@ const TOOL_APPROVAL_LABELS: Record<string, string> = {
   updateBird: "Update bird details",
   addBird: "Open add bird form",
   deleteBird: "Delete bird",
+  deleteBirds: "Delete multiple birds",
   recordEggOutcome: "Record egg outcome",
   rememberAIMemory: "Remember AI preference",
   forgetAIMemory: "Forget AI preference",
 };
 
-const DESTRUCTIVE_TOOL_NAMES = new Set(["deleteBird", "deletePair", "deleteEvent", "deleteClutch", "forgetAIMemory"]);
+const DESTRUCTIVE_TOOL_NAMES = new Set(["deleteBird", "deleteBirds", "deletePair", "deleteEvent", "deleteClutch", "forgetAIMemory"]);
 
 function formatToolInput(input: unknown): string {
   if (!input || typeof input !== "object") return "No extra details";
 
+  const renderValue = (value: unknown): string => {
+    if (Array.isArray(value)) {
+      const shown = value.slice(0, 12).map((item) => String(item)).join(", ");
+      return value.length > 12 ? `${shown} … (+${value.length - 12} more)` : shown;
+    }
+    return String(value);
+  };
+
   const entries = Object.entries(input as Record<string, unknown>)
-    .filter(([, value]) => value !== undefined && value !== null && value !== "")
+    .filter(([, value]) => value !== undefined && value !== null && value !== "" && !(Array.isArray(value) && value.length === 0))
     .slice(0, 5)
     .map(([key, value]) => {
       const label = key.replace(/([A-Z])/g, " $1").replace(/^./, (char) => char.toUpperCase());
-      return `${label}: ${String(value)}`;
+      return `${label}: ${renderValue(value)}`;
     });
 
   return entries.length ? entries.join(" · ") : "No extra details";
