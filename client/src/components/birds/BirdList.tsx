@@ -107,15 +107,8 @@ export function BirdList({
                                     }`}
                                 onClick={() => setLocation(`/birds/${bird.id}`)}
                             >
-                                <td className="px-4 py-3 relative">
-                                    <a
-                                        href={`/birds/${bird.id}`}
-                                        onClick={(e) => e.preventDefault()}
-                                        aria-hidden="true"
-                                        className="absolute inset-0 z-0"
-                                        tabIndex={-1}
-                                    />
-                                    <div className="flex items-center gap-3 relative z-10">
+                                <td className="px-4 py-3">
+                                    <div className="flex items-center gap-3">
                                         <div
                                             className={`w-9 h-9 rounded-lg overflow-hidden ${bird.gender === "male"
                                                 ? "bg-blue-50"
@@ -134,9 +127,13 @@ export function BirdList({
                                                 <GenderIcon gender={bird.gender} className="w-5 h-5" />
                                             )}
                                         </div>
-                                        <span className="font-semibold truncate max-w-32">
+                                        <a
+                                            href={`/birds/${bird.id}`}
+                                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setLocation(`/birds/${bird.id}`); }}
+                                            className="font-semibold truncate max-w-32 hover:underline"
+                                        >
                                             {bird.name || `#${bird.id}`}
-                                        </span>
+                                        </a>
                                     </div>
                                 </td>
                                 <td className="px-4 py-3 text-muted-foreground">
