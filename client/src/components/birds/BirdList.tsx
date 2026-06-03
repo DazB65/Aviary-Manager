@@ -101,14 +101,21 @@ export function BirdList({
                         return (
                             <tr
                                 key={bird.id}
-                                className={`hover:bg-muted/30 transition-colors group cursor-pointer ${inactiveStatuses.includes(bird.status)
+                                className={`hover:bg-muted/30 transition-colors group cursor-pointer relative ${inactiveStatuses.includes(bird.status)
                                     ? "bg-muted/20 opacity-60"
                                     : "bg-white"
                                     }`}
                                 onClick={() => setLocation(`/birds/${bird.id}`)}
                             >
-                                <td className="px-4 py-3">
-                                    <div className="flex items-center gap-3">
+                                <td className="px-4 py-3 relative">
+                                    <a
+                                        href={`/birds/${bird.id}`}
+                                        onClick={(e) => e.preventDefault()}
+                                        aria-hidden="true"
+                                        className="absolute inset-0 z-0"
+                                        tabIndex={-1}
+                                    />
+                                    <div className="flex items-center gap-3 relative z-10">
                                         <div
                                             className={`w-9 h-9 rounded-lg overflow-hidden ${bird.gender === "male"
                                                 ? "bg-blue-50"

@@ -21,11 +21,15 @@ export function BirdGrid({ birds, speciesMap, inactiveStatuses, onEdit, onDelete
             {birds.map((bird) => {
                 const sp = speciesMap[bird.speciesId];
                 return (
-                    <Card
+                    <a
                         key={bird.id}
+                        href={`/birds/${bird.id}`}
+                        onClick={(e) => { e.preventDefault(); setLocation(`/birds/${bird.id}`); }}
+                        className="block"
+                    >
+                    <Card
                         className={`group border border-border shadow-card hover:shadow-elevated transition-all duration-200 overflow-hidden cursor-pointer ${inactiveStatuses.includes(bird.status) ? "opacity-60" : ""
                             }`}
-                        onClick={() => setLocation(`/birds/${bird.id}`)}
                     >
                         <div className="relative">
                             {bird.photoUrl ? (
@@ -102,6 +106,7 @@ export function BirdGrid({ birds, speciesMap, inactiveStatuses, onEdit, onDelete
                             )}
                         </CardContent>
                     </Card>
+                    </a>
                 );
             })}
         </div >
