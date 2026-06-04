@@ -9,6 +9,7 @@ import { registerPdfRoutes } from "../pdfRoutes";
 import { registerAuthRoutes } from "../authRoutes";
 import { registerStripeRoutes } from "../stripeRoutes";
 import { registerPhotoRoutes } from "../photoRoutes";
+import { registerExportRoutes } from "../exportRoutes";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
@@ -53,6 +54,8 @@ async function startServer() {
   registerPdfRoutes(app);
   // Stable authenticated photo URLs backed by Tigris signed URLs
   registerPhotoRoutes(app);
+  // Full-data export (xlsx + photos, streamed as a zip)
+  registerExportRoutes(app);
 
   // Run pending database migrations
   try {

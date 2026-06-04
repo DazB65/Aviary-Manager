@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { gouldianFinchPack } from "@/genetics/packs/gouldianFinch";
 import { useGeneticsPacks } from "@/genetics/useGeneticsPacks";
 import { trpc } from "@/lib/trpc";
-import { CalendarDays, Check, Dna, Settings as SettingsIcon, Star, X } from "lucide-react";
+import { CalendarDays, Check, Dna, Download, Settings as SettingsIcon, Star, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
@@ -26,7 +26,35 @@ export default function Settings() {
   const [defaultId, setDefaultId] = useState<number | null>(null);
   const [breedingYear, setBreedingYear] = useState<string>("");
   const [dirty, setDirty] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const isGouldianPackActive = isPackActive(gouldianFinchPack.speciesId);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const res = await fetch("/api/export/full", { credentials: "include" });
+      if (!res.ok) throw new Error("Export failed");
+
+      // Read the server-set filename, fall back to a dated default.
+      const disposition = res.headers.get("Content-Disposition") ?? "";
+      const match = disposition.match(/filename="?([^"]+)"?/);
+      const filename = match?.[1] ?? `aviary-manager-export-${new Date().toISOString().slice(0, 10)}.zip`;
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      toast.success("Your data is downloading — check your Downloads folder.");
+    } catch {
+      toast.error("Couldn't export your data. Please try again.");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   // Populate from loaded settings
   useEffect(() => {
@@ -285,6 +313,33 @@ export default function Settings() {
                 ))}
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* ── Export / Backup ── */}
+        <Card className="border border-border shadow-card">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <Download className="h-5 w-5 text-violet-600" />
+              <CardTitle className="font-display text-lg">Export &amp; Backup</CardTitle>
+            </div>
+            <CardDescription>
+              Download a complete local copy of your aviary — birds, pairs, broods, eggs,
+              events and species as an Excel workbook, plus all your bird photos, in one zip file.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              onClick={handleExport}
+              disabled={exporting}
+              className="gap-2 bg-primary hover:bg-primary/90 shadow-md"
+            >
+              <Download className="h-4 w-4" />
+              {exporting ? "Preparing your download…" : "Download my data"}
+            </Button>
+            <p className="text-xs text-muted-foreground mt-3">
+              Saves to your browser's Downloads folder. Large aviaries with many photos may take a moment.
+            </p>
           </CardContent>
         </Card>
 
