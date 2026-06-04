@@ -1,4 +1,5 @@
 import { NOT_ADMIN_ERR_MSG, UNAUTHED_ERR_MSG } from '@shared/const';
+import { hasProAccess } from '@shared/access';
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import type { TrpcContext } from "./context";
@@ -70,19 +71,9 @@ const requirePro = t.middleware(async opts => {
     throw new TRPCError({ code: "UNAUTHORIZED", message: UNAUTHED_ERR_MSG });
   }
 
-  if (user.role === "admin" || user.plan === "pro") {
+  // Pro rule lives in @shared/access so server gates and client UI stay in sync.
+  if (hasProAccess(user)) {
     return next({ ctx: { ...ctx, user } });
-  }
-
-  // Non-subscribed trial accounts get temporary Pro access.
-  if (user.plan === "free") {
-    const trialEnd = user.planExpiresAt
-      ? new Date(user.planExpiresAt)
-      : new Date(user.createdAt.getTime() + TRIAL_DAYS_MS);
-
-    if (trialEnd > new Date()) {
-      return next({ ctx: { ...ctx, user } });
-    }
   }
 
   throw new TRPCError({ code: "FORBIDDEN", message: PRO_REQUIRED_MSG });

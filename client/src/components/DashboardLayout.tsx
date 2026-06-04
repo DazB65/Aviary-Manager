@@ -25,6 +25,7 @@ import { trpc } from "@/lib/trpc";
 import { BarChart2, Bird, BookOpen, CalendarDays, CreditCard, Egg, Heart, HelpCircle, Home, LayoutDashboard, LogOut, Megaphone, Settings, Trash2, Users, MapPin, Sparkles } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
+import { hasProAccess, trialEndsAt } from "@shared/access";
 import { useAppTour } from "@/hooks/useAppTour";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
@@ -50,8 +51,6 @@ const mainMenuItems = [
   { icon: CreditCard, label: "Billing", path: "/billing" },
   { icon: HelpCircle, label: "Help", path: "/help" },
 ];
-
-const TRIAL_DAYS = 30;
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
 const DEFAULT_WIDTH = 280;
@@ -80,10 +79,8 @@ export default function DashboardLayout({
       return;
     }
     if (!loading && user && user.plan !== "pro" && user.plan !== "starter" && user.role !== "admin") {
-      const trialEnd = user.planExpiresAt
-        ? new Date(user.planExpiresAt)
-        : new Date(new Date(user.createdAt).getTime() + 7 * 24 * 60 * 60 * 1000);
-      if (trialEnd <= new Date() && location !== "/billing") {
+      const trialEnd = trialEndsAt(user);
+      if (trialEnd && trialEnd <= new Date() && location !== "/billing") {
         navigate("/billing");
       }
     }
@@ -162,17 +159,13 @@ function DashboardLayoutContent({
   const isPro = user?.plan === "pro";
   const isStarter = user?.plan === "starter";
 
-  // Trial status for accounts that have not subscribed yet.
-  const trialEnd = user && !isPro && !isStarter && !isAdmin
-    ? (user.planExpiresAt
-        ? new Date(user.planExpiresAt)
-        : new Date(new Date(user.createdAt).getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000))
-    : null;
+  // Trial status for accounts that have not subscribed yet (display only).
+  const trialEnd = isAdmin ? null : trialEndsAt(user);
   const isOnTrial = trialEnd && trialEnd > new Date();
   const trialDaysLeft = isOnTrial
     ? Math.max(1, Math.ceil((trialEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : 0;
-  const hasAiAccess = Boolean(isPro || isAdmin || isOnTrial);
+  const hasAiAccess = hasProAccess(user);
   const { startTour, maybeStartTour, hasTourBeenSkipped } = useAppTour();
   const [aiOpen, setAiOpen] = useState(false);
   const [aiDraftPrompt, setAiDraftPrompt] = useState<string | null>(null);

@@ -22,10 +22,22 @@ export function hasProAccess(user: ProAccessUser | null | undefined): boolean {
   if (!user) return false;
   if (user.role === "admin" || user.plan === "pro") return true;
   if (user.plan === "free") {
-    const trialEnd = user.planExpiresAt != null
-      ? new Date(user.planExpiresAt)
-      : new Date(new Date(user.createdAt).getTime() + TRIAL_MS);
-    return trialEnd.getTime() > Date.now();
+    const end = trialEndsAt(user);
+    return end != null && end.getTime() > Date.now();
   }
   return false;
+}
+
+/**
+ * The moment this account's free trial ends, or null for paid plans (pro /
+ * starter) which have no trial clock. Uses planExpiresAt when present, else
+ * falls back to createdAt + the trial window. Single source of truth for
+ * "days left in trial" displays and trial-expiry redirects.
+ */
+export function trialEndsAt(user: ProAccessUser | null | undefined): Date | null {
+  if (!user) return null;
+  if (user.plan === "pro" || user.plan === "starter") return null;
+  return user.planExpiresAt != null
+    ? new Date(user.planExpiresAt)
+    : new Date(new Date(user.createdAt).getTime() + TRIAL_MS);
 }

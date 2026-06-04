@@ -10,23 +10,18 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { useMemo, useState } from "react";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../server/routers";
+import { trialEndsAt } from "@shared/access";
 
 type SortKey = "name" | "email" | "plan" | "role" | "joined" | "lastSeen" | "chatToday" | "model";
 type SortDirection = "asc" | "desc";
 type AdminUser = inferRouterOutputs<AppRouter>["admin"]["users"][number];
 type PlanStatus = "trialExpired" | "trial" | "starter" | "pro";
 
-const TRIAL_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
-
 function getPlanStatus(user: AdminUser): PlanStatus {
   if (user.plan === "pro" || user.plan === "starter") return user.plan;
 
-  const createdAt = user.createdAt ? new Date(user.createdAt).getTime() : Date.now();
-  const trialEndsAt = user.planExpiresAt
-    ? new Date(user.planExpiresAt)
-    : new Date(createdAt + TRIAL_DAYS_MS);
-
-  return trialEndsAt > new Date() ? "trial" : "trialExpired";
+  const trialEnd = trialEndsAt(user) ?? new Date(0);
+  return trialEnd > new Date() ? "trial" : "trialExpired";
 }
 
 function PlanBadge({ user }: { user: AdminUser }) {

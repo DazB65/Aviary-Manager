@@ -10,8 +10,7 @@ import { useLocation } from "wouter";
 import { format, isToday, isTomorrow, parseISO, formatDistanceToNow } from "date-fns";
 import { GenderIcon } from "@/components/ui/GenderIcon";
 import { openAIAssistant } from "@/lib/aiPrompt";
-
-const TRIAL_DAYS = 30;
+import { hasProAccess } from "@shared/access";
 
 function formatDateLabel(dateVal: Date | string | null | undefined): string {
   if (!dateVal) return "—";
@@ -67,10 +66,7 @@ export default function Dashboard() {
   const { data: birds } = trpc.birds.list.useQuery();
   const { data: pairs } = trpc.pairs.list.useQuery();
   const { data: settings } = trpc.settings.get.useQuery();
-  const trialEnd = user?.plan === "free"
-    ? (user.planExpiresAt ? new Date(user.planExpiresAt) : new Date(new Date(user.createdAt).getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000))
-    : null;
-  const hasAiAccess = Boolean(user?.role === "admin" || user?.plan === "pro" || (trialEnd && trialEnd > new Date()));
+  const hasAiAccess = hasProAccess(user);
   const { data: aiBrief, isLoading: aiBriefLoading } = trpc.ai.dailyBrief.useQuery(undefined, {
     enabled: hasAiAccess,
   });
