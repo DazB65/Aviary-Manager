@@ -106,3 +106,8 @@ temp/
 *.sqlite
 *.sqlite3
 Media/
+
+# Large local marketing/video working assets — kept off GitHub (exceed size
+# limits / not needed in the repo). Already-tracked files are unaffected.
+aviary-video/AM Adding Birds.mp4
+Marketing/aviary-manager-30-day-trial-facebook*.png
