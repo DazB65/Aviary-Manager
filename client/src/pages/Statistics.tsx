@@ -1,8 +1,15 @@
 import DashboardLayout from "@/components/DashboardLayout";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { BarChart2, Bird, Egg, TrendingUp } from "lucide-react";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { hasProAccess } from "@shared/access";
+import { BarChart2, Bird, Egg, FileDown, Sparkles, TrendingUp } from "lucide-react";
 import { GenderIcon } from "@/components/ui/GenderIcon";
+import { useState } from "react";
+import { useLocation } from "wouter";
+import { toast } from "sonner";
 
 function StatBlock({ label, value, sub }: { label: string; value: string | number; sub?: React.ReactNode }) {
   return (
@@ -19,6 +26,43 @@ export default function Statistics() {
   const { data: pairs } = trpc.pairs.list.useQuery();
   const { data: broods } = trpc.broods.list.useQuery();
   const { data: speciesList = [] } = trpc.species.list.useQuery();
+  const { data: settings } = trpc.settings.get.useQuery();
+
+  const { user } = useAuth();
+  const isPro = hasProAccess(user);
+  const [, navigate] = useLocation();
+  const [downloading, setDownloading] = useState(false);
+  const seasonYear = settings?.breedingYear ?? new Date().getFullYear();
+
+  const handleDownloadScorecard = async () => {
+    if (!isPro) {
+      navigate("/billing");
+      return;
+    }
+    setDownloading(true);
+    try {
+      const res = await fetch(`/api/pdf/season-report?year=${seasonYear}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Download failed");
+
+      const disposition = res.headers.get("Content-Disposition") ?? "";
+      const match = disposition.match(/filename="?([^"]+)"?/);
+      const filename = match?.[1] ?? `season-scorecard-${seasonYear}.pdf`;
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      toast.success("Your Season Scorecard is downloading — check your Downloads folder.");
+    } catch {
+      toast.error("Couldn't generate your Season Scorecard. Please try again.");
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   const speciesById = Object.fromEntries(speciesList.map(s => [s.id, s]));
 
@@ -62,12 +106,28 @@ export default function Statistics() {
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-5xl mx-auto">
-        <div>
-          <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3">
-            <BarChart2 className="h-7 w-7 text-primary" />
-            Statistics
-          </h1>
-          <p className="text-muted-foreground mt-1">An overview of your aviary performance.</p>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3">
+              <BarChart2 className="h-7 w-7 text-primary" />
+              Statistics
+            </h1>
+            <p className="text-muted-foreground mt-1">An overview of your aviary performance.</p>
+          </div>
+          <Button
+            onClick={handleDownloadScorecard}
+            disabled={downloading}
+            className="gap-2 shrink-0"
+            title={isPro ? `Download your ${seasonYear} Breeding Season Scorecard (PDF)` : "Upgrade to Pro to download your Season Scorecard"}
+          >
+            {isPro ? <FileDown className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+            {downloading ? "Preparing…" : "Season Scorecard"}
+            {!isPro && (
+              <Badge className="ml-1 h-4 px-1 py-0 text-[10px] bg-yellow-400 text-yellow-900 hover:bg-yellow-400">
+                Pro
+              </Badge>
+            )}
+          </Button>
         </div>
 
         {/* Overview */}

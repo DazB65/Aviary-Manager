@@ -8,6 +8,7 @@ import { generatePedigreePdf } from "./pedigreePdf";
 import { generateSeasonScorecardPdf } from "./seasonReportPdf";
 import { getDb } from "./db";
 import { birds } from "../drizzle/schema";
+import { hasProAccess } from "@shared/access";
 
 /**
  * Register REST routes for PDF generation.
@@ -66,22 +67,27 @@ export function registerPdfRoutes(app: Express) {
   app.get("/api/pdf/season-report", async (req: Request, res: Response) => {
     try {
       // ── Auth ──────────────────────────────────────────────────────────────
-      let userId: number | null = null;
-      let userEmail: string | null = null;
+      let user: Awaited<ReturnType<typeof sdk.authenticateRequest>> | null = null;
       try {
-        const user = await sdk.authenticateRequest(req as any);
-        if (user) {
-          userId = user.id;
-          userEmail = user.email ?? null;
-        }
+        user = await sdk.authenticateRequest(req as any);
       } catch {
         // token invalid — fall through to 401
       }
 
-      if (!userId) {
+      if (!user) {
         res.status(401).json({ error: "Unauthorised" });
         return;
       }
+
+      // ── Pro gate ──────────────────────────────────────────────────────────
+      // The Season Scorecard is a Pro feature (the free data export stays free).
+      if (!hasProAccess(user)) {
+        res.status(403).json({ error: "PRO_REQUIRED" });
+        return;
+      }
+
+      const userId = user.id;
+      const userEmail = user.email ?? null;
 
       // ── Resolve season year: ?year= → userSettings.breedingYear → current ──
       const currentYear = new Date().getFullYear();
