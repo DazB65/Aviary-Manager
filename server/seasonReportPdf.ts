@@ -1,13 +1,16 @@
 import PDFDocument from "pdfkit";
+import {
+  type Doc, PW, PH, M, CW, C, HEADER_H,
+  fmtInt, ratio, card, arc, stackedBar,
+  drawSectionHeader, drawReportFooter,
+} from "./pdfTheme";
 
 /**
- * Premium "Breeding Season Scorecard" — a single-page, presentation-quality PDF
- * built from StatsService.getSeasonStats(). This is the proof-of-concept page for
- * the eventual multi-page Flock Report. Mirrors the layout/streaming pattern of
- * pedigreePdf.ts (pdfkit, absolute coordinates, Helvetica only — no Unicode glyphs).
+ * "Breeding Season Scorecard" — a presentation-quality page built from
+ * StatsService.getSeasonStats(). Exposed both as a standalone single-page PDF
+ * (generateSeasonScorecardPdf) and as a page painter (drawScorecardPage) so the
+ * multi-page Flock Report can drop it in as a section.
  */
-
-type Doc = InstanceType<typeof PDFDocument>;
 
 // Shape returned by StatsService.getSeasonStats (superset of the documented fields).
 export type SeasonStats = {
@@ -35,23 +38,6 @@ export type ScorecardMeta = {
   generatedAt?: Date;
 };
 
-// ── Palette (brand-aligned with pedigreePdf.ts) ──────────────────────────────
-const C = {
-  primary:    "#0d9488",
-  primaryDk:  "#0f766e",
-  priLight:   "#ccfbf1",
-  secondary:  "#f59e0b",
-  text:       "#0f172a",
-  heading:    "#1e293b",
-  muted:      "#64748b",
-  faint:      "#94a3b8",
-  border:     "#e2e8f0",
-  cardBg:     "#ffffff",
-  panelBg:    "#f8fafc",
-  track:      "#eef2f6",
-  white:      "#ffffff",
-};
-
 // Egg-outcome colours — keys match StatsService outcome buckets.
 const OUTCOME = {
   hatched:   { color: "#22c55e", label: "Hatched" },
@@ -64,107 +50,44 @@ const OUTCOME = {
   abandoned: { color: "#78716c", label: "Abandoned" },
 } as const;
 
-// ── Page geometry (A4 portrait) ──────────────────────────────────────────────
-const PW = 595.28;
-const PH = 841.89;
-const M  = 40;
-const CW = PW - M * 2; // content width
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-function fmtInt(n: number): string {
-  return Math.round(n).toLocaleString("en-AU");
-}
-
-function ratio(n: number, d: number): string {
-  if (!d) return "—";
-  return (n / d).toFixed(1);
-}
-
-/** Draw a soft "card": filled rounded rect with a hairline border. */
-function card(doc: Doc, x: number, y: number, w: number, h: number, r = 8) {
-  doc.roundedRect(x, y, w, h, r).fill(C.cardBg);
-  doc.roundedRect(x, y, w, h, r).lineWidth(0.8).strokeColor(C.border).stroke();
-}
-
-/** Point on a circle, 0° at top, clockwise positive (pdfkit y-down). */
-function polar(cx: number, cy: number, r: number, deg: number): [number, number] {
-  const a = ((deg - 90) * Math.PI) / 180;
-  return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
-}
-
-/** Stroke a circular arc from 0° clockwise by `sweep` degrees (for the donut). */
-function arc(doc: Doc, cx: number, cy: number, r: number, sweep: number, width: number, color: string) {
-  if (sweep <= 0) return;
-  if (sweep >= 360) {
-    doc.circle(cx, cy, r).lineWidth(width).strokeColor(color).stroke();
-    return;
-  }
-  const [sx, sy] = polar(cx, cy, r, 0);
-  const [ex, ey] = polar(cx, cy, r, sweep);
-  const large = sweep > 180 ? 1 : 0;
-  doc.path(`M ${sx} ${sy} A ${r} ${r} 0 ${large} 1 ${ex} ${ey}`)
-     .lineWidth(width).lineCap("round").strokeColor(color).stroke();
-}
-
-// ── Main export ──────────────────────────────────────────────────────────────
+// ── Standalone single-page export ────────────────────────────────────────────
 export async function generateSeasonScorecardPdf(
   stats: SeasonStats,
   meta: ScorecardMeta
 ): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({
-      size: "A4",
-      layout: "portrait",
-      margin: 0,
-      autoFirstPage: true,
-      info: {
-        Title: `Breeding Season Scorecard — ${meta.year}`,
-        Author: "Aviary Manager",
-      },
+      size: "A4", layout: "portrait", margin: 0, autoFirstPage: true,
+      info: { Title: `Breeding Season Scorecard — ${meta.year}`, Author: "Aviary Manager" },
     });
-
     const chunks: Buffer[] = [];
     doc.on("data", (c: Buffer) => chunks.push(c));
     doc.on("end", () => resolve(Buffer.concat(chunks)));
     doc.on("error", reject);
 
-    drawHeader(doc, meta);
-    let y = drawHero(doc, stats, meta);
-    y = drawKpis(doc, stats, y + 16);
-    y = drawVizBlock(doc, stats, y + 18);
-    y = drawProductivity(doc, stats, y + 18);
-    drawFooter(doc);
-
+    drawScorecardPage(doc, stats, meta);
     doc.end();
   });
 }
 
-// ── Header band ──────────────────────────────────────────────────────────────
-function drawHeader(doc: Doc, meta: ScorecardMeta) {
-  const H = 92;
-  const grad = doc.linearGradient(0, 0, PW, H);
-  grad.stop(0, C.primaryDk).stop(1, C.primary);
-  doc.rect(0, 0, PW, H).fill(grad);
-
-  // Eyebrow + title
-  doc.fillColor(C.priLight).font("Helvetica-Bold").fontSize(9)
-     .text("AVIARY MANAGER", M, 26, { characterSpacing: 2, lineBreak: false });
-  doc.fillColor(C.white).font("Helvetica-Bold").fontSize(22)
-     .text("Breeding Season Scorecard", M, 40, { lineBreak: false });
-
-  // Year badge (right)
-  const badgeW = 96, badgeH = 44, bx = PW - M - badgeW, by = (H - badgeH) / 2;
-  doc.roundedRect(bx, by, badgeW, badgeH, 8)
-     .fillOpacity(0.18).fill(C.white).fillOpacity(1);
-  doc.fillColor(C.priLight).font("Helvetica-Bold").fontSize(8)
-     .text("SEASON", bx, by + 8, { width: badgeW, align: "center", characterSpacing: 1.5, lineBreak: false });
-  doc.fillColor(C.white).font("Helvetica-Bold").fontSize(20)
-     .text(String(meta.year), bx, by + 18, { width: badgeW, align: "center", lineBreak: false });
+// ── Page painter (used by the standalone PDF and the Flock Report) ────────────
+export function drawScorecardPage(
+  doc: Doc,
+  stats: SeasonStats,
+  meta: ScorecardMeta,
+  opts?: { page?: string }
+) {
+  drawSectionHeader(doc, { title: "Breeding Season Scorecard", badgeLabel: "SEASON", badgeValue: String(meta.year) });
+  let y = drawHero(doc, meta);
+  y = drawKpis(doc, stats, y + 16);
+  y = drawVizBlock(doc, stats, y + 18);
+  drawProductivity(doc, stats, y + 18);
+  drawReportFooter(doc, opts);
 }
 
 // ── Hero strip ───────────────────────────────────────────────────────────────
-function drawHero(doc: Doc, stats: SeasonStats, meta: ScorecardMeta): number {
-  const top = 92 + 22;
+function drawHero(doc: Doc, meta: ScorecardMeta): number {
+  const top = HEADER_H + 22;
   doc.fillColor(C.heading).font("Helvetica-Bold").fontSize(26)
      .text(`${meta.year} Season Summary`, M, top, { lineBreak: false });
   doc.fillColor(C.muted).font("Helvetica").fontSize(11)
@@ -195,10 +118,10 @@ function drawHero(doc: Doc, stats: SeasonStats, meta: ScorecardMeta): number {
 function drawKpis(doc: Doc, stats: SeasonStats, top: number): number {
   const youngProduced = stats.hatched + stats.fledged;
   const kpis: { label: string; value: string; accent: string }[] = [
-    { label: "Breeding Pairs", value: fmtInt(stats.pairs),       accent: C.primary },
-    { label: "Broods Raised",  value: fmtInt(stats.broods),      accent: C.primary },
-    { label: "Eggs Laid",      value: fmtInt(stats.totalEggs),   accent: C.secondary },
-    { label: "Young Produced", value: fmtInt(youngProduced),     accent: OUTCOME.hatched.color },
+    { label: "Breeding Pairs", value: fmtInt(stats.pairs),     accent: C.primary },
+    { label: "Broods Raised",  value: fmtInt(stats.broods),    accent: C.primary },
+    { label: "Eggs Laid",      value: fmtInt(stats.totalEggs), accent: C.secondary },
+    { label: "Young Produced", value: fmtInt(youngProduced),   accent: OUTCOME.hatched.color },
   ];
 
   const gap = 14;
@@ -208,7 +131,6 @@ function drawKpis(doc: Doc, stats: SeasonStats, top: number): number {
   kpis.forEach((k, i) => {
     const x = M + i * (w + gap);
     card(doc, x, top, w, h);
-    // accent tab
     doc.roundedRect(x, top, w, 4, 2).fill(k.accent);
     doc.fillColor(C.muted).font("Helvetica-Bold").fontSize(8.5)
        .text(k.label.toUpperCase(), x + 12, top + 16, { width: w - 24, characterSpacing: 0.5, lineBreak: false });
@@ -227,20 +149,20 @@ function drawVizBlock(doc: Doc, stats: SeasonStats, top: number): number {
   const rightW = CW - leftW - gap;
   const lx = M, rx = M + leftW + gap;
 
-  // ----- Left: hatch-rate donut -----
+  // Left: hatch-rate donut
   card(doc, lx, top, leftW, h);
   doc.fillColor(C.heading).font("Helvetica-Bold").fontSize(12)
      .text("Hatch Rate", lx + 16, top + 16, { lineBreak: false });
   doc.fillColor(C.muted).font("Helvetica").fontSize(8.5)
-     .text("Young produced ÷ eggs laid".replace("÷", "/"), lx + 16, top + 33, { lineBreak: false });
+     .text("Young produced / eggs laid", lx + 16, top + 33, { lineBreak: false });
 
   const cx = lx + leftW / 2;
   const cy = top + 138;
   const r = 58;
   const ring = 16;
   const pct = Math.max(0, Math.min(100, stats.hatchRate));
-  arc(doc, cx, cy, r, 360, ring, C.track);          // track
-  arc(doc, cx, cy, r, (pct / 100) * 360, ring, C.primary); // value
+  arc(doc, cx, cy, r, 360, ring, C.track);
+  arc(doc, cx, cy, r, (pct / 100) * 360, ring, C.primary);
 
   doc.fillColor(C.heading).font("Helvetica-Bold").fontSize(30)
      .text(`${Math.round(pct)}%`, cx - r, cy - 18, { width: r * 2, align: "center", lineBreak: false });
@@ -252,7 +174,7 @@ function drawVizBlock(doc: Doc, stats: SeasonStats, top: number): number {
      .text(`${fmtInt(young)} of ${fmtInt(stats.totalEggs)} eggs produced young`,
            lx + 14, top + h - 30, { width: leftW - 28, align: "center", lineBreak: false });
 
-  // ----- Right: egg-outcome stacked bar + legend -----
+  // Right: egg-outcome stacked bar + legend
   card(doc, rx, top, rightW, h);
   doc.fillColor(C.heading).font("Helvetica-Bold").fontSize(12)
      .text("Egg Outcomes", rx + 16, top + 16, { lineBreak: false });
@@ -277,19 +199,11 @@ function drawVizBlock(doc: Doc, stats: SeasonStats, top: number): number {
 
   const barX = rx + 16, barY = top + 58, barW = rightW - 32, barH = 22;
   const total = stats.totalEggs;
-  doc.roundedRect(barX, barY, barW, barH, 5).fill(C.track);
   if (total > 0) {
-    let cursor = barX;
-    doc.save();
-    doc.roundedRect(barX, barY, barW, barH, 5).clip();
-    for (const s of segs) {
-      if (s.value <= 0) continue;
-      const segW = (s.value / total) * barW;
-      doc.rect(cursor, barY, segW, barH).fill(OUTCOME[s.key].color);
-      cursor += segW;
-    }
-    doc.restore();
+    stackedBar(doc, barX, barY, barW, barH, total,
+      segs.map(s => ({ value: s.value, color: OUTCOME[s.key].color })));
   } else {
+    doc.roundedRect(barX, barY, barW, barH, 5).fill(C.track);
     doc.fillColor(C.faint).font("Helvetica").fontSize(9)
        .text("No eggs recorded this season", barX, barY + 6, { width: barW, align: "center", lineBreak: false });
   }
@@ -320,10 +234,10 @@ function drawVizBlock(doc: Doc, stats: SeasonStats, top: number): number {
 function drawProductivity(doc: Doc, stats: SeasonStats, top: number): number {
   const young = stats.hatched + stats.fledged;
   const chips: { label: string; value: string }[] = [
-    { label: "Eggs / Pair",   value: ratio(stats.totalEggs, stats.pairs) },
-    { label: "Eggs / Brood",  value: ratio(stats.totalEggs, stats.broods) },
-    { label: "Young / Pair",  value: ratio(young, stats.pairs) },
-    { label: "Total Losses",  value: fmtInt(stats.losses) },
+    { label: "Eggs / Pair",  value: ratio(stats.totalEggs, stats.pairs) },
+    { label: "Eggs / Brood", value: ratio(stats.totalEggs, stats.broods) },
+    { label: "Young / Pair", value: ratio(young, stats.pairs) },
+    { label: "Total Losses", value: fmtInt(stats.losses) },
   ];
 
   const h = 84;
@@ -344,14 +258,4 @@ function drawProductivity(doc: Doc, stats: SeasonStats, top: number): number {
   });
 
   return top + h;
-}
-
-// ── Footer ───────────────────────────────────────────────────────────────────
-function drawFooter(doc: Doc) {
-  const fy = PH - 46;
-  doc.rect(M, fy, CW, 1).fill(C.border);
-  doc.fillColor(C.faint).font("Helvetica").fontSize(8.5)
-     .text("Made with Aviary Manager", M, fy + 12, { lineBreak: false });
-  doc.fillColor(C.faint).font("Helvetica").fontSize(8.5)
-     .text("aviarymanager.app", M, fy + 12, { width: CW, align: "right", lineBreak: false });
 }

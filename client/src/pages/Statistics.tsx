@@ -41,12 +41,12 @@ export default function Statistics() {
     }
     setDownloading(true);
     try {
-      const res = await fetch(`/api/pdf/season-report?year=${seasonYear}`, { credentials: "include" });
+      const res = await fetch(`/api/pdf/flock-report?year=${seasonYear}`, { credentials: "include" });
       if (!res.ok) throw new Error("Download failed");
 
       const disposition = res.headers.get("Content-Disposition") ?? "";
       const match = disposition.match(/filename="?([^"]+)"?/);
-      const filename = match?.[1] ?? `season-scorecard-${seasonYear}.pdf`;
+      const filename = match?.[1] ?? `flock-report-${seasonYear}.pdf`;
 
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -56,9 +56,9 @@ export default function Statistics() {
       a.click();
       URL.revokeObjectURL(url);
 
-      toast.success("Your Season Scorecard is downloading — check your Downloads folder.");
+      toast.success("Your Flock Report is downloading — check your Downloads folder.");
     } catch {
-      toast.error("Couldn't generate your Season Scorecard. Please try again.");
+      toast.error("Couldn't generate your Flock Report. Please try again.");
     } finally {
       setDownloading(false);
     }
@@ -118,10 +118,10 @@ export default function Statistics() {
             onClick={handleDownloadScorecard}
             disabled={downloading}
             className="gap-2 shrink-0"
-            title={isPro ? `Download your ${seasonYear} Breeding Season Scorecard (PDF)` : "Upgrade to Pro to download your Season Scorecard"}
+            title={isPro ? `Download your ${seasonYear} Flock Report (PDF)` : "Upgrade to Pro to download your Flock Report"}
           >
             {isPro ? <FileDown className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
-            {downloading ? "Preparing…" : "Season Scorecard"}
+            {downloading ? "Preparing…" : "Flock Report"}
             {!isPro && (
               <Badge className="ml-1 h-4 px-1 py-0 text-[10px] bg-yellow-400 text-yellow-900 hover:bg-yellow-400">
                 Pro
