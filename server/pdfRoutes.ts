@@ -2,7 +2,10 @@ import type { Express, Request, Response } from "express";
 import { and, eq } from "drizzle-orm";
 import { sdk } from "./_core/sdk";
 import { SpeciesService } from "./services/speciesService";
+import { StatsService } from "./services/statsService";
+import { SettingsService } from "./services/settingsService";
 import { generatePedigreePdf } from "./pedigreePdf";
+import { generateSeasonScorecardPdf } from "./seasonReportPdf";
 import { getDb } from "./db";
 import { birds } from "../drizzle/schema";
 
@@ -54,6 +57,57 @@ export function registerPdfRoutes(app: Express) {
       res.send(pdfBuffer);
     } catch (err) {
       console.error("[PDF] Error generating pedigree PDF:", err);
+      res.status(500).json({ error: "Failed to generate PDF" });
+    }
+  });
+
+  // GET /api/pdf/season-report?year=YYYY
+  // Premium "Breeding Season Scorecard" — single-page POC for the Flock Report.
+  app.get("/api/pdf/season-report", async (req: Request, res: Response) => {
+    try {
+      // ── Auth ──────────────────────────────────────────────────────────────
+      let userId: number | null = null;
+      let userEmail: string | null = null;
+      try {
+        const user = await sdk.authenticateRequest(req as any);
+        if (user) {
+          userId = user.id;
+          userEmail = user.email ?? null;
+        }
+      } catch {
+        // token invalid — fall through to 401
+      }
+
+      if (!userId) {
+        res.status(401).json({ error: "Unauthorised" });
+        return;
+      }
+
+      // ── Resolve season year: ?year= → userSettings.breedingYear → current ──
+      const currentYear = new Date().getFullYear();
+      const queryYear = parseInt(String(req.query.year ?? ""), 10);
+      let year = Number.isFinite(queryYear) && queryYear >= 2000 && queryYear <= 2100
+        ? queryYear
+        : NaN;
+      if (Number.isNaN(year)) {
+        const settings = await SettingsService.getUserSettings(userId);
+        year = settings?.breedingYear ?? currentYear;
+      }
+
+      const stats = await StatsService.getSeasonStats(userId, year);
+
+      const pdfBuffer = await generateSeasonScorecardPdf(stats, {
+        year,
+        preparedFor: userEmail,
+        generatedAt: new Date(),
+      });
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="season-scorecard-${year}.pdf"`);
+      res.setHeader("Content-Length", pdfBuffer.length);
+      res.send(pdfBuffer);
+    } catch (err) {
+      console.error("[PDF] Error generating season scorecard PDF:", err);
       res.status(500).json({ error: "Failed to generate PDF" });
     }
   });
