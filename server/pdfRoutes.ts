@@ -197,10 +197,11 @@ export function registerPdfRoutes(app: Express) {
         seasonStats,
       });
 
-      const safeName = (settings?.aviaryName?.trim() || "flock")
-        .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "flock";
+      const slug = (settings?.aviaryName?.trim() || "")
+        .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+      const filename = `${slug ? `${slug}-` : ""}flock-report-${year}.pdf`;
       res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `attachment; filename="${safeName}-flock-report-${year}.pdf"`);
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
       res.setHeader("Content-Length", pdfBuffer.length);
       res.send(pdfBuffer);
     } catch (err) {
