@@ -310,35 +310,12 @@ export function registerExportRoutes(app: Express) {
 
       const xlsxBuffer = Buffer.from(await wb.xlsx.writeBuffer());
 
-      // ── Fetch photos (skip failures, record them for the README) ──────────
-      const photoBuffers: { filename: string; data: Buffer }[] = [];
-      const photoFailures: string[] = [];
-      for (const task of photoTasks) {
-        try {
-          const data = await storageGetBytes(task.key);
-          photoBuffers.push({ filename: task.filename, data });
-        } catch (err) {
-          photoFailures.push(`${task.filename} (${err instanceof Error ? err.message : "unavailable"})`);
-        }
-      }
-
-      const readme = buildReadme({
-        exportedAt,
-        userEmail: userEmail ?? `User #${userId}`,
-        counts: {
-          birds: birds.length,
-          pairs: pairs.length,
-          broods: broods.length,
-          eggs: eggs.length,
-          events: events.length,
-          customSpecies: customSpecies.length,
-          savedNotes: savedNotes.length,
-        },
-        photosIncluded: photoBuffers.length,
-        photoFailures,
-      });
-
       // ── Stream the zip ────────────────────────────────────────────────────
+      // Start the archive and pipe to the response up front, then fetch photos
+      // with bounded concurrency and append each as it arrives. This keeps
+      // memory low (only ~PHOTO_CONCURRENCY photos held at once, not all of
+      // them) and makes large exports — e.g. 200 photos — fast instead of a
+      // minute of sequential downloads.
       const dateStr = exportedAt.toISOString().slice(0, 10); // YYYY-MM-DD
       const zipName = `aviary-manager-export-${dateStr}.zip`;
       res.setHeader("Content-Type", "application/zip");
@@ -353,10 +330,50 @@ export function registerExportRoutes(app: Express) {
       archive.pipe(res);
 
       archive.append(xlsxBuffer, { name: "Aviary Manager Export.xlsx" });
+
+      // Fetch photos with a bounded worker pool, appending each to the zip as
+      // it resolves. JS is single-threaded, so append() calls between awaits
+      // never overlap; the archive drains to the response as we go.
+      const PHOTO_CONCURRENCY = 8;
+      const photoFailures: string[] = [];
+      let photosIncluded = 0;
+      let cursor = 0;
+      const runWorker = async () => {
+        while (true) {
+          const i = cursor++;
+          if (i >= photoTasks.length) return;
+          const task = photoTasks[i];
+          try {
+            const data = await storageGetBytes(task.key);
+            archive.append(data, { name: `photos/${task.filename}` });
+            photosIncluded++;
+          } catch (err) {
+            photoFailures.push(`${task.filename} (${err instanceof Error ? err.message : "unavailable"})`);
+          }
+        }
+      };
+      await Promise.all(
+        Array.from({ length: Math.min(PHOTO_CONCURRENCY, photoTasks.length) }, runWorker)
+      );
+
+      // README appended last, so it can report the final photo count + failures.
+      const readme = buildReadme({
+        exportedAt,
+        userEmail: userEmail ?? `User #${userId}`,
+        counts: {
+          birds: birds.length,
+          pairs: pairs.length,
+          broods: broods.length,
+          eggs: eggs.length,
+          events: events.length,
+          customSpecies: customSpecies.length,
+          savedNotes: savedNotes.length,
+        },
+        photosIncluded,
+        photoFailures,
+      });
       archive.append(readme, { name: "README.txt" });
-      for (const p of photoBuffers) {
-        archive.append(p.data, { name: `photos/${p.filename}` });
-      }
+
       await archive.finalize();
     } catch (err) {
       console.error("[export] Failed to build export:", err);
