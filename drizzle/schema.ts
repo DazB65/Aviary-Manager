@@ -195,6 +195,7 @@ export const userSettings = pgTable("userSettings", {
   favouriteSpeciesIds: text("favouriteSpeciesIds"), // JSON array of species IDs
   defaultSpeciesId: integer("defaultSpeciesId"),        // single default species for quick-add
   breedingYear: integer("breedingYear"),                // global flock breeding season year
+  aviaryName: varchar("aviaryName", { length: 120 }),   // breeder/aviary name shown on PDF reports
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 

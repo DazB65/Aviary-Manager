@@ -92,11 +92,11 @@ export function registerPdfRoutes(app: Express) {
       // ── Resolve season year: ?year= → userSettings.breedingYear → current ──
       const currentYear = new Date().getFullYear();
       const queryYear = parseInt(String(req.query.year ?? ""), 10);
+      const settings = await SettingsService.getUserSettings(userId);
       let year = Number.isFinite(queryYear) && queryYear >= 2000 && queryYear <= 2100
         ? queryYear
         : NaN;
       if (Number.isNaN(year)) {
-        const settings = await SettingsService.getUserSettings(userId);
         year = settings?.breedingYear ?? currentYear;
       }
 
@@ -104,6 +104,7 @@ export function registerPdfRoutes(app: Express) {
 
       const pdfBuffer = await generateSeasonScorecardPdf(stats, {
         year,
+        aviaryName: settings?.aviaryName ?? null,
         preparedFor: userEmail,
         generatedAt: new Date(),
       });

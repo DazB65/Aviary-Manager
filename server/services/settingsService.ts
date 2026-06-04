@@ -10,7 +10,7 @@ export class SettingsService {
         return rows[0] ?? null;
     }
 
-    static async updateUserSettings(userId: number, data: { favouriteSpeciesIds?: number[]; defaultSpeciesId?: number | null; breedingYear?: number | null; }) {
+    static async updateUserSettings(userId: number, data: { favouriteSpeciesIds?: number[]; defaultSpeciesId?: number | null; breedingYear?: number | null; aviaryName?: string | null; }) {
         const db = getDb();
         if (!db) return;
         const favouriteSpeciesIds = data.favouriteSpeciesIds !== undefined
@@ -30,6 +30,12 @@ export class SettingsService {
         if (data.breedingYear !== undefined) {
             values.breedingYear = data.breedingYear;
             updateSet.breedingYear = data.breedingYear;
+        }
+        if (data.aviaryName !== undefined) {
+            // Normalise empty/whitespace to null so the report falls back cleanly.
+            const trimmed = data.aviaryName?.trim() || null;
+            values.aviaryName = trimmed;
+            updateSet.aviaryName = trimmed;
         }
 
         await db.insert(userSettings).values(values as any).onConflictDoUpdate({ target: userSettings.userId, set: updateSet });

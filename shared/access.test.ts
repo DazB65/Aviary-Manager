@@ -1,0 +1,56 @@
+import { describe, expect, it } from "vitest";
+import { hasProAccess, trialEndsAt, TRIAL_DAYS } from "./access";
+
+const DAY = 24 * 60 * 60 * 1000;
+const ago = (days: number) => new Date(Date.now() - days * DAY);
+const ahead = (days: number) => new Date(Date.now() + days * DAY);
+
+describe("hasProAccess", () => {
+  it("grants admins regardless of plan", () => {
+    expect(hasProAccess({ role: "admin", plan: "free", createdAt: ago(90) })).toBe(true);
+  });
+
+  it("grants pro subscribers", () => {
+    expect(hasProAccess({ plan: "pro", createdAt: ago(90) })).toBe(true);
+  });
+
+  it("blocks starter subscribers (Pro-only)", () => {
+    expect(hasProAccess({ plan: "starter", createdAt: ago(1) })).toBe(false);
+  });
+
+  it("grants free accounts inside their trial window", () => {
+    expect(hasProAccess({ plan: "free", createdAt: ago(5) })).toBe(true);
+  });
+
+  it("blocks free accounts whose trial has expired", () => {
+    expect(hasProAccess({ plan: "free", createdAt: ago(TRIAL_DAYS + 5) })).toBe(false);
+  });
+
+  it("honours an explicit future planExpiresAt over createdAt fallback", () => {
+    expect(hasProAccess({ plan: "free", planExpiresAt: ahead(3), createdAt: ago(90) })).toBe(true);
+  });
+
+  it("returns false for null/undefined users", () => {
+    expect(hasProAccess(null)).toBe(false);
+    expect(hasProAccess(undefined)).toBe(false);
+  });
+});
+
+describe("trialEndsAt", () => {
+  it("returns null for paid plans (no trial clock)", () => {
+    expect(trialEndsAt({ plan: "pro", createdAt: ago(1) })).toBeNull();
+    expect(trialEndsAt({ plan: "starter", createdAt: ago(1) })).toBeNull();
+  });
+
+  it("falls back to createdAt + trial window when planExpiresAt is absent", () => {
+    const created = ago(5);
+    const end = trialEndsAt({ plan: "free", createdAt: created });
+    expect(end?.getTime()).toBe(created.getTime() + TRIAL_DAYS * DAY);
+  });
+
+  it("uses planExpiresAt when present", () => {
+    const exp = ahead(3);
+    const end = trialEndsAt({ plan: "free", planExpiresAt: exp, createdAt: ago(90) });
+    expect(end?.getTime()).toBe(exp.getTime());
+  });
+});

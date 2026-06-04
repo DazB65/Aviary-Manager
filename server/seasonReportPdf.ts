@@ -30,7 +30,8 @@ export type SeasonStats = {
 
 export type ScorecardMeta = {
   year: number;
-  preparedFor?: string | null; // account email / breeder identifier
+  aviaryName?: string | null;  // breeder/aviary name (preferred identity on the report)
+  preparedFor?: string | null; // account email — fallback when no aviary name is set
   generatedAt?: Date;
 };
 
@@ -170,16 +171,17 @@ function drawHero(doc: Doc, stats: SeasonStats, meta: ScorecardMeta): number {
      .text("A snapshot of this season's breeding performance across your flock.",
            M, top + 34, { width: CW * 0.62, lineBreak: false });
 
-  // Right-aligned meta
+  // Right-aligned meta. Prefer the aviary name; fall back to the account email.
   const generated = (meta.generatedAt ?? new Date()).toLocaleDateString("en-AU", {
     day: "2-digit", month: "long", year: "numeric",
   });
+  const identity = meta.aviaryName?.trim() || meta.preparedFor?.trim() || null;
   const rx = M, rw = CW;
-  if (meta.preparedFor) {
+  if (identity) {
     doc.fillColor(C.faint).font("Helvetica").fontSize(9)
        .text("PREPARED FOR", rx, top + 2, { width: rw, align: "right", characterSpacing: 1, lineBreak: false });
     doc.fillColor(C.heading).font("Helvetica-Bold").fontSize(11)
-       .text(meta.preparedFor, rx, top + 14, { width: rw, align: "right", lineBreak: false });
+       .text(identity, rx, top + 14, { width: rw, align: "right", lineBreak: false });
   }
   doc.fillColor(C.faint).font("Helvetica").fontSize(9)
      .text(`Generated ${generated}`, rx, top + 32, { width: rw, align: "right", lineBreak: false });

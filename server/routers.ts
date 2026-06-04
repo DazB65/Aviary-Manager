@@ -842,12 +842,14 @@ export const appRouter = router({
         favouriteSpeciesIds: z.array(z.number()).optional(),
         defaultSpeciesId: z.number().nullable().optional(),
         breedingYear: z.number().int().min(2000).max(2100).nullable().optional(),
+        aviaryName: z.string().max(120).nullable().optional(),
       }))
       .mutation(({ ctx, input }) =>
         SettingsService.updateUserSettings(ctx.user.id, {
           favouriteSpeciesIds: input.favouriteSpeciesIds,
           defaultSpeciesId: input.defaultSpeciesId ?? null,
           breedingYear: input.breedingYear ?? null,
+          aviaryName: input.aviaryName,
         })
       ),
   }),

@@ -25,6 +25,7 @@ export default function Settings() {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [defaultId, setDefaultId] = useState<number | null>(null);
   const [breedingYear, setBreedingYear] = useState<string>("");
+  const [aviaryName, setAviaryName] = useState<string>("");
   const [dirty, setDirty] = useState(false);
   const [exporting, setExporting] = useState(false);
   const isGouldianPackActive = isPackActive(gouldianFinchPack.speciesId);
@@ -65,6 +66,7 @@ export default function Settings() {
     } catch { setSelectedIds([]); }
     setDefaultId(settings.defaultSpeciesId ?? null);
     setBreedingYear(settings.breedingYear ? String(settings.breedingYear) : String(new Date().getFullYear()));
+    setAviaryName(settings.aviaryName ?? "");
     setDirty(false);
   }, [settings]);
 
@@ -104,6 +106,7 @@ export default function Settings() {
       favouriteSpeciesIds: selectedIds,
       defaultSpeciesId: defaultId,
       breedingYear: yearNum,
+      aviaryName: aviaryName.trim() || null,
     });
   };
 
@@ -168,6 +171,21 @@ export default function Settings() {
                 <p>New pairs and broods will default to <strong>{breedingYear || new Date().getFullYear()}</strong>.</p>
                 <p className="mt-0.5">You can still override the year on individual records.</p>
               </div>
+            </div>
+
+            <div className="mt-5 pt-5 border-t border-teal-100">
+              <Label className="text-sm font-medium text-teal-800">Aviary name</Label>
+              <Input
+                type="text"
+                maxLength={120}
+                className="mt-1.5 max-w-md text-teal-900 border-teal-300 focus:border-teal-500"
+                value={aviaryName}
+                onChange={e => { setAviaryName(e.target.value); setDirty(true); }}
+                placeholder="e.g. Darren's Gouldian Aviary"
+              />
+              <p className="mt-1.5 text-sm text-teal-700/70">
+                Shown on your PDF reports (cover page and scorecard). Leave blank to use your account email.
+              </p>
             </div>
           </CardContent>
         </Card>

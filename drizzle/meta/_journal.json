@@ -127,6 +127,13 @@
       "when": 1778374800000,
       "tag": "0017_ai_saved_notes",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1778378400000,
+      "tag": "0018_add_aviary_name",
+      "breakpoints": true
     }
   ]
 }
