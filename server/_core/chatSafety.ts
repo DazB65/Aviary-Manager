@@ -2,6 +2,7 @@ import type { UIMessage } from "ai";
 
 export const READ_TOOL_NAMES = [
   "getFlockStats",
+  "getShows",
   "searchBirds",
   "getUpcomingEvents",
   "getMutationSummary",
