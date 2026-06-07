@@ -3,8 +3,9 @@ import { BroodService } from "./broodService";
 import { EventService } from "./eventService";
 import { PairService } from "./pairService";
 import { SpeciesService } from "./speciesService";
+import { ShowService } from "./showService";
 
-type SearchScope = "all" | "birds" | "pairs" | "broods" | "eggs" | "events" | "species";
+type SearchScope = "all" | "birds" | "pairs" | "broods" | "eggs" | "events" | "species" | "shows";
 
 function normalize(value: unknown): string {
   return String(value ?? "").toLowerCase();
@@ -33,19 +34,21 @@ function owned<T extends { userId?: number | null }>(rows: T[], userId: number):
 export class AISearchService {
   static async search(userId: number, query: string, scope: SearchScope = "all") {
     const terms = tokens(query).slice(0, 12);
-    const [birdRows, pairRows, broodRows, eggRows, eventRows, speciesRows] = await Promise.all([
+    const [birdRows, pairRows, broodRows, eggRows, eventRows, speciesRows, showRows] = await Promise.all([
       BirdService.getBirdsByUser(userId),
       PairService.getPairsByUser(userId),
       BroodService.getBroodsByUser(userId),
       BroodService.getEggsByUser(userId),
       EventService.getEventsByUser(userId),
       SpeciesService.getAllSpecies(userId),
+      ShowService.getShowsByUser(userId),
     ]);
     const birds = owned(birdRows, userId);
     const pairs = owned(pairRows, userId);
     const broods = owned(broodRows, userId);
     const eggs = owned(eggRows, userId);
     const events = owned(eventRows, userId);
+    const shows = owned(showRows, userId);
     const species = speciesRows.filter((item: any) => item.userId === undefined || item.userId === null || item.userId === userId);
 
     const birdMap = new Map(birds.map((bird: any) => [bird.id, bird]));
@@ -121,6 +124,29 @@ export class AISearchService {
               date: event.eventDate,
               type: event.eventType,
               completed: event.completed ?? false,
+            }))
+        : [],
+      shows: wants("shows")
+        ? shows
+            .filter((show: any) => match([
+              birdLabel(birdMap.get(show.birdId)),
+              show.venue,
+              show.species,
+              show.showGroup,
+              show.result,
+              show.notes,
+              show.showDate,
+            ]))
+            .slice(0, 12)
+            .map((show: any) => ({
+              id: show.id,
+              bird: birdLabel(birdMap.get(show.birdId)),
+              birdId: show.birdId,
+              date: show.showDate,
+              venue: show.venue,
+              species: show.species,
+              group: show.showGroup,
+              result: show.result,
             }))
         : [],
       species: wants("species")

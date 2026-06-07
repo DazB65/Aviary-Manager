@@ -826,7 +826,7 @@ export const appRouter = router({
     search: proProcedure
       .input(z.object({
         query: z.string().min(1).max(300),
-        scope: z.enum(["all", "birds", "pairs", "broods", "eggs", "events", "species"]).default("all"),
+        scope: z.enum(["all", "birds", "pairs", "broods", "eggs", "events", "species", "shows"]).default("all"),
       }))
       .query(({ ctx, input }) => AISearchService.search(ctx.user.id, input.query, input.scope)),
     breedingPlanner: router({

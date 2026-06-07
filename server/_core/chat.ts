@@ -15,6 +15,8 @@ import { BroodService } from "../services/broodService";
 import { StatsService } from "../services/statsService";
 import { SpeciesService } from "../services/speciesService";
 import { EventService } from "../services/eventService";
+import { ShowService } from "../services/showService";
+import { summariseShowResults } from "../../shared/showResult";
 import { PedigreeService } from "../services/pedigreeService";
 import { SettingsService } from "../services/settingsService";
 import { AIMemoryService, AI_MEMORY_CATEGORIES } from "../services/aiMemoryService";
@@ -191,11 +193,14 @@ function createLLMProvider() {
  */
 const tools = (userId: number) => ({
   getFlockStats: tool({
-    description: "Get the total number of birds, active pairs, and eggs incubating for the user's aviary flock.",
+    description: "Get the total number of birds, active pairs, and eggs incubating for the user's aviary flock, plus a show/exhibition summary (total shows, wins, best result).",
     inputSchema: z.object({}),
     execute: async () => {
-      const stats = await StatsService.getDashboardStatsByUser(userId);
-      return stats;
+      const [stats, shows] = await Promise.all([
+        StatsService.getDashboardStatsByUser(userId),
+        ShowService.getShowStatsByUser(userId),
+      ]);
+      return { ...stats, shows };
     },
   }),
 
@@ -212,10 +217,10 @@ const tools = (userId: number) => ({
   }),
 
   naturalLanguageSearch: tool({
-    description: "Search user-owned aviary records in plain language across birds, pairs, broods, eggs, events, species, and notes. Read-only.",
+    description: "Search user-owned aviary records in plain language across birds, pairs, broods, eggs, events, species, shows/exhibitions, and notes. Read-only.",
     inputSchema: z.object({
       query: z.string().min(1).max(300),
-      scope: z.enum(["all", "birds", "pairs", "broods", "eggs", "events", "species"]).default("all"),
+      scope: z.enum(["all", "birds", "pairs", "broods", "eggs", "events", "species", "shows"]).default("all"),
     }),
     execute: async ({ query, scope }) => runLoggedReadTool(userId, "naturalLanguageSearch", () => AISearchService.search(userId, query, scope)),
   }),
@@ -868,7 +873,7 @@ const tools = (userId: number) => ({
   }),
 
   getBirdDetails: tool({
-    description: "Get full details for a specific bird including status, cage, mutation, date of birth, and breeding history. Use searchBirds to find the bird ID first.",
+    description: "Get full details for a specific bird including status, cage, mutation, date of birth, breeding history, and show/exhibition records (dates, venues, groups, results). Use searchBirds to find the bird ID first.",
     inputSchema: z.object({
       birdId: z.number().describe("ID of the bird"),
     }),
@@ -876,7 +881,11 @@ const tools = (userId: number) => ({
       try {
         const bird = await BirdService.getBirdById(birdId, userId);
         if (!bird) return { success: false, error: "Bird not found." };
-        const history = await BroodService.getBreedingHistoryByBird(birdId, userId);
+        const [history, birdShows] = await Promise.all([
+          BroodService.getBreedingHistoryByBird(birdId, userId),
+          ShowService.getShowsByBird(birdId, userId),
+        ]);
+        const showSummary = summariseShowResults(birdShows);
         return {
           id: bird.id,
           name: bird.name,
@@ -892,6 +901,19 @@ const tools = (userId: number) => ({
             partner: h.partnerName,
             clutches: h.clutches?.length ?? 0,
           })),
+          shows: {
+            totalShows: showSummary.totalShows,
+            wins: showSummary.wins,
+            bestResult: showSummary.bestResult,
+            records: birdShows.map((s: any) => ({
+              date: s.showDate,
+              venue: s.venue,
+              species: s.species,
+              group: s.showGroup,
+              result: s.result,
+              notes: s.notes,
+            })),
+          },
         };
       } catch {
         return { success: false, error: "Failed to get bird details." };
