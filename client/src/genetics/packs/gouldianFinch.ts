@@ -1,8 +1,11 @@
 import { InheritanceType, type GeneticsPack } from "../types";
 
 export const gouldianFinchPack: GeneticsPack = {
+  kind: "trait",
   speciesId: "gouldian-finch",
   speciesName: "Gouldian Finch",
+  speciesMatch: "gouldian",
+  description: "Track head, body and breast colour mutations for Gouldian Finches",
   traits: [
     {
       traitName: "Head Colour",

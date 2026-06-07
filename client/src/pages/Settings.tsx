@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { gouldianFinchPack } from "@/genetics/packs/gouldianFinch";
+import { ALL_GENETICS_PACKS } from "@/genetics/registry";
 import { useGeneticsPacks } from "@/genetics/useGeneticsPacks";
 import { trpc } from "@/lib/trpc";
 import { CalendarDays, Check, Dna, Download, Settings as SettingsIcon, Star, X } from "lucide-react";
@@ -28,7 +28,6 @@ export default function Settings() {
   const [aviaryName, setAviaryName] = useState<string>("");
   const [dirty, setDirty] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const isGouldianPackActive = isPackActive(gouldianFinchPack.speciesId);
 
   const handleExport = async () => {
     setExporting(true);
@@ -201,33 +200,38 @@ export default function Settings() {
                 Activate species-specific genetics tools on this device. Your selections are saved in this browser.
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="rounded-xl border border-border bg-muted/20 p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium text-sm">{gouldianFinchPack.speciesName}</p>
-                      <Badge variant={isGouldianPackActive ? "default" : "secondary"}>
-                        {isGouldianPackActive ? "Active" : "Inactive"}
-                      </Badge>
+            <CardContent className="space-y-3">
+              {ALL_GENETICS_PACKS.map((pack) => {
+                const active = isPackActive(pack.speciesId);
+                return (
+                  <div key={pack.speciesId} className="rounded-xl border border-border bg-muted/20 p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-sm">{pack.speciesName}</p>
+                          <Badge variant={active ? "default" : "secondary"}>
+                            {active ? "Active" : "Inactive"}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground max-w-xl">
+                          {pack.description ?? `Genetics tools for ${pack.speciesName}`}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Label htmlFor={`genetics-pack-${pack.speciesId}`} className="text-sm font-medium">
+                          {active ? "On" : "Off"}
+                        </Label>
+                        <Switch
+                          id={`genetics-pack-${pack.speciesId}`}
+                          checked={active}
+                          onCheckedChange={(checked) => setPackActive(pack.speciesId, checked)}
+                          aria-label={`Toggle ${pack.speciesName} genetics pack`}
+                        />
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground max-w-xl">
-                      Track head, body and breast colour mutations for Gouldian Finches
-                    </p>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Label htmlFor="gouldian-genetics-pack" className="text-sm font-medium">
-                      {isGouldianPackActive ? "On" : "Off"}
-                    </Label>
-                    <Switch
-                      id="gouldian-genetics-pack"
-                      checked={isGouldianPackActive}
-                      onCheckedChange={(checked) => setPackActive(gouldianFinchPack.speciesId, checked)}
-                      aria-label={`Toggle ${gouldianFinchPack.speciesName} genetics pack`}
-                    />
-                  </div>
-                </div>
-              </div>
+                );
+              })}
             </CardContent>
           </Card>
         )}

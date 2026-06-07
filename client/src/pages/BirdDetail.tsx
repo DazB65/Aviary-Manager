@@ -13,7 +13,14 @@ import {
 import { describeVisualPhenotype } from "@/genetics/engine";
 import { gouldianFinchPack } from "@/genetics/packs/gouldianFinch";
 import { readActiveGeneticsPacks, readBirdGenotype, formatGeneticsDisplay } from "@/genetics/storage";
-import { GenotypeState, InheritanceType, type BirdGenotype } from "@/genetics/types";
+import { GenotypeState, InheritanceType, type BirdGenotype, type PhenotypeSplitSelection } from "@/genetics/types";
+import { findActivePackForSpecies, isPhenotypeSplitPack } from "@/genetics/registry";
+import {
+  buildGenotypeFromPhenotypeSplit,
+  parsePhenotypeSplitFromGenotype,
+  formatPhenotypeSplitDisplay,
+} from "@/genetics/phenotypeSplit";
+import { PhenotypeSplitGeneticsCard } from "@/components/birds/PhenotypeSplitGeneticsCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
 import { ArrowLeft, Bird, Calendar, Tag, Dna, GitBranch, Users, CalendarDays, CheckCircle2, Circle, Heart, Home, Pencil, Plus, Trash2, Trophy } from "lucide-react";
@@ -321,6 +328,7 @@ export default function BirdDetail() {
   const [activeGeneticsPacks] = useState<string[]>(() => readActiveGeneticsPacks());
   const [birdGenotype, setBirdGenotype] = useState<BirdGenotype>({});
   const [traitSelections, setTraitSelections] = useState<Record<string, { colour: string; splitTo: string }>>({});
+  const [phenotypeSplitSel, setPhenotypeSplitSel] = useState<PhenotypeSplitSelection>({ phenotypes: [], splits: [], notes: "" });
 
   const { data: bird, isLoading } = trpc.birds.get.useQuery({ id: birdId });
   const utils = trpc.useUtils();
@@ -467,10 +475,10 @@ export default function BirdDetail() {
 
   const speciesMap = Object.fromEntries(speciesList.map(s => [s.id, s]));
   const species = bird ? speciesMap[bird.speciesId] : undefined;
-  const showGeneticsTab =
-    isPro &&
-    activeGeneticsPacks.includes(gouldianFinchPack.speciesId) &&
-    /gouldian/i.test(species?.commonName ?? "");
+  const activePack = isPro ? findActivePackForSpecies(species?.commonName, activeGeneticsPacks) : undefined;
+  const showGeneticsTab = !!activePack;
+  const isPhenotypeSplit = !!activePack && isPhenotypeSplitPack(activePack);
+  const isTraitGenetics = showGeneticsTab && !isPhenotypeSplit;
 
   useEffect(() => {
     let g: BirdGenotype = {};
@@ -480,11 +488,16 @@ export default function BirdDetail() {
     if (!Object.keys(g).length) g = readBirdGenotype(birdId);
     setBirdGenotype(g);
     setTraitSelections(parseSelectionsFromGenotype(g, gouldianFinchPack));
-  }, [birdId, bird?.genotype]);
+    setPhenotypeSplitSel(
+      activePack && isPhenotypeSplitPack(activePack)
+        ? parsePhenotypeSplitFromGenotype(g, activePack)
+        : { phenotypes: [], splits: [], notes: "" }
+    );
+  }, [birdId, bird?.genotype, activePack?.speciesId]);
 
   const phenotypeSummary = useMemo(
-    () => bird && showGeneticsTab ? describeVisualPhenotype(bird.gender, birdGenotype, gouldianFinchPack) : [],
-    [bird, birdGenotype, showGeneticsTab]
+    () => bird && isTraitGenetics ? describeVisualPhenotype(bird.gender, birdGenotype, gouldianFinchPack) : [],
+    [bird, birdGenotype, isTraitGenetics]
   );
 
   const relevantPairIds = new Set(
@@ -578,7 +591,9 @@ export default function BirdDetail() {
     sold: "Sold",
     unknown: "Unknown",
   }[bird.status] ?? bird.status;
-  const mutationRows = showGeneticsTab
+  const mutationRows = isPhenotypeSplit
+    ? (bird.colorMutation ? [{ label: "MUTATION", value: bird.colorMutation }] : [])
+    : isTraitGenetics
     ? gouldianFinchPack.traits.flatMap((trait) => {
         const sel = traitSelections[trait.traitName] ?? { colour: "", splitTo: "" };
         const colourMutation = trait.mutations.find(m => m.id === sel.colour);
@@ -1150,6 +1165,24 @@ export default function BirdDetail() {
 
           {showGeneticsTab && (
             <TabsContent value="genetics">
+              {isPhenotypeSplit && activePack && isPhenotypeSplitPack(activePack) ? (
+                <PhenotypeSplitGeneticsCard
+                  pack={activePack}
+                  size="md"
+                  value={phenotypeSplitSel}
+                  onChange={(next) => {
+                    setPhenotypeSplitSel(next);
+                    const g = buildGenotypeFromPhenotypeSplit(next, activePack);
+                    setBirdGenotype(g);
+                    const display = formatPhenotypeSplitDisplay(next, activePack);
+                    updateBird.mutate({
+                      id: birdId,
+                      genotype: JSON.stringify(g),
+                      colorMutation: display || undefined,
+                    });
+                  }}
+                />
+              ) : (
               <div className="space-y-4">
                 {(() => {
                   const display = formatGeneticsDisplay(traitSelections, gouldianFinchPack);
@@ -1234,6 +1267,7 @@ export default function BirdDetail() {
                   </CardContent>
                 </Card>
               </div>
+              )}
             </TabsContent>
           )}
         </Tabs>

@@ -23,8 +23,15 @@ import { Controller } from "react-hook-form";
 import { useBirdForm, type BirdFormData } from "@/hooks/useBirdForm";
 import { GenderIcon } from "@/components/ui/GenderIcon";
 import { gouldianFinchPack } from "@/genetics/packs/gouldianFinch";
-import { GenotypeState, InheritanceType, type BirdGenotype } from "@/genetics/types";
+import { GenotypeState, InheritanceType, type BirdGenotype, type PhenotypeSplitSelection } from "@/genetics/types";
 import { readBirdGenotype, formatGeneticsDisplay } from "@/genetics/storage";
+import { findActivePackForSpecies, isPhenotypeSplitPack } from "@/genetics/registry";
+import {
+    buildGenotypeFromPhenotypeSplit,
+    parsePhenotypeSplitFromGenotype,
+    formatPhenotypeSplitDisplay,
+} from "@/genetics/phenotypeSplit";
+import { PhenotypeSplitGeneticsCard } from "@/components/birds/PhenotypeSplitGeneticsCard";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
@@ -130,10 +137,27 @@ export function BirdFormModal({
     const [traitSelections, setTraitSelections] = useState<Record<string, { colour: string; splitTo: string }>>(() =>
         parseSelectionsFromGenotype(getBirdGenotype(initialBird, editingId), gouldianFinchPack)
     );
+    const [phenotypeSplitSel, setPhenotypeSplitSel] = useState<PhenotypeSplitSelection>(
+        () => ({ phenotypes: [], splits: [], notes: "" })
+    );
+
+    /** Resolve the active genetics pack for a species (Pro only). */
+    const resolveActivePack = (speciesId?: string) => {
+        if (!isPro) return undefined;
+        const species = speciesList.find(s => String(s.id) === speciesId);
+        return findActivePackForSpecies(species?.commonName, activeGeneticsPacks);
+    };
 
     // Reset selections when dialog opens/closes or editing target changes
     useEffect(() => {
-        setTraitSelections(parseSelectionsFromGenotype(getBirdGenotype(initialBird, editingId), gouldianFinchPack));
+        const genotype = getBirdGenotype(initialBird, editingId);
+        setTraitSelections(parseSelectionsFromGenotype(genotype, gouldianFinchPack));
+        const pack = resolveActivePack(String(initialBird?.speciesId ?? ""));
+        setPhenotypeSplitSel(
+            pack && isPhenotypeSplitPack(pack)
+                ? parsePhenotypeSplitFromGenotype(genotype, pack)
+                : { phenotypes: [], splits: [], notes: "" }
+        );
     }, [editingId, open, initialBird]);
 
     // ── Crop state ────────────────────────────────────────────────────────────
@@ -394,8 +418,16 @@ export function BirdFormModal({
                         </DialogHeader>
 
                         <form onSubmit={form.handleSubmit((data) => {
-                            const genotype = buildGenotypeFromSelections(traitSelections, gouldianFinchPack);
-                            const geneticsDisplay = formatGeneticsDisplay(traitSelections, gouldianFinchPack);
+                            const activePack = resolveActivePack(data.speciesId);
+                            let genotype: BirdGenotype;
+                            let geneticsDisplay: string;
+                            if (activePack && isPhenotypeSplitPack(activePack)) {
+                                genotype = buildGenotypeFromPhenotypeSplit(phenotypeSplitSel, activePack);
+                                geneticsDisplay = formatPhenotypeSplitDisplay(phenotypeSplitSel, activePack);
+                            } else {
+                                genotype = buildGenotypeFromSelections(traitSelections, gouldianFinchPack);
+                                geneticsDisplay = formatGeneticsDisplay(traitSelections, gouldianFinchPack);
+                            }
                             if (geneticsDisplay) data.colorMutation = geneticsDisplay;
                             onSubmit(data, genotype);
                         })} className="space-y-4 py-2">
@@ -674,13 +706,20 @@ export function BirdFormModal({
                                     />
                                 </div>
 
-                                {/* Genetics section — only for Gouldian Finch + Pro users with pack active */}
+                                {/* Genetics section — Pro users with a matching pack active for the species */}
                                 {(() => {
-                                    const selectedSpeciesId = form.watch("speciesId");
-                                    const selectedSpecies = speciesList.find(s => String(s.id) === selectedSpeciesId);
-                                    const isGouldian = /gouldian/i.test(selectedSpecies?.commonName ?? "");
-                                    const showGenetics = isPro && activeGeneticsPacks.includes(gouldianFinchPack.speciesId) && isGouldian;
-                                    if (!showGenetics) return null;
+                                    const activePack = resolveActivePack(form.watch("speciesId"));
+                                    if (!activePack) return null;
+                                    if (isPhenotypeSplitPack(activePack)) {
+                                        return (
+                                            <PhenotypeSplitGeneticsCard
+                                                className="col-span-2"
+                                                pack={activePack}
+                                                value={phenotypeSplitSel}
+                                                onChange={setPhenotypeSplitSel}
+                                            />
+                                        );
+                                    }
                                     return (
                                         <div className="col-span-2 rounded-xl border border-teal-200 bg-teal-50/50 p-4 space-y-4">
                                             <div className="flex items-center gap-2">
