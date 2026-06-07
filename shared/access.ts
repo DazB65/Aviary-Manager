@@ -11,16 +11,30 @@ export type ProAccessUser = {
   role?: string | null;
   plan?: string | null;
   planExpiresAt?: Date | string | number | null;
+  /** Admin-granted Pro access until this date, independent of the paid plan. */
+  compedProUntil?: Date | string | number | null;
   createdAt: Date | string | number;
 };
 
 /**
+ * True when an admin has comped this account Pro access through a future date.
+ * Independent of the user's paid plan and Stripe billing — they keep their
+ * existing subscription, this just unlocks Pro features for the comped window.
+ */
+export function isCompedPro(user: ProAccessUser | null | undefined): boolean {
+  if (!user?.compedProUntil) return false;
+  return new Date(user.compedProUntil).getTime() > Date.now();
+}
+
+/**
  * Mirrors the server's requirePro middleware: admins and pro subscribers always
- * pass; free accounts pass while their trial is active; everyone else is blocked.
+ * pass; comped accounts pass while their comp is active; free accounts pass
+ * while their trial is active; everyone else is blocked.
  */
 export function hasProAccess(user: ProAccessUser | null | undefined): boolean {
   if (!user) return false;
   if (user.role === "admin" || user.plan === "pro") return true;
+  if (isCompedPro(user)) return true;
   if (user.plan === "free") {
     const end = trialEndsAt(user);
     return end != null && end.getTime() > Date.now();

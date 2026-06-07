@@ -14,11 +14,12 @@ import { BirdFormModal } from "@/components/birds/BirdFormModal";
 import { GenderIcon } from "@/components/ui/GenderIcon";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useGeneticsPacks } from "@/genetics/useGeneticsPacks";
+import { isCompedPro } from "@shared/access";
 import type { BirdGenotype } from "@/genetics/types";
 
 export default function Birds() {
   const { user } = useAuth();
-  const isPro = user?.plan === "pro" || user?.role === "admin";
+  const isPro = user?.plan === "pro" || user?.role === "admin" || isCompedPro(user);
   const { activePackIds: activeGeneticsPacks } = useGeneticsPacks();
   const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
     try { return (localStorage.getItem("birds-view-mode") as "grid" | "list") || "grid"; } catch { return "grid"; }

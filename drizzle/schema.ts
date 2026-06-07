@@ -40,6 +40,10 @@ export const users = pgTable("users", {
   stripeCustomerId: varchar("stripeCustomerId", { length: 128 }),
   stripeSubscriptionId: varchar("stripeSubscriptionId", { length: 128 }),
   planExpiresAt: timestamp("planExpiresAt"),
+  // Admin-granted Pro access until this date, independent of Stripe billing.
+  // The user keeps paying their existing sub; this just unlocks Pro features and
+  // is NOT overwritten by Stripe webhooks (which only touch `plan`).
+  compedProUntil: timestamp("compedProUntil"),
   role: roleEnum("role").default("user").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),

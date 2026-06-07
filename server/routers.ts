@@ -850,6 +850,12 @@ export const appRouter = router({
     setPlan: adminProcedure
       .input(z.object({ userId: z.number(), plan: z.enum(["starter", "pro"]) }))
       .mutation(({ input }) => UserService.setUserPlan(input.userId, input.plan)),
+    setCompedPro: adminProcedure
+      // `until` is an ISO date string (Pro through that day) or null to clear the comp.
+      .input(z.object({ userId: z.number(), until: z.string().datetime().nullable() }))
+      .mutation(({ input }) =>
+        UserService.setUserCompedProUntil(input.userId, input.until ? new Date(input.until) : null),
+      ),
     deleteUser: adminProcedure
       .input(z.object({ userId: z.number() }))
       .mutation(({ ctx, input }) => {

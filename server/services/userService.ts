@@ -28,6 +28,7 @@ export class UserService {
             email: users.email,
             plan: users.plan,
             planExpiresAt: users.planExpiresAt,
+            compedProUntil: users.compedProUntil,
             role: users.role,
             createdAt: users.createdAt,
             lastSignedIn: users.lastSignedIn,
@@ -53,6 +54,17 @@ export class UserService {
         const db = getDb();
         if (!db) throw new Error("DB unavailable");
         await db.update(users).set({ plan }).where(eq(users.id, userId));
+    }
+
+    /**
+     * Grant (or clear) admin-comped Pro access until a date. Pass null to remove
+     * the comp. Does not touch the user's Stripe subscription or `plan` — they
+     * keep paying their existing sub; this only unlocks Pro features.
+     */
+    static async setUserCompedProUntil(userId: number, until: Date | null) {
+        const db = getDb();
+        if (!db) throw new Error("DB unavailable");
+        await db.update(users).set({ compedProUntil: until }).where(eq(users.id, userId));
     }
 
     static async setUserRole(userId: number, role: "user" | "admin") {

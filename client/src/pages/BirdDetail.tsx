@@ -25,7 +25,7 @@ import { PhenotypeSplitGeneticsCard } from "@/components/birds/PhenotypeSplitGen
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
 import { ArrowLeft, Bird, Calendar, Tag, Dna, GitBranch, Users, CalendarDays, CheckCircle2, Circle, Heart, Home, Pencil, Plus, Trash2, Trophy } from "lucide-react";
-import { hasProAccess } from "@shared/access";
+import { hasProAccess, isCompedPro } from "@shared/access";
 import { BirdFormModal } from "@/components/birds/BirdFormModal";
 import { BirdEventCalendar } from "@/components/birds/BirdEventCalendar";
 import { EventFormModal } from "@/components/events/EventFormModal";
@@ -323,7 +323,7 @@ export default function BirdDetail() {
   const [editOpen, setEditOpen] = useState(false);
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
-  const isPro = user?.plan === "pro" || isAdmin;
+  const isPro = user?.plan === "pro" || isAdmin || isCompedPro(user);
   const canUseShows = hasProAccess(user);
   const maxGenerations = 4;
   const { activePackIds: activeGeneticsPacks } = useGeneticsPacks();

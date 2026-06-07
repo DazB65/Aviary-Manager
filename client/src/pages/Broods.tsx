@@ -19,11 +19,12 @@ import type { BroodFormData } from "@/hooks/useBroodForm";
 import type { BirdFormData } from "@/hooks/useBirdForm";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useGeneticsPacks } from "@/genetics/useGeneticsPacks";
+import { isCompedPro } from "@shared/access";
 import type { BirdGenotype } from "@/genetics/types";
 
 export default function Broods() {
   const { user } = useAuth();
-  const isPro = user?.plan === "pro" || user?.role === "admin";
+  const isPro = user?.plan === "pro" || user?.role === "admin" || isCompedPro(user);
   const { activePackIds: activeGeneticsPacks } = useGeneticsPacks();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);

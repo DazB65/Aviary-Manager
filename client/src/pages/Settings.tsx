@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useGeneticsPacks } from "@/genetics/useGeneticsPacks";
+import { isCompedPro } from "@shared/access";
 import { trpc } from "@/lib/trpc";
 import { CalendarDays, Check, Dna, Download, Settings as SettingsIcon, Star, X } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -15,7 +16,7 @@ import { toast } from "sonner";
 export default function Settings() {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
-  const isPro = user?.plan === "pro" || isAdmin;
+  const isPro = user?.plan === "pro" || isAdmin || isCompedPro(user);
   const utils = trpc.useUtils();
   const { data: speciesList = [], isLoading: loadingSpecies } = trpc.species.list.useQuery();
   const { data: settings, isLoading: loadingSettings } = trpc.settings.get.useQuery();

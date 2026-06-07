@@ -1,146 +1,153 @@
 {
-  "version": "7",
-  "dialect": "postgresql",
-  "entries": [
-    {
-      "idx": 0,
-      "version": "7",
-      "when": 1772320105831,
-      "tag": "0000_sweet_tarot",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1772406522721,
-      "tag": "0001_real_galactus",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1772411579270,
-      "tag": "0002_clean_emma_frost",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1772936720865,
-      "tag": "0003_first_mindworm",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1772956220127,
-      "tag": "0004_marvelous_phantom_reporter",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1773007904524,
-      "tag": "0005_real_monster_badoon",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1773100000000,
-      "tag": "0006_add_missing_egg_outcome",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1773200000000,
-      "tag": "0007_add_missing_egg_outcome_fix",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1773300000000,
-      "tag": "0008_add_missing_outcome_final",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1773400000000,
-      "tag": "0009_add_abandoned_egg_outcome",
-      "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "7",
-      "when": 1773500000000,
-      "tag": "0010_add_abandoned_egg_outcome_fix",
-      "breakpoints": true
-    },
-    {
-      "idx": 11,
-      "version": "7",
-      "when": 1774335285679,
-      "tag": "0011_messy_serpent_society",
-      "breakpoints": true
-    },
-    {
-      "idx": 12,
-      "version": "7",
-      "when": 1775342386700,
-      "tag": "0012_add_starter_plan",
-      "breakpoints": true
-    },
-    {
-      "idx": 13,
-      "version": "7",
-      "when": 1775342386800,
-      "tag": "0013_add_indexes",
-      "breakpoints": true
-    },
-    {
-      "idx": 14,
-      "version": "7",
-      "when": 1775343791350,
-      "tag": "0014_add_bird_genotype",
-      "breakpoints": true
-    },
-    {
-      "idx": 15,
-      "version": "7",
-      "when": 1775344800000,
-      "tag": "0015_backfill_breeding_status",
-      "breakpoints": true
-    },
-    {
-      "idx": 16,
-      "version": "7",
-      "when": 1778371200000,
-      "tag": "0016_ai_copilot",
-      "breakpoints": true
-    },
-    {
-      "idx": 17,
-      "version": "7",
-      "when": 1778374800000,
-      "tag": "0017_ai_saved_notes",
-      "breakpoints": true
-    },
-    {
-      "idx": 18,
-      "version": "7",
-      "when": 1778378400000,
-      "tag": "0018_add_aviary_name",
-      "breakpoints": true
-    },
-    {
-      "idx": 19,
-      "version": "7",
-      "when": 1780970400000,
-      "tag": "0019_add_shows",
-      "breakpoints": true
-    }
-  ]
+	"version": "7",
+	"dialect": "postgresql",
+	"entries": [
+		{
+			"idx": 0,
+			"version": "7",
+			"when": 1772320105831,
+			"tag": "0000_sweet_tarot",
+			"breakpoints": true
+		},
+		{
+			"idx": 1,
+			"version": "7",
+			"when": 1772406522721,
+			"tag": "0001_real_galactus",
+			"breakpoints": true
+		},
+		{
+			"idx": 2,
+			"version": "7",
+			"when": 1772411579270,
+			"tag": "0002_clean_emma_frost",
+			"breakpoints": true
+		},
+		{
+			"idx": 3,
+			"version": "7",
+			"when": 1772936720865,
+			"tag": "0003_first_mindworm",
+			"breakpoints": true
+		},
+		{
+			"idx": 4,
+			"version": "7",
+			"when": 1772956220127,
+			"tag": "0004_marvelous_phantom_reporter",
+			"breakpoints": true
+		},
+		{
+			"idx": 5,
+			"version": "7",
+			"when": 1773007904524,
+			"tag": "0005_real_monster_badoon",
+			"breakpoints": true
+		},
+		{
+			"idx": 6,
+			"version": "7",
+			"when": 1773100000000,
+			"tag": "0006_add_missing_egg_outcome",
+			"breakpoints": true
+		},
+		{
+			"idx": 7,
+			"version": "7",
+			"when": 1773200000000,
+			"tag": "0007_add_missing_egg_outcome_fix",
+			"breakpoints": true
+		},
+		{
+			"idx": 8,
+			"version": "7",
+			"when": 1773300000000,
+			"tag": "0008_add_missing_outcome_final",
+			"breakpoints": true
+		},
+		{
+			"idx": 9,
+			"version": "7",
+			"when": 1773400000000,
+			"tag": "0009_add_abandoned_egg_outcome",
+			"breakpoints": true
+		},
+		{
+			"idx": 10,
+			"version": "7",
+			"when": 1773500000000,
+			"tag": "0010_add_abandoned_egg_outcome_fix",
+			"breakpoints": true
+		},
+		{
+			"idx": 11,
+			"version": "7",
+			"when": 1774335285679,
+			"tag": "0011_messy_serpent_society",
+			"breakpoints": true
+		},
+		{
+			"idx": 12,
+			"version": "7",
+			"when": 1775342386700,
+			"tag": "0012_add_starter_plan",
+			"breakpoints": true
+		},
+		{
+			"idx": 13,
+			"version": "7",
+			"when": 1775342386800,
+			"tag": "0013_add_indexes",
+			"breakpoints": true
+		},
+		{
+			"idx": 14,
+			"version": "7",
+			"when": 1775343791350,
+			"tag": "0014_add_bird_genotype",
+			"breakpoints": true
+		},
+		{
+			"idx": 15,
+			"version": "7",
+			"when": 1775344800000,
+			"tag": "0015_backfill_breeding_status",
+			"breakpoints": true
+		},
+		{
+			"idx": 16,
+			"version": "7",
+			"when": 1778371200000,
+			"tag": "0016_ai_copilot",
+			"breakpoints": true
+		},
+		{
+			"idx": 17,
+			"version": "7",
+			"when": 1778374800000,
+			"tag": "0017_ai_saved_notes",
+			"breakpoints": true
+		},
+		{
+			"idx": 18,
+			"version": "7",
+			"when": 1778378400000,
+			"tag": "0018_add_aviary_name",
+			"breakpoints": true
+		},
+		{
+			"idx": 19,
+			"version": "7",
+			"when": 1780970400000,
+			"tag": "0019_add_shows",
+			"breakpoints": true
+		},
+		{
+			"idx": 20,
+			"version": "7",
+			"when": 1780970400001,
+			"tag": "0020_add_comped_pro_until",
+			"breakpoints": true
+		}
+	]
 }

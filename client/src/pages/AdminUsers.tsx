@@ -10,7 +10,8 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { useMemo, useState } from "react";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../server/routers";
-import { trialEndsAt } from "@shared/access";
+import { trialEndsAt, isCompedPro } from "@shared/access";
+import { Input } from "@/components/ui/input";
 
 type SortKey = "name" | "email" | "plan" | "role" | "joined" | "lastSeen" | "chatToday" | "model";
 type SortDirection = "asc" | "desc";
@@ -54,6 +55,19 @@ export default function AdminUsers() {
     onSuccess: () => { utils.admin.users.invalidate(); toast.success("Plan updated!"); },
     onError: (e) => toast.error(e.message),
   });
+  const [compDates, setCompDates] = useState<Record<number, string>>({});
+  const setCompedPro = trpc.admin.setCompedPro.useMutation({
+    onSuccess: () => { utils.admin.users.invalidate(); toast.success("Pro comp updated!"); },
+    onError: (e) => toast.error(e.message),
+  });
+  const applyComp = (userId: number) => {
+    const dateStr = compDates[userId];
+    if (!dateStr) { toast.error("Pick a date first."); return; }
+    // Comp through the end of the chosen day (local), sent as an ISO datetime.
+    const until = new Date(`${dateStr}T23:59:59`);
+    if (isNaN(until.getTime())) { toast.error("Invalid date."); return; }
+    setCompedPro.mutate({ userId, until: until.toISOString() });
+  };
   const deleteUser = trpc.admin.deleteUser.useMutation({
     onSuccess: () => { utils.admin.users.invalidate(); toast.success("User deleted."); },
     onError: (e) => toast.error(e.message),
@@ -311,7 +325,14 @@ export default function AdminUsers() {
                           <td className="px-3 py-2 font-medium whitespace-nowrap">{u.name || "—"}</td>
                           <td className="px-3 py-2 text-muted-foreground max-w-[160px] truncate">{u.email}</td>
                           <td className="px-3 py-2">
-                            <PlanBadge user={u} />
+                            <div className="flex flex-col items-start gap-1">
+                              <PlanBadge user={u} />
+                              {isCompedPro(u) && (
+                                <Badge className="text-xs bg-violet-100 text-violet-800 border-violet-200 whitespace-nowrap">
+                                  Pro comp · {format(new Date(u.compedProUntil!), "d MMM yy")}
+                                </Badge>
+                              )}
+                            </div>
                           </td>
                           <td className="px-3 py-2">
                             {u.role === "admin" ? (
@@ -353,6 +374,33 @@ export default function AdminUsers() {
                               >
                                 {u.plan === "pro" ? "→ Starter" : "→ Pro"}
                               </Button>
+                              <Input
+                                type="date"
+                                value={compDates[u.id] ?? ""}
+                                onChange={(e) => setCompDates((prev) => ({ ...prev, [u.id]: e.target.value }))}
+                                className="h-7 w-[130px] text-xs"
+                                title="Grant Pro access until this date (billing unchanged)"
+                              />
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-xs h-7 whitespace-nowrap"
+                                disabled={setCompedPro.isPending || !compDates[u.id]}
+                                onClick={() => applyComp(u.id)}
+                              >
+                                Comp Pro
+                              </Button>
+                              {isCompedPro(u) && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="text-xs h-7 whitespace-nowrap text-muted-foreground"
+                                  disabled={setCompedPro.isPending}
+                                  onClick={() => setCompedPro.mutate({ userId: u.id, until: null })}
+                                >
+                                  Clear comp
+                                </Button>
+                              )}
                               {u.id !== me?.id && (
                                 <>
                                   <Button

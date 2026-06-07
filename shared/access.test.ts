@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hasProAccess, trialEndsAt, TRIAL_DAYS } from "./access";
+import { hasProAccess, isCompedPro, trialEndsAt, TRIAL_DAYS } from "./access";
 
 const DAY = 24 * 60 * 60 * 1000;
 const ago = (days: number) => new Date(Date.now() - days * DAY);
@@ -33,6 +33,26 @@ describe("hasProAccess", () => {
   it("returns false for null/undefined users", () => {
     expect(hasProAccess(null)).toBe(false);
     expect(hasProAccess(undefined)).toBe(false);
+  });
+
+  it("grants a comped starter user while the comp is active, without changing their plan", () => {
+    expect(hasProAccess({ plan: "starter", compedProUntil: ahead(10), createdAt: ago(90) })).toBe(true);
+  });
+
+  it("does not grant a comped user once the comp date has passed", () => {
+    expect(hasProAccess({ plan: "starter", compedProUntil: ago(1), createdAt: ago(90) })).toBe(false);
+  });
+});
+
+describe("isCompedPro", () => {
+  it("is true only while compedProUntil is in the future", () => {
+    expect(isCompedPro({ plan: "starter", compedProUntil: ahead(1), createdAt: ago(1) })).toBe(true);
+    expect(isCompedPro({ plan: "starter", compedProUntil: ago(1), createdAt: ago(1) })).toBe(false);
+  });
+
+  it("is false when no comp is set", () => {
+    expect(isCompedPro({ plan: "starter", createdAt: ago(1) })).toBe(false);
+    expect(isCompedPro(null)).toBe(false);
   });
 });
 
