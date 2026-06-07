@@ -18,13 +18,13 @@ import { BirdFormModal } from "@/components/birds/BirdFormModal";
 import type { BroodFormData } from "@/hooks/useBroodForm";
 import type { BirdFormData } from "@/hooks/useBirdForm";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { readActiveGeneticsPacks } from "@/genetics/storage";
+import { useGeneticsPacks } from "@/genetics/useGeneticsPacks";
 import type { BirdGenotype } from "@/genetics/types";
 
 export default function Broods() {
   const { user } = useAuth();
   const isPro = user?.plan === "pro" || user?.role === "admin";
-  const activeGeneticsPacks = readActiveGeneticsPacks();
+  const { activePackIds: activeGeneticsPacks } = useGeneticsPacks();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingBrood, setEditingBrood] = useState<any>(null);

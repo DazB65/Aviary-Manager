@@ -2,7 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { calculateOffspringProbabilities } from "@/genetics/engine";
 import { gouldianFinchPack } from "@/genetics/packs/gouldianFinch";
 import type { BirdGenotype, GeneticsPack, OffspringProbability } from "@/genetics/types";
-import { readActiveGeneticsPacks } from "@/genetics/useGeneticsPacks";
+import { useGeneticsPacks } from "@/genetics/useGeneticsPacks";
 import { Dna } from "lucide-react";
 import { useMemo } from "react";
 
@@ -81,9 +81,10 @@ function parseBirdGenotype(bird?: PairBird): BirdGenotype | null {
 export function PredictedOffspringSection({ male, female }: { male?: PairBird; female?: PairBird }) {
   const { user } = useAuth();
   const isPro = user?.plan === "pro" || user?.role === "admin";
+  const { activePackIds } = useGeneticsPacks();
   const showPredictedOffspring = useMemo(
-    () => isPro && readActiveGeneticsPacks().includes(gouldianFinchPack.speciesId),
-    [isPro]
+    () => isPro && activePackIds.includes(gouldianFinchPack.speciesId),
+    [isPro, activePackIds]
   );
 
   const maleGenotype = useMemo(() => parseBirdGenotype(male), [male?.id, male?.genotype]);

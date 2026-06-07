@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { ALL_GENETICS_PACKS } from "@/genetics/registry";
 import { useGeneticsPacks } from "@/genetics/useGeneticsPacks";
 import { trpc } from "@/lib/trpc";
 import { CalendarDays, Check, Dna, Download, Settings as SettingsIcon, Star, X } from "lucide-react";
@@ -20,7 +19,7 @@ export default function Settings() {
   const utils = trpc.useUtils();
   const { data: speciesList = [], isLoading: loadingSpecies } = trpc.species.list.useQuery();
   const { data: settings, isLoading: loadingSettings } = trpc.settings.get.useQuery();
-  const { isPackActive, setPackActive } = useGeneticsPacks();
+  const { isPackActive, setPackActive, availablePacks } = useGeneticsPacks();
 
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [defaultId, setDefaultId] = useState<number | null>(null);
@@ -197,11 +196,16 @@ export default function Settings() {
                 <CardTitle className="font-display text-lg">Genetics Packs</CardTitle>
               </div>
               <CardDescription>
-                Activate species-specific genetics tools on this device. Your selections are saved in this browser.
+                Packs unlock automatically for the species in your My Species list below. You can switch any pack off here.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              {ALL_GENETICS_PACKS.map((pack) => {
+              {availablePacks.length === 0 && (
+                <div className="rounded-xl border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">
+                  No genetics packs yet. Add a species we support (e.g. Gouldian Finch or Zebra Finch) to your My Species list and its pack will appear here automatically.
+                </div>
+              )}
+              {availablePacks.map((pack) => {
                 const active = isPackActive(pack.speciesId);
                 return (
                   <div key={pack.speciesId} className="rounded-xl border border-border bg-muted/20 p-4">

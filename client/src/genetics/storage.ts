@@ -1,16 +1,5 @@
 import { GenotypeState, type BirdGenotype, type GeneticsPack } from "./types";
 
-const ACTIVE_GENETICS_PACKS_KEY = "activeGeneticsPacks";
-
-export function readActiveGeneticsPacks(): string[] {
-  try {
-    const stored = localStorage.getItem(ACTIVE_GENETICS_PACKS_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
-}
-
 export function readBirdGenotype(birdId: number): BirdGenotype {
   try {
     const storedValue = localStorage.getItem(`birdGenetics_${birdId}`);

@@ -13,13 +13,13 @@ import { BirdList } from "@/components/birds/BirdList";
 import { BirdFormModal } from "@/components/birds/BirdFormModal";
 import { GenderIcon } from "@/components/ui/GenderIcon";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { readActiveGeneticsPacks } from "@/genetics/storage";
+import { useGeneticsPacks } from "@/genetics/useGeneticsPacks";
 import type { BirdGenotype } from "@/genetics/types";
 
 export default function Birds() {
   const { user } = useAuth();
   const isPro = user?.plan === "pro" || user?.role === "admin";
-  const activeGeneticsPacks = readActiveGeneticsPacks();
+  const { activePackIds: activeGeneticsPacks } = useGeneticsPacks();
   const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
     try { return (localStorage.getItem("birds-view-mode") as "grid" | "list") || "grid"; } catch { return "grid"; }
   });

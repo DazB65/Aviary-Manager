@@ -12,7 +12,8 @@ import {
 } from "@/components/ui/select";
 import { describeVisualPhenotype } from "@/genetics/engine";
 import { gouldianFinchPack } from "@/genetics/packs/gouldianFinch";
-import { readActiveGeneticsPacks, readBirdGenotype, formatGeneticsDisplay } from "@/genetics/storage";
+import { readBirdGenotype, formatGeneticsDisplay } from "@/genetics/storage";
+import { useGeneticsPacks } from "@/genetics/useGeneticsPacks";
 import { GenotypeState, InheritanceType, type BirdGenotype, type PhenotypeSplitSelection } from "@/genetics/types";
 import { findActivePackForSpecies, isPhenotypeSplitPack } from "@/genetics/registry";
 import {
@@ -325,7 +326,7 @@ export default function BirdDetail() {
   const isPro = user?.plan === "pro" || isAdmin;
   const canUseShows = hasProAccess(user);
   const maxGenerations = 4;
-  const [activeGeneticsPacks] = useState<string[]>(() => readActiveGeneticsPacks());
+  const { activePackIds: activeGeneticsPacks } = useGeneticsPacks();
   const [birdGenotype, setBirdGenotype] = useState<BirdGenotype>({});
   const [traitSelections, setTraitSelections] = useState<Record<string, { colour: string; splitTo: string }>>({});
   const [phenotypeSplitSel, setPhenotypeSplitSel] = useState<PhenotypeSplitSelection>({ phenotypes: [], splits: [], notes: "" });
