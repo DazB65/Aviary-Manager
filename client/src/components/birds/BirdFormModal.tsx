@@ -16,7 +16,8 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Dna, Loader2, Upload } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Dna, Loader2, Trophy, Upload } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 import { Controller } from "react-hook-form";
 import { useBirdForm, type BirdFormData } from "@/hooks/useBirdForm";
@@ -769,6 +770,37 @@ export function BirdFormModal({
                                         placeholder="Any additional notes..."
                                         {...form.register("notes")}
                                         rows={2}
+                                    />
+                                </div>
+
+                                {/* Shows / exhibition toggle — Pro feature */}
+                                <div className="col-span-2">
+                                    <Controller
+                                        control={form.control}
+                                        name="showsEnabled"
+                                        render={({ field }) => (
+                                            <label className={`flex items-start gap-3 rounded-xl border p-3 ${isPro ? "cursor-pointer border-border hover:bg-muted/40" : "cursor-not-allowed border-dashed border-border bg-muted/30"}`}>
+                                                <input
+                                                    type="checkbox"
+                                                    className="mt-0.5 h-4 w-4 rounded"
+                                                    checked={Boolean(field.value)}
+                                                    disabled={!isPro}
+                                                    onChange={(e) => field.onChange(e.target.checked)}
+                                                />
+                                                <span className="flex-1">
+                                                    <span className="flex items-center gap-2 text-sm font-semibold">
+                                                        <Trophy className="h-4 w-4 text-amber-500" />
+                                                        This bird is shown / exhibited
+                                                        {!isPro && (
+                                                            <Badge className="h-4 px-1 py-0 text-[10px] bg-yellow-400 text-yellow-900 hover:bg-yellow-400">Pro</Badge>
+                                                        )}
+                                                    </span>
+                                                    <span className="mt-0.5 block text-xs text-muted-foreground">
+                                                        Adds a Shows tab to this bird for logging show dates, venues, groups and results.
+                                                    </span>
+                                                </span>
+                                            </label>
+                                        )}
                                     />
                                 </div>
                             </div>

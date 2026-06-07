@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { hasProAccess } from "@shared/access";
-import { BarChart2, Bird, Egg, FileDown, Sparkles, TrendingUp } from "lucide-react";
+import { summariseShowResults } from "@shared/showResult";
+import { BarChart2, Bird, Egg, FileDown, Sparkles, TrendingUp, Trophy } from "lucide-react";
 import { GenderIcon } from "@/components/ui/GenderIcon";
 import { useState } from "react";
 import { useLocation } from "wouter";
@@ -30,6 +31,8 @@ export default function Statistics() {
 
   const { user } = useAuth();
   const isPro = hasProAccess(user);
+  const { data: shows = [] } = trpc.shows.list.useQuery(undefined, { enabled: isPro });
+  const showSummary = summariseShowResults(shows);
   const [, navigate] = useLocation();
   const [downloading, setDownloading] = useState(false);
   const seasonYear = settings?.breedingYear ?? new Date().getFullYear();
@@ -262,6 +265,41 @@ export default function Statistics() {
               <StatBlock label="Unhatched" value={totalEggs - totalHatched} />
               <StatBlock label="Hatch Rate" value={`${overallHatchRate}%`} />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Shows & exhibitions — Pro */}
+        <Card className="border border-border shadow-card">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <Trophy className="h-4 w-4 text-amber-500" />
+              Shows & Exhibitions
+              {!isPro && (
+                <Badge className="ml-1 h-4 px-1 py-0 text-[10px] bg-yellow-400 text-yellow-900 hover:bg-yellow-400">
+                  Pro
+                </Badge>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {!isPro ? (
+              <div className="text-center py-6">
+                <p className="text-sm text-muted-foreground">Track show dates, venues, groups and results across your flock.</p>
+                <Button variant="outline" size="sm" className="mt-3" onClick={() => navigate("/billing")}>
+                  Upgrade to Pro
+                </Button>
+              </div>
+            ) : showSummary.totalShows === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">
+                No shows recorded yet. Enable “shown / exhibited” on a bird to start logging results.
+              </p>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <StatBlock label="Total Shows" value={showSummary.totalShows} />
+                <StatBlock label="Wins" value={showSummary.wins} sub="1st / Champion" />
+                <StatBlock label="Best Result" value={showSummary.bestResult ?? "—"} />
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

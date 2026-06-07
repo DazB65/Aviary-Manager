@@ -149,6 +149,7 @@ export default function Broods() {
       photoUrl: data.photoUrl || undefined,
       notes: data.notes || undefined,
       status: data.status,
+      showsEnabled: data.showsEnabled ?? false,
       fatherId: data.fatherId ? Number(data.fatherId) : undefined,
       motherId: data.motherId ? Number(data.motherId) : undefined,
       fromBroodId: birdFromEgg?.fromBroodId,

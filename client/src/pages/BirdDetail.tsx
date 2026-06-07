@@ -16,10 +16,14 @@ import { readActiveGeneticsPacks, readBirdGenotype, formatGeneticsDisplay } from
 import { GenotypeState, InheritanceType, type BirdGenotype } from "@/genetics/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Bird, Calendar, Tag, Dna, GitBranch, Users, CalendarDays, CheckCircle2, Circle, Heart, Home, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Bird, Calendar, Tag, Dna, GitBranch, Users, CalendarDays, CheckCircle2, Circle, Heart, Home, Pencil, Plus, Trash2, Trophy } from "lucide-react";
+import { hasProAccess } from "@shared/access";
 import { BirdFormModal } from "@/components/birds/BirdFormModal";
 import { BirdEventCalendar } from "@/components/birds/BirdEventCalendar";
 import { EventFormModal } from "@/components/events/EventFormModal";
+import { ShowFormModal } from "@/components/shows/ShowFormModal";
+import { useShows } from "@/hooks/useShows";
+import { type ShowFormData } from "@/hooks/useShowForm";
 import { EGG_OUTCOME_CONFIG } from "@/components/broods/constants";
 import { STATUS_STYLES, STATUS_LABELS } from "@/components/pairs/constants";
 import { useEffect, useMemo, useState } from "react";
@@ -312,6 +316,7 @@ export default function BirdDetail() {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
   const isPro = user?.plan === "pro" || isAdmin;
+  const canUseShows = hasProAccess(user);
   const maxGenerations = 4;
   const [activeGeneticsPacks] = useState<string[]>(() => readActiveGeneticsPacks());
   const [birdGenotype, setBirdGenotype] = useState<BirdGenotype>({});
@@ -347,6 +352,43 @@ export default function BirdDetail() {
     onSuccess: () => { utils.events.list.invalidate(); utils.dashboard.stats.invalidate(); },
     onError: (e) => toast.error(e.message),
   });
+
+  // ─── Shows / exhibitions (Pro, opt-in per bird) ────────────────────────────
+  const showsEnabled = Boolean((bird as any)?.showsEnabled);
+  const showsTabVisible = canUseShows && showsEnabled;
+  const { shows: allShows, createShow, updateShow, deleteShow } = useShows(showsTabVisible);
+  const birdShows = useMemo(
+    () => allShows
+      .filter((s: any) => s.birdId === birdId)
+      .sort((a: any, b: any) => {
+        const aDate = a.showDate ? new Date(String(a.showDate)).getTime() : 0;
+        const bDate = b.showDate ? new Date(String(b.showDate)).getTime() : 0;
+        return bDate - aDate;
+      }),
+    [allShows, birdId]
+  );
+  const [showDialogOpen, setShowDialogOpen] = useState(false);
+  const [editingShowId, setEditingShowId] = useState<number | null>(null);
+  const [editingShow, setEditingShow] = useState<any>(null);
+
+  const openAddShow = () => { setEditingShowId(null); setEditingShow(null); setShowDialogOpen(true); };
+  const openEditShow = (s: any) => { setEditingShowId(s.id); setEditingShow(s); setShowDialogOpen(true); };
+
+  const handleShowSubmit = (form: ShowFormData) => {
+    const payload = {
+      showDate: form.showDate,
+      venue: form.venue?.trim() || undefined,
+      species: form.species?.trim() || undefined,
+      showGroup: form.showGroup?.trim() || undefined,
+      result: form.result?.trim() || undefined,
+      notes: form.notes?.trim() || undefined,
+    };
+    if (editingShowId) {
+      updateShow.mutate({ id: editingShowId, ...payload }, { onSuccess: () => setShowDialogOpen(false) });
+    } else {
+      createShow.mutate({ birdId, ...payload }, { onSuccess: () => setShowDialogOpen(false) });
+    }
+  };
 
   const birdLabel = (b: any) => b?.name || b?.ringId || `#${b?.id}`;
   const pairLabel = (pair: any) => {
@@ -739,6 +781,12 @@ export default function BirdDetail() {
               <CalendarDays className="h-4 w-4" /> Events
               {birdEvents.length > 0 && <Badge variant="secondary" className="ml-1 text-xs">{birdEvents.length}</Badge>}
             </TabsTrigger>
+            {showsTabVisible && (
+              <TabsTrigger value="shows" className="gap-2 text-sm px-4 rounded-lg h-9">
+                <Trophy className="h-4 w-4" /> Shows
+                {birdShows.length > 0 && <Badge variant="secondary" className="ml-1 text-xs">{birdShows.length}</Badge>}
+              </TabsTrigger>
+            )}
             {showGeneticsTab && (
               <TabsTrigger value="genetics" className="gap-2 text-sm px-4 rounded-lg h-9">
                 <Dna className="h-4 w-4" /> Genetics
@@ -1022,6 +1070,84 @@ export default function BirdDetail() {
             </Card>
           </TabsContent>
 
+          {/* Shows Tab */}
+          {showsTabVisible && (
+            <TabsContent value="shows">
+              <Card className="border border-border shadow-card">
+                <CardHeader className="pb-3 pt-5 px-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <CardTitle className="flex items-center gap-2 text-xl font-bold">
+                        <Trophy className="h-5 w-5 text-amber-500" />
+                        Shows & Exhibitions
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground mt-1">A log of this bird's show appearances and results.</p>
+                    </div>
+                    <Button onClick={openAddShow} className="bg-primary hover:bg-primary/90 shadow-md gap-2 shrink-0">
+                      <Plus className="h-4 w-4" /> Add Show
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="px-6 pb-6">
+                  {birdShows.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <Trophy className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                      <p className="text-base font-medium">No shows recorded yet.</p>
+                      <p className="text-sm mt-1">Add a show to start tracking dates, venues and results.</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm" style={{ minWidth: "640px" }}>
+                        <thead>
+                          <tr className="text-left text-xs font-bold uppercase tracking-wider text-muted-foreground border-b border-border">
+                            <th className="py-2 pr-4">Date</th>
+                            <th className="py-2 pr-4">Venue</th>
+                            <th className="py-2 pr-4">Species</th>
+                            <th className="py-2 pr-4">Group</th>
+                            <th className="py-2 pr-4">Result</th>
+                            <th className="py-2 pr-4">Notes</th>
+                            <th className="py-2 w-20 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border">
+                          {birdShows.map((s: any) => (
+                            <tr key={s.id} className="align-top">
+                              <td className="py-3 pr-4 whitespace-nowrap font-medium">
+                                {s.showDate ? format(new Date(String(s.showDate)), "dd MMM yyyy") : "—"}
+                              </td>
+                              <td className="py-3 pr-4">{s.venue || "—"}</td>
+                              <td className="py-3 pr-4">{s.species || "—"}</td>
+                              <td className="py-3 pr-4">{s.showGroup || "—"}</td>
+                              <td className="py-3 pr-4">
+                                {s.result
+                                  ? <Badge variant="secondary" className="font-semibold">{s.result}</Badge>
+                                  : "—"}
+                              </td>
+                              <td className="py-3 pr-4 text-muted-foreground max-w-[200px]">{s.notes || "—"}</td>
+                              <td className="py-3 text-right whitespace-nowrap">
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditShow(s)}>
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-red-500 hover:text-red-600"
+                                  onClick={() => deleteShow.mutate({ id: s.id })}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+
           {showGeneticsTab && (
             <TabsContent value="genetics">
               <div className="space-y-4">
@@ -1145,6 +1271,7 @@ export default function BirdDetail() {
           fatherId: data.fatherId ? Number(data.fatherId) : undefined,
           motherId: data.motherId ? Number(data.motherId) : undefined,
           status: data.status,
+          showsEnabled: data.showsEnabled ?? false,
         }, { onSuccess: () => setEditOpen(false) });
       }}
     />
@@ -1161,6 +1288,19 @@ export default function BirdDetail() {
       onSubmit={handleEventSubmit}
       isSubmitting={createEvent.isPending || updateEvent.isPending}
     />
+
+    {/* Show modal */}
+    {showsTabVisible && (
+      <ShowFormModal
+        open={showDialogOpen}
+        onOpenChange={setShowDialogOpen}
+        editingId={editingShowId}
+        initialShow={editingShow}
+        fallbackSpecies={species?.commonName}
+        onSubmit={handleShowSubmit}
+        isSubmitting={createShow.isPending || updateShow.isPending}
+      />
+    )}
 
     {/* Lightbox */}
     {lightboxSrc && (

@@ -9,6 +9,7 @@ import { BirdService } from "./services/birdService";
 import { PairService } from "./services/pairService";
 import { BroodService } from "./services/broodService";
 import { EventService } from "./services/eventService";
+import { ShowService } from "./services/showService";
 import { SettingsService } from "./services/settingsService";
 import { StatsService } from "./services/statsService";
 import { UserService } from "./services/userService";
@@ -343,6 +344,7 @@ export const appRouter = router({
         fatherId: z.number().optional(),
         motherId: z.number().optional(),
         status: z.enum(["alive", "breeding", "resting", "fledged", "deceased", "sold", "unknown"]).default("alive"),
+        showsEnabled: z.boolean().optional(),
         fromBroodId: z.number().optional(),
         fromEggNumber: z.number().optional(),
       }))
@@ -366,6 +368,7 @@ export const appRouter = router({
         fatherId: z.number().nullable().optional(),
         motherId: z.number().nullable().optional(),
         status: z.enum(["alive", "breeding", "resting", "fledged", "deceased", "sold", "unknown"]).optional(),
+        showsEnabled: z.boolean().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const { id, ...data } = input;
@@ -686,6 +689,45 @@ export const appRouter = router({
       .mutation(({ ctx, input }) => EventService.toggleEventComplete(input.id, ctx.user.id)),
     deleteAll: activeProcedure
       .mutation(({ ctx }) => EventService.deleteAllEventsForUser(ctx.user.id)),
+  }),
+
+  // ─── Shows / Exhibitions (Pro) ───────────────────────────────────────────────
+  shows: router({
+    list: proProcedure.query(({ ctx }) => ShowService.getShowsByUser(ctx.user.id)),
+
+    create: proProcedure
+      .input(z.object({
+        birdId: z.number(),
+        showDate: z.string(),
+        venue: z.string().optional(),
+        species: z.string().optional(),
+        showGroup: z.string().optional(),
+        result: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(({ ctx, input }) =>
+        ShowService.createShow({ ...input, userId: ctx.user.id } as any)
+      ),
+
+    update: proProcedure
+      .input(z.object({
+        id: z.number(),
+        birdId: z.number().optional(),
+        showDate: z.string().optional(),
+        venue: z.string().nullable().optional(),
+        species: z.string().nullable().optional(),
+        showGroup: z.string().nullable().optional(),
+        result: z.string().nullable().optional(),
+        notes: z.string().nullable().optional(),
+      }))
+      .mutation(({ ctx, input }) => {
+        const { id, ...data } = input;
+        return ShowService.updateShow(id, ctx.user.id, data as any);
+      }),
+
+    delete: proProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(({ ctx, input }) => ShowService.deleteShow(input.id, ctx.user.id)),
   }),
 
   clutchEggs: router({

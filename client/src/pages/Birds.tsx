@@ -82,6 +82,7 @@ export default function Birds() {
       fatherId: data.fatherId ? Number(data.fatherId) : undefined,
       motherId: data.motherId ? Number(data.motherId) : undefined,
       status: data.status,
+      showsEnabled: data.showsEnabled ?? false,
     };
     if (editingId) {
       updateBird.mutate({ id: editingId, ...payload, photoUrl: data.photoUrl || null }, {

@@ -5,6 +5,7 @@ import { SpeciesService } from "./services/speciesService";
 import { StatsService } from "./services/statsService";
 import { SettingsService } from "./services/settingsService";
 import { BirdService } from "./services/birdService";
+import { ShowService } from "./services/showService";
 import { generatePedigreePdf } from "./pedigreePdf";
 import { generateSeasonScorecardPdf } from "./seasonReportPdf";
 import { generateFlockReportPdf, type FlockComposition } from "./flockReportPdf";
@@ -179,11 +180,12 @@ export function registerPdfRoutes(app: Express) {
         : (settings?.breedingYear ?? currentYear);
 
       // ── Gather data ───────────────────────────────────────────────────────
-      const [summary, seasonStats, birdList, allSpecies] = await Promise.all([
+      const [summary, seasonStats, birdList, allSpecies, shows] = await Promise.all([
         StatsService.getDashboardStatsByUser(userId),
         StatsService.getSeasonStats(userId, year),
         BirdService.getBirdsByUser(userId),
         SpeciesService.getAllSpecies(userId),
+        ShowService.getSeasonShowStats(userId, year),
       ]);
 
       const speciesName = new Map<number, string>();
@@ -195,6 +197,7 @@ export function registerPdfRoutes(app: Express) {
         summary,
         composition,
         seasonStats,
+        shows,
       });
 
       const slug = (settings?.aviaryName?.trim() || "")

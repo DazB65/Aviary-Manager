@@ -18,6 +18,7 @@ export const birdSchema = z.object({
     fatherId: z.string().optional(),
     motherId: z.string().optional(),
     status: z.enum(["alive", "breeding", "resting", "fledged", "deceased", "sold", "unknown"]),
+    showsEnabled: z.boolean().optional(),
     fromBroodId: z.number().optional(),
     fromEggNumber: z.number().optional(),
 });
@@ -38,6 +39,7 @@ export const defaultBirdForm: BirdFormData = {
     fatherId: "",
     motherId: "",
     status: "alive",
+    showsEnabled: false,
     fromBroodId: undefined,
     fromEggNumber: undefined,
 };
@@ -64,6 +66,7 @@ export function useBirdForm(bird?: any, userSettings?: any) {
                 fatherId: bird.fatherId ? String(bird.fatherId) : "",
                 motherId: bird.motherId ? String(bird.motherId) : "",
                 status: (bird.status ?? "alive") as any,
+                showsEnabled: Boolean((bird as any).showsEnabled),
                 fromBroodId: bird.fromBroodId,
                 fromEggNumber: bird.fromEggNumber,
             });

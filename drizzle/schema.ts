@@ -88,6 +88,7 @@ export const birds = pgTable("birds", {
   fatherId: integer("fatherId"), // self-referential for pedigree
   motherId: integer("motherId"), // self-referential for pedigree
   status: birdStatusEnum("status").default("alive").notNull(),
+  showsEnabled: boolean("showsEnabled").default(false).notNull(), // opt-in: show the Shows/exhibition log for this bird (Pro)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 }, (table) => ({
@@ -97,6 +98,27 @@ export const birds = pgTable("birds", {
 
 export type Bird = typeof birds.$inferSelect;
 export type InsertBird = typeof birds.$inferInsert;
+
+// Shows / exhibitions table — one row per time a bird is shown (Pro feature)
+export const shows = pgTable("shows", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").notNull(),
+  birdId: integer("birdId").notNull(),
+  showDate: date("showDate").notNull(),
+  venue: varchar("venue", { length: 200 }),
+  species: varchar("species", { length: 160 }),     // class/category entered under (defaults to the bird's species)
+  showGroup: varchar("showGroup", { length: 160 }), // "group"/class — `group` is a reserved word in SQL
+  result: varchar("result", { length: 160 }),       // free text, e.g. "1st", "Champion", "Best in Show"
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+}, (table) => ({
+  userIdIdx: index("shows_userId_idx").on(table.userId),
+  birdIdIdx: index("shows_birdId_idx").on(table.birdId),
+}));
+
+export type Show = typeof shows.$inferSelect;
+export type InsertShow = typeof shows.$inferInsert;
 
 // Breeding pairs table
 export const breedingPairs = pgTable("breedingPairs", {

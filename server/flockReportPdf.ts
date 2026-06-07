@@ -4,6 +4,7 @@ import {
   fmtInt, card, stackedBar, drawSectionHeader, drawReportFooter,
 } from "./pdfTheme";
 import { drawScorecardPage, type SeasonStats, type ScorecardMeta } from "./seasonReportPdf";
+import type { ShowResultSummary } from "../shared/showResult";
 
 /**
  * The premium multi-page "Flock Report":
@@ -37,6 +38,8 @@ export type FlockReportData = {
   summary: FlockSummary;
   composition: FlockComposition;
   seasonStats: SeasonStats;
+  /** Season show/exhibition rollup — omitted when the user has no show records. */
+  shows?: ShowResultSummary;
 };
 
 const TOTAL_PAGES = 3;
@@ -207,7 +210,34 @@ export function drawFlockAtAGlancePage(doc: Doc, data: FlockReportData, pageLabe
        .text(c.label, x + 12, ccTop + 27, { width: ccW - 16, lineBreak: false });
   });
 
+  // Show ring strip — only when the user actually shows their birds
+  if (data.shows && data.shows.totalShows > 0) {
+    drawShowRing(doc, data.shows, cTop + cH + 16);
+  }
+
   drawReportFooter(doc, { page: pageLabel });
+}
+
+function drawShowRing(doc: Doc, shows: ShowResultSummary, top: number) {
+  const h = 86;
+  card(doc, M, top, CW, h);
+  doc.fillColor(C.heading).font("Helvetica-Bold").fontSize(12)
+     .text("Show Ring", M + 16, top + 14, { lineBreak: false });
+  const cells: { label: string; value: string }[] = [
+    { label: "Shows this season", value: fmtInt(shows.totalShows) },
+    { label: "Wins (1st / Champion)", value: fmtInt(shows.wins) },
+    { label: "Best result", value: shows.bestResult ?? "—" },
+  ];
+  const cw = (CW - 32) / cells.length;
+  const cy = top + 38;
+  cells.forEach((c, i) => {
+    const x = M + 16 + i * cw;
+    if (i > 0) doc.rect(x, cy, 1, 32).fill(C.border);
+    doc.fillColor(C.primary).font("Helvetica-Bold").fontSize(22)
+       .text(c.value, x + 12, cy, { width: cw - 16, lineBreak: false, ellipsis: true });
+    doc.fillColor(C.muted).font("Helvetica").fontSize(9)
+       .text(c.label, x + 12, cy + 27, { width: cw - 16, lineBreak: false });
+  });
 }
 
 function drawComposition(doc: Doc, comp: FlockComposition, x: number, y: number, w: number, h: number) {
