@@ -148,6 +148,13 @@
 			"when": 1780970400001,
 			"tag": "0020_add_comped_pro_until",
 			"breakpoints": true
+		},
+		{
+			"idx": 21,
+			"version": "7",
+			"when": 1780970400002,
+			"tag": "0021_extend_legacy_trials",
+			"breakpoints": true
 		}
 	]
 }
