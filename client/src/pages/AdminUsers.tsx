@@ -13,7 +13,7 @@ import type { AppRouter } from "../../../server/routers";
 import { trialEndsAt, isCompedPro } from "@shared/access";
 import { Input } from "@/components/ui/input";
 
-type SortKey = "name" | "email" | "plan" | "role" | "joined" | "lastSeen" | "chatToday" | "model";
+type SortKey = "name" | "email" | "plan" | "role" | "joined" | "trialEnds" | "lastSeen" | "chatToday" | "model";
 type SortDirection = "asc" | "desc";
 type AdminUser = inferRouterOutputs<AppRouter>["admin"]["users"][number];
 type PlanStatus = "trialExpired" | "trial" | "starter" | "pro";
@@ -115,6 +115,13 @@ export default function AdminUsers() {
           break;
         case "joined":
           result = compareNumber(new Date(a.createdAt || 0).getTime(), new Date(b.createdAt || 0).getTime());
+          break;
+        case "trialEnds":
+          // Paid plans (no trial clock) sort last regardless of direction.
+          result = compareNumber(
+            trialEndsAt(a)?.getTime() ?? Number.POSITIVE_INFINITY,
+            trialEndsAt(b)?.getTime() ?? Number.POSITIVE_INFINITY,
+          );
           break;
         case "lastSeen":
           result = compareNumber(new Date(a.lastSignedIn || 0).getTime(), new Date(b.lastSignedIn || 0).getTime());
@@ -311,6 +318,7 @@ export default function AdminUsers() {
                       <th className="text-left px-3 py-2 whitespace-nowrap">{sortHeader("plan", "Plan")}</th>
                       <th className="text-left px-3 py-2 whitespace-nowrap">{sortHeader("role", "Role")}</th>
                       <th className="text-left px-3 py-2 whitespace-nowrap">{sortHeader("joined", "Joined")}</th>
+                      <th className="text-left px-3 py-2 whitespace-nowrap">{sortHeader("trialEnds", "Trial Ends")}</th>
                       <th className="text-left px-3 py-2 whitespace-nowrap">{sortHeader("lastSeen", "Last Seen")}</th>
                       <th className="text-left px-3 py-2 whitespace-nowrap">{sortHeader("chatToday", "Chat Today")}</th>
                       <th className="text-left px-3 py-2 whitespace-nowrap">{sortHeader("model", "Model")}</th>
@@ -343,6 +351,18 @@ export default function AdminUsers() {
                           </td>
                           <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
                             {u.createdAt ? format(new Date(u.createdAt), "d MMM yy") : "—"}
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            {(() => {
+                              const end = trialEndsAt(u);
+                              if (!end) return <span className="text-muted-foreground">—</span>;
+                              const expired = end.getTime() <= Date.now();
+                              return (
+                                <span className={expired ? "text-orange-600 font-medium" : "text-muted-foreground"}>
+                                  {format(end, "d MMM yy")}
+                                </span>
+                              );
+                            })()}
                           </td>
                           <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
                             {u.lastSignedIn ? format(new Date(u.lastSignedIn), "d MMM yy") : "Never"}
