@@ -5,11 +5,31 @@ import { useLocation } from "wouter";
 import { format } from "date-fns";
 import type { SortCol } from "@/hooks/useBirds";
 import { GenderIcon } from "@/components/ui/GenderIcon";
+import { findPackForSpecies, isPhenotypeSplitPack } from "@/genetics/registry";
 
 const TRAIT_LABELS = ["HEAD", "BODY", "BREAST"];
 
-function GeneticsMutationCell({ colorMutation }: { colorMutation: string | null }) {
+function GeneticsMutationCell({ colorMutation, commonName }: { colorMutation: string | null; commonName?: string | null }) {
     if (!colorMutation) return <span>—</span>;
+
+    // Phenotype-split species (e.g. Zebra Finch) don't have head/body/breast
+    // traits — show the phenotype line and any splits beneath, without labels.
+    const pack = findPackForSpecies(commonName);
+    if (pack && isPhenotypeSplitPack(pack)) {
+        const [phenotypes, splits] = colorMutation.split(" split ");
+        return (
+            <div className="flex flex-col gap-0.5">
+                <span>{phenotypes}</span>
+                {splits && (
+                    <span>
+                        <span className="text-[10px] font-bold tracking-wider text-muted-foreground mr-1">SPLIT</span>
+                        <span>{splits}</span>
+                    </span>
+                )}
+            </div>
+        );
+    }
+
     const parts = colorMutation.split(" / ");
     if (parts.length < 2) return <span>{colorMutation}</span>;
     return (
@@ -159,7 +179,7 @@ export function BirdList({
                                     {bird.cageNumber || "—"}
                                 </td>
                                 <td className="px-4 py-3 text-xs text-amber-600 hidden lg:table-cell">
-                                    <GeneticsMutationCell colorMutation={bird.colorMutation} />
+                                    <GeneticsMutationCell colorMutation={bird.colorMutation} commonName={sp?.commonName} />
                                 </td>
                                 <td className="px-4 py-3 text-xs text-muted-foreground hidden md:table-cell">
                                     {dobStr}

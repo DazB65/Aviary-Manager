@@ -32,6 +32,17 @@ export function packMatchesSpecies(pack: AnyGeneticsPack, commonName?: string | 
 }
 
 /**
+ * Resolve the genetics pack for a species regardless of whether the user has
+ * activated it. Useful for display decisions (e.g. how to label a mutation
+ * string) that should hold even when the pack toggle is off.
+ */
+export function findPackForSpecies(
+  commonName: string | null | undefined,
+): AnyGeneticsPack | undefined {
+  return ALL_GENETICS_PACKS.find((pack) => packMatchesSpecies(pack, commonName));
+}
+
+/**
  * Resolve the genetics pack to use for a species, given which packs the user has
  * activated. Returns undefined when no active pack matches the species.
  */
